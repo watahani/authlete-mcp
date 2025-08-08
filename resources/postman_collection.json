@@ -1,0 +1,5050 @@
+{
+	"info": {
+		"name": "Authlete API",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"description": "This API collection requires several environment variables to be configured in Postman before use.\n\n### Required Environment Variables\n\n| Variable Name | Example Value | Description |\n| --- | --- | --- |\n| `organizationToken` | `RsGrx...` | Organization Token for authentication |\n| `idpServer` | `https://login.authlete.com` | Base URL of the Identity Provider server |\n| `authleteServer` | `https://api.authlete.com` | Base URL of the Authlete server |\n| `organizationId` | `10001000001` | ID of your Authlete organization |\n| `apiServerId` | `2001100` | ID of the target Authlete API server |\n\n> ⚠️ All of these variables must be defined in your Postman environment before using the requests. \n  \n\n### Setup Instructions\n\n1. For Authlete 3.0 shared enviroment, `idpServer` is `https://login.authlete.com` and `authleteServer` is `https://api.authlete.com`. If you are using a dedicated environment, lease refer to your deployment information.\n    \n2. Obtain a Organization ID (`organizationId`), Organization Token (`organizationToken`), and Server Id (`apiServerId`) by following the guide at  \n    [authlete.com/developers/terraform/starting](https://www.authlete.com/developers/terraform/starting).\n    \n3. Add the above variables and example values to your Postman environment.\n    \n4. Select the correct environment when sending requests.\n"
+	},
+	"item": [
+		{
+			"name": "01 service management",
+			"item": [
+				{
+					"name": "Create a new service on the api server, belonging to the specified organization. A service can be created either with an organization token, or by an user with a CREATE_SERVICE role.",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {\r",
+									"    pm.response.to.have.status(200);\r",
+									"});\r",
+									"pm.test(\"API key should be created\", function () {\r",
+									"    var jsonData = pm.response.json();\r",
+									"    pm.expect(jsonData.apiKey).is.not.undefined;\r",
+									"\r",
+									"    pm.environment.set(\"apiKey\", jsonData.apiKey);\r",
+									"});\r",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{organizationToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"apiServerId\": {{apiServerId}},\r\n    \"organizationId\": {{organizationId}},\r\n    \"service\": {\r\n        \"number\": 0,\r\n        \"serviceOwnerNumber\": 0,\r\n        \"apiKey\": 0,\r\n        \"supportedScopes\": [\r\n            {\r\n                \"name\": \"address\",\r\n                \"defaultEntry\": false\r\n            },\r\n            {\r\n                \"name\": \"email\",\r\n                \"defaultEntry\": false\r\n            },\r\n            {\r\n                \"name\": \"openid\",\r\n                \"defaultEntry\": false\r\n            },\r\n            {\r\n                \"name\": \"offline_access\",\r\n                \"defaultEntry\": false\r\n            },\r\n            {\r\n                \"name\": \"phone\",\r\n                \"defaultEntry\": false\r\n            },\r\n            {\r\n                \"name\": \"profile\",\r\n                \"defaultEntry\": false\r\n            },\r\n            {\r\n                \"name\": \"grant_management_query\",\r\n                \"defaultEntry\": false\r\n            },\r\n            {\r\n                \"name\": \"grant_management_revoke\",\r\n                \"defaultEntry\": false\r\n            },\r\n            {\r\n                \"name\": \"read_history\",\r\n                \"defaultEntry\": false\r\n            },\r\n            {\r\n                \"name\": \"write_history\",\r\n                \"defaultEntry\": false\r\n            },\r\n            {\r\n                \"name\": \"device_sso\",\r\n                \"defaultEntry\": false\r\n            }\r\n        ],\r\n        \"supportedResponseTypes\": [\r\n            \"NONE\",\r\n            \"CODE\",\r\n            \"ID_TOKEN\",\r\n            \"CODE_ID_TOKEN\"\r\n        ],\r\n        \"supportedGrantTypes\": [\r\n            \"AUTHORIZATION_CODE\",\r\n            \"CLIENT_CREDENTIALS\",\r\n            \"REFRESH_TOKEN\",\r\n            \"CIBA\",\r\n            \"DEVICE_CODE\",\r\n            \"PRE_AUTHORIZED_CODE\"\r\n        ],\r\n        \"supportedTokenAuthMethods\": [\r\n            \"NONE\",\r\n            \"CLIENT_SECRET_BASIC\",\r\n            \"CLIENT_SECRET_POST\"\r\n        ],\r\n        \"supportedDisplays\": [\r\n            \"PAGE\",\r\n            \"POPUP\",\r\n            \"TOUCH\",\r\n            \"WAP\"\r\n        ],\r\n        \"supportedClaimTypes\": [\r\n            \"NORMAL\"\r\n        ],\r\n        \"supportedClaims\": [\r\n            \"address\",\r\n            \"birthdate\",\r\n            \"email\",\r\n            \"email_verified\",\r\n            \"family_name\",\r\n            \"gender\",\r\n            \"given_name\",\r\n            \"locale\",\r\n            \"middle_name\",\r\n            \"name\",\r\n            \"nickname\",\r\n            \"phone_number\",\r\n            \"phone_number_verified\",\r\n            \"picture\",\r\n            \"preferred_username\",\r\n            \"profile\",\r\n            \"sub\",\r\n            \"updated_at\",\r\n            \"website\",\r\n            \"zoneinfo\"\r\n        ],\r\n        \"createdAt\": 0,\r\n        \"modifiedAt\": 0,\r\n        \"clientsPerDeveloper\": 0,\r\n        \"directAuthorizationEndpointEnabled\": true,\r\n        \"directTokenEndpointEnabled\": true,\r\n        \"directRevocationEndpointEnabled\": true,\r\n        \"directUserInfoEndpointEnabled\": true,\r\n        \"directJwksEndpointEnabled\": true,\r\n        \"directIntrospectionEndpointEnabled\": true,\r\n        \"singleAccessTokenPerSubject\": false,\r\n        \"pkceRequired\": false,\r\n        \"pkceS256Required\": false,\r\n        \"refreshTokenKept\": false,\r\n        \"refreshTokenDurationKept\": false,\r\n        \"refreshTokenDurationReset\": false,\r\n        \"errorDescriptionOmitted\": false,\r\n        \"errorUriOmitted\": false,\r\n        \"clientIdAliasEnabled\": false,\r\n        \"tlsClientCertificateBoundAccessTokens\": false,\r\n        \"mutualTlsValidatePkiCertChain\": false,\r\n        \"dynamicRegistrationSupported\": false,\r\n        \"accessTokenDuration\": 86400,\r\n        \"refreshTokenDuration\": 864000,\r\n        \"idTokenDuration\": 86400,\r\n        \"authorizationResponseDuration\": 600,\r\n        \"pushedAuthReqDuration\": 0,\r\n        \"supportedBackchannelTokenDeliveryModes\": [\r\n            \"POLL\",\r\n            \"PING\",\r\n            \"PUSH\"\r\n        ],\r\n        \"backchannelUserCodeParameterSupported\": true,\r\n        \"backchannelAuthReqIdDuration\": 600,\r\n        \"backchannelPollingInterval\": 5,\r\n        \"backchannelBindingMessageRequiredInFapi\": false,\r\n        \"allowableClockSkew\": 0,\r\n        \"deviceFlowCodeDuration\": 600,\r\n        \"deviceFlowPollingInterval\": 5,\r\n        \"userCodeLength\": 0,\r\n        \"missingClientIdAllowed\": false,\r\n        \"parRequired\": false,\r\n        \"requestObjectRequired\": false,\r\n        \"traditionalRequestObjectProcessingApplied\": false,\r\n        \"claimShortcutRestrictive\": true,\r\n        \"scopeRequired\": false,\r\n        \"nbfOptional\": false,\r\n        \"issSuppressed\": false,\r\n        \"tokenExpirationLinked\": false,\r\n        \"frontChannelRequestObjectEncryptionRequired\": false,\r\n        \"requestObjectEncryptionAlgMatchRequired\": false,\r\n        \"requestObjectEncryptionEncMatchRequired\": false,\r\n        \"hsmEnabled\": false,\r\n        \"grantManagementActionRequired\": false,\r\n        \"unauthorizedOnClientConfigSupported\": true,\r\n        \"dcrScopeUsedAsRequestable\": false,\r\n        \"loopbackRedirectionUriVariable\": true,\r\n        \"requestObjectAudienceChecked\": true,\r\n        \"accessTokenForExternalAttachmentEmbedded\": false,\r\n        \"refreshTokenIdempotent\": false,\r\n        \"federationEnabled\": false,\r\n        \"federationConfigurationDuration\": 0,\r\n        \"tokenExchangeByIdentifiableClientsOnly\": true,\r\n        \"tokenExchangeByConfidentialClientsOnly\": true,\r\n        \"tokenExchangeByPermittedClientsOnly\": true,\r\n        \"tokenExchangeEncryptedJwtRejected\": true,\r\n        \"tokenExchangeUnsignedJwtRejected\": true,\r\n        \"jwtGrantByIdentifiableClientsOnly\": true,\r\n        \"jwtGrantEncryptedJwtRejected\": true,\r\n        \"jwtGrantUnsignedJwtRejected\": true,\r\n        \"dcrDuplicateSoftwareIdBlocked\": false,\r\n        \"rsResponseSigned\": false,\r\n        \"openidDroppedOnRefreshWithoutOfflineAccess\": false,\r\n        \"verifiableCredentialsEnabled\": false,\r\n        \"credentialOfferDuration\": 0,\r\n        \"userPinLength\": 0,\r\n        \"preAuthorizedGrantAnonymousAccessSupported\": false,\r\n        \"cnonceDuration\": 0,\r\n        \"credentialTransactionDuration\": 0,\r\n        \"credentialDuration\": 0,\r\n        \"idTokenReissuable\": false,\r\n        \"dpopNonceRequired\": false,\r\n        \"dpopNonceDuration\": 0,\r\n        \"clientAssertionAudRestrictedToIssuer\": false,\r\n        \"nativeSsoSupported\": false,\r\n        \"serviceName\": \"new service {{$randomNoun}}\",\r\n        \"cluster\": {{apiServerId}},\r\n        \"jwks\": \"{\\r\\n  \\\"keys\\\": [\\r\\n    {\\r\\n      \\\"kty\\\": \\\"EC\\\",\\r\\n      \\\"d\\\": \\\"_YEzBySvr86scnsEi6IYeTUbTBaaFOaBBzzDZXaFJpU\\\",\\r\\n      \\\"use\\\": \\\"sig\\\",\\r\\n      \\\"crv\\\": \\\"P-256\\\",\\r\\n      \\\"kid\\\": \\\"lkBMgkCvIBddwCP1Z_ShimBzDLK5SZqanj7_A-vfi04\\\",\\r\\n      \\\"x\\\": \\\"yCxgjIDHjvVIixQkdPKITM3eAfWpz5lQequZ6QdxsdY\\\",\\r\\n      \\\"y\\\": \\\"utTZ54JOgW3vCx0cP7fNaDlnMEQOEqzu5pyXPXcFgCA\\\",\\r\\n      \\\"alg\\\": \\\"ES256\\\"\\r\\n    }\\r\\n  ]\\r\\n}\",\r\n        \"idTokenSignatureKeyId\": \"lkBMgkCvIBddwCP1Z_ShimBzDLK5SZqanj7_A-vfi04\",\r\n        \"userInfoSignatureKeyId\": \"lkBMgkCvIBddwCP1Z_ShimBzDLK5SZqanj7_A-vfi04\",\r\n        \"authorizationSignatureKeyId\": \"lkBMgkCvIBddwCP1Z_ShimBzDLK5SZqanj7_A-vfi04\"\r\n    }\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{idpServer}}/api/service",
+							"host": [
+								"{{idpServer}}"
+							],
+							"path": [
+								"api",
+								"service"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Service",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{authleteServer}}/api/{{apiKey}}/service/get/",
+							"host": [
+								"{{authleteServer}}"
+							],
+							"path": [
+								"api",
+								"{{apiKey}}",
+								"service",
+								"get",
+								""
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "List Service",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{authleteServer}}/api/service/get/list",
+							"host": [
+								"{{authleteServer}}"
+							],
+							"path": [
+								"api",
+								"service",
+								"get",
+								"list"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update Service",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {\r",
+									"    pm.response.to.have.status(200);\r",
+									"});\r",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"apiKey\": {{apiKey}},\r\n    \"serviceName\": \"Service {{$randomNoun}}\",\r\n    \"description\": \"Description for Service {{$randomNoun}}\",\r\n    \"errorDescriptionOmitted\": false,\r\n    \"errorUriOmitted\": false,\r\n    \"supportedServiceProfiles\": [\r\n        \"FAPI\",\r\n        \"OPEN_BANKING\"\r\n    ],\r\n    \"directAuthorizationEndpointEnabled\": false,\r\n    \"directIntrospectionEndpointEnabled\": false,\r\n    \"directJwksEndpointEnabled\": false,\r\n    \"directRevocationEndpointEnabled\": false,\r\n    \"directTokenEndpointEnabled\": false,\r\n    \"directUserInfoEndpointEnabled\": false,\r\n    \"dynamicRegistrationSupported\": false,\r\n    \"authorizationResponseDuration\": 0,\r\n    \"accessTokenDuration\": 0,\r\n    \"idTokenDuration\": 0,\r\n    \"refreshTokenDuration\": 0,\r\n    \"issuer\": \"https://authlete.com\",\r\n    \"accessTokenType\": \"Bearer\",\r\n    \"allowableClockSkew\": 0,\r\n    \"backchannelAuthReqIdDuration\": 0,\r\n    \"backchannelBindingMessageRequiredInFapi\": false,\r\n    \"backchannelPollingInterval\": 0,\r\n    \"backchannelUserCodeParameterSupported\": false,\r\n    \"claimShortcutRestrictive\": false,\r\n    \"clientIdAliasEnabled\": false,\r\n    \"clientsPerDeveloper\": 0,\r\n    \"deviceFlowCodeDuration\": 0,\r\n    \"deviceFlowPollingInterval\": 0,\r\n    \"jwks\": \"{\\\"keys\\\":[{\\\"p\\\":\\\"0no0WrsfYZa5P9L2XZw4CurddTJlx7bwsAQr13tJ0W2K2i43aje3Q1Sq2NYkBTjvdHU9AZtdjyaZacoMpSUj5Hc2YWrOn7exQGAxOXusKrG2BDMGlPwaHq1PKEcTv8kWzqRu8Htw8HZaSTccfCgNzO5dssbf_nWcvO7DPDNM6bk\\\",\\\"kty\\\":\\\"RSA\\\",\\\"q\\\":\\\"vMH2pdihgQrmAxdHtC32EGwL18a9LfvZCspXgyx0rFbS-WdnJ-dfLvttO1txPvt0JmBexdAhs9twvm-1i959YRWbqNWJpfTqpNr-ubjCAKnu-M5nRWY1oM2tbAQ72kQtNEok-C2ujKO79RQ-HJJ4JKA3RIJCkTpnSYe10k2mX7M\\\",\\\"d\\\":\\\"WCAff5nrLFstVbxoSiMSGeD1CwqG-ZAZMob7WsfRpqZ6zNvmmLWq70SdpQIhb2EDWUx3Lg1DtoYgPs69I71ReZgK7QCJsfCxbvMpz28qg7ZxH3m9nsU1hwMPo1M_IuOH87RHROTZA1eM-lvpsE0jMyG2xqF-D2FZo-sdZXpkvvaIE4I12HrBtflPY40ZRPt84Z79Gq0udfN3XIDsCR8UUroTnUVd_7SIl8qlt0f1YOkF10hUce5iniAKq48PD9Tovriy_ozeyTbMfHQwnJdPr7kuy7RPxRrle1nqC9QvINIwkJqZJ4xeAC8ccNMa3pVXZB8ubvgXHsy11HUKHfXgEQ\\\",\\\"e\\\":\\\"AQAB\\\",\\\"use\\\":\\\"enc\\\",\\\"kid\\\":\\\"2\\\",\\\"qi\\\":\\\"k-yzhsdLaqIciiP4eZjAf0_Trl2SaqnPVo9OUctGUDO5-REMs03VLuwPSzpQ6FJ421ZAR2L42gX9jRQa7t5QzbweWXced0p2c85fNBTlU-ufJtReky0T4nT_MrDaXPIkewaYN87ppSmWQ6Q2VXFoZ-_jcQA3nVg3OVcmEmFxEYI\\\",\\\"dp\\\":\\\"G-2LNN7PcyuEuStM9W7dINW5POvLBY0IstJa3uTFDrzyR7EKOVXbQ1vgr5T6gpbjbxh_V889wtjkUl01AFTFRnNrC9IYSKkfI-OfpHj8h029USFUJkCtVpS4hCeqPzB3jkPTVKWMftu1bzGY3gCSlDasyCQLZMBGY-tqjHpiIkE\\\",\\\"alg\\\":\\\"RSA-OAEP\\\",\\\"dq\\\":\\\"TnSweC6asnA9OnuqqhGQfTLrmTxZ1Ysgo4OG7FbGB_vupQt9rPBWd8i5ljpjz7HkjS7xNXdVCtTi_8SeyQwpQPkiQgK_u-MYxHzh83__4xa-5VulQQtCrxvOQV9hIU_FGj7XLvCN5JcJwMwxJN8cYNzXG_qogISt-boWsNrllFE\\\",\\\"n\\\":\\\"mzE3XeMA8b4K44a5bsDmq97yNSvaeBYWLplmUpxHZJd8AJGjJvURIM13ds4DhMYMxPv3ITUt9PADAXHIx3OKTrgnKYLAwFoOC1q3yDRnSVtWZ-fSN513z-gNTnlnH4toWvD2Ymk4QB2b87Th2d5p3mxbRbFEsTmhx-oNK54yWXf827MZB5lcM3vC-rpPFOzRWaz_eQEfh7mtKJ2RDePvuq8HJsPbRcyW3qz2omVDRmvrdS__bhpiwgBP2_8kqKmeq9HvVfNeAXN3PtZ529J1nc_qn8-LU8DczpweWJM8OtrJb7CZaMfqpWLmVTOQN5rEFx6B54T8YYvhw8cPnHkTWw\\\"}]}\",\r\n    \"metadata\": [\r\n        {\r\n            \"key\": \"clientCount\",\r\n            \"value\": \"0\"\r\n        }\r\n    ],\r\n    \"missingClientIdAllowed\": false,\r\n    \"mutualTlsValidatePkiCertChain\": false,\r\n    \"parRequired\": false,\r\n    \"pkceRequired\": false,\r\n    \"pkceS256Required\": false,\r\n    \"pushedAuthReqDuration\": 0,\r\n    \"refreshTokenDurationKept\": false,\r\n    \"refreshTokenKept\": false,\r\n    \"requestObjectRequired\": false,\r\n    \"scopeRequired\": false,\r\n    \"singleAccessTokenPerSubject\": false,\r\n    \"supportedClaimTypes\": [\r\n        \"NORMAL\"\r\n    ],\r\n    \"supportedDisplays\": [\r\n        \"PAGE\"\r\n    ],\r\n    \"supportedGrantTypes\": [\r\n        \"AUTHORIZATION_CODE\",\r\n        \"IMPLICIT\",\r\n        \"PASSWORD\",\r\n        \"CLIENT_CREDENTIALS\",\r\n        \"REFRESH_TOKEN\"\r\n    ],\r\n    \"supportedResponseTypes\": [\r\n        \"NONE\",\r\n        \"CODE\",\r\n        \"TOKEN\",\r\n        \"ID_TOKEN\",\r\n        \"CODE_TOKEN\",\r\n        \"CODE_ID_TOKEN\",\r\n        \"ID_TOKEN_TOKEN\",\r\n        \"CODE_ID_TOKEN_TOKEN\"\r\n    ],\r\n    \"supportedTokenAuthMethods\": [\r\n        \"CLIENT_SECRET_BASIC\"\r\n    ],\r\n    \"tlsClientCertificateBoundAccessTokens\": false,\r\n    \"traditionalRequestObjectProcessingApplied\": false,\r\n    \"userCodeLength\": 0,\r\n    \"supportedScopes\": [\r\n        {\r\n            \"attributes\": [\r\n                {\r\n                    \"key\": \"ROLE\",\r\n                    \"value\": \"DADOS\"\r\n                },\r\n                {\r\n                    \"key\": \"fapi\",\r\n                    \"value\": \"rw\"\r\n                }\r\n            ],\r\n            \"defaultEntry\": false,\r\n            \"name\": \"accounts\"\r\n        },\r\n        {\r\n            \"attributes\": [\r\n                {\r\n                    \"key\": \"Role\",\r\n                    \"value\": \"DADOS PAGTO\"\r\n                },\r\n                {\r\n                    \"key\": \"fapi\",\r\n                    \"value\": \"rw\"\r\n                },\r\n                {\r\n                    \"key\": \"regex\",\r\n                    \"value\": \"^consents:.+*$\"\r\n                }\r\n            ],\r\n            \"defaultEntry\": false,\r\n            \"description\": \"consent - Openbanking profile A\",\r\n            \"name\": \"consents\"\r\n        },\r\n        {\r\n            \"attributes\": [\r\n                {\r\n                    \"key\": \"ROLE\",\r\n                    \"value\": \"DADOS\"\r\n                },\r\n                {\r\n                    \"key\": \"fapi\",\r\n                    \"value\": \"rw\"\r\n                }\r\n            ],\r\n            \"defaultEntry\": false,\r\n            \"description\": \"Openbanking - credit-cards-accounts\",\r\n            \"name\": \"credit-cards-accounts\"\r\n        },\r\n        {\r\n            \"attributes\": [\r\n                {\r\n                    \"key\": \"ROLE\",\r\n                    \"value\": \"DADOS\"\r\n                },\r\n                {\r\n                    \"key\": \"fapi\",\r\n                    \"value\": \"rw\"\r\n                }\r\n            ],\r\n            \"defaultEntry\": false,\r\n            \"name\": \"customers\"\r\n        },\r\n        {\r\n            \"attributes\": [\r\n                {\r\n                    \"key\": \"ROLE\",\r\n                    \"value\": \"DADOS\"\r\n                },\r\n                {\r\n                    \"key\": \"fapi\",\r\n                    \"value\": \"rw\"\r\n                }\r\n            ],\r\n            \"defaultEntry\": false,\r\n            \"name\": \"financings\"\r\n        },\r\n        {\r\n            \"attributes\": [\r\n                {\r\n                    \"key\": \"ROLE\",\r\n                    \"value\": \"DADOS\"\r\n                },\r\n                {\r\n                    \"key\": \"fapi\",\r\n                    \"value\": \"rw\"\r\n                }\r\n            ],\r\n            \"defaultEntry\": false,\r\n            \"name\": \"invoice-financings\"\r\n        },\r\n        {\r\n            \"attributes\": [\r\n                {\r\n                    \"key\": \"fapi\",\r\n                    \"value\": \"rw\"\r\n                }\r\n            ],\r\n            \"defaultEntry\": false,\r\n            \"name\": \"loans\"\r\n        },\r\n        {\r\n            \"attributes\": [\r\n                {\r\n                    \"key\": \"ROLE\",\r\n                    \"value\": \"DADOS PAGTO CONTA CCORR\"\r\n                }\r\n            ],\r\n            \"defaultEntry\": false,\r\n            \"description\": \"A permission to request an OpenID Provider to issue an ID Token. See OpenID Connect Core 1.0, 3.1.2.1. for details.\",\r\n            \"descriptions\": [\r\n                {\r\n                    \"tag\": \"en\",\r\n                    \"value\": \"A permission to request an OpenID Provider to issue an ID Token. See OpenID Connect Core 1.0, 3.1.2.1. for details.\"\r\n                },\r\n                {\r\n                    \"tag\": \"ja\",\r\n                    \"value\": \"OpenID プロバイダーに ID トークンの発行を要求するための権限です。詳細は OpenID Connect Core 1.0, 3.1.2.1. を参照してください。\"\r\n                }\r\n            ],\r\n            \"name\": \"openid\"\r\n        },\r\n        {\r\n            \"attributes\": [\r\n                {\r\n                    \"key\": \"ROLE\",\r\n                    \"value\": \"PAGTO\"\r\n                },\r\n                {\r\n                    \"key\": \"fapi\",\r\n                    \"value\": \"rw\"\r\n                },\r\n                {\r\n                    \"key\": \"regex\",\r\n                    \"value\": \"^payments:.+*$\"\r\n                }\r\n            ],\r\n            \"defaultEntry\": false,\r\n            \"name\": \"payments\"\r\n        },\r\n        {\r\n            \"attributes\": [\r\n                {\r\n                    \"key\": \"ROLE\",\r\n                    \"value\": \"DADOS\"\r\n                },\r\n                {\r\n                    \"key\": \"fapi\",\r\n                    \"value\": \"rw\"\r\n                }\r\n            ],\r\n            \"defaultEntry\": false,\r\n            \"name\": \"unarranged-accounts-overdraft\"\r\n        },\r\n        {\r\n            \"attributes\": [\r\n                {\r\n                    \"key\": \"ROLE\",\r\n                    \"value\": \"DADOS PAGTO CONTA CCORR\"\r\n                }\r\n            ],\r\n            \"defaultEntry\": false,\r\n            \"description\": \"A permission to read histories.\",\r\n            \"name\": \"history.read\"\r\n        }\r\n    ]\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{authleteServer}}/api/{{apiKey}}/service/update",
+							"host": [
+								"{{authleteServer}}"
+							],
+							"path": [
+								"api",
+								"{{apiKey}}",
+								"service",
+								"update"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "02 client management",
+			"item": [
+				{
+					"name": "Create Client",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 201\", function () {\r",
+									"    pm.response.to.have.status(201);\r",
+									"});\r",
+									"pm.test(\"API key should be created\", function () {\r",
+									"    var jsonData = pm.response.json();\r",
+									"    pm.environment.set(\"clientId\", jsonData.clientId);\r",
+									"    pm.environment.set(\"clientIdAlias\", jsonData.clientIdAlias);\r",
+									"    pm.environment.set(\"clientSecret\", jsonData.clientSecret);\r",
+									"});\r",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"developer\": \"john\",\r\n  \"clientName\": \"My Client\",\r\n  \"clientIdAlias\": \"my-client\",\r\n  \"clientIdAliasEnabled\": true,\r\n  \"clientType\": \"CONFIDENTIAL\",\r\n  \"applicationType\": \"WEB\",\r\n  \"grantTypes\": [\r\n    \"AUTHORIZATION_CODE\",\r\n    \"REFRESH_TOKEN\"\r\n  ],\r\n  \"responseTypes\": [\r\n    \"CODE\",\r\n    \"TOKEN\"\r\n  ],\r\n  \"redirectUris\": [\r\n    \"https://my-client.example.com/cb1\",\r\n    \"https://my-client.example.com/cb2\"\r\n  ],\r\n  \"tokenAuthMethod\": \"CLIENT_SECRET_BASIC\",\r\n  \"attributes\": [\r\n    {\r\n      \"key\": \"attribute1-key\",\r\n      \"value\": \"attribute1-value\"\r\n    },\r\n    {\r\n      \"key\": \"attribute2-key\",\r\n      \"value\": \"attribute2-value\"\r\n    }\r\n  ],\r\n  \"jwks\": \"{\\\"keys\\\":[{\\\"kty\\\":\\\"EC\\\",\\\"use\\\":\\\"sig\\\",\\\"crv\\\":\\\"P-256\\\",\\\"kid\\\":\\\"KSyp_pfnNqyIfYrUNvRrTX75gD8--BYtdSQZWMf7MUg\\\",\\\"x\\\":\\\"uKRLFdBK7LCaUYnLhKYyF53vtmHBSQlKOUETjnZsKNQ\\\",\\\"y\\\":\\\"8X-mjomuPghfqMNY0wKKzMuEqQFKeGsj_aevIBjT4Pk\\\",\\\"alg\\\":\\\"ES256\\\"}]}\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{authleteServer}}/api/{{apiKey}}/client/create",
+							"host": [
+								"{{authleteServer}}"
+							],
+							"path": [
+								"api",
+								"{{apiKey}}",
+								"client",
+								"create"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Client",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{authleteServer}}/api/{{apiKey}}/client/get/{{clientId}}",
+							"host": [
+								"{{authleteServer}}"
+							],
+							"path": [
+								"api",
+								"{{apiKey}}",
+								"client",
+								"get",
+								"{{clientId}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "List Clients",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{authleteServer}}/api/{{apiKey}}/client/get/list",
+							"host": [
+								"{{authleteServer}}"
+							],
+							"path": [
+								"api",
+								"{{apiKey}}",
+								"client",
+								"get",
+								"list"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update Client",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"developer\": \"john\",\r\n  \"clientName\": \"My Client Updated\",\r\n  \"clientIdAlias\": \"my-client-updated\",\r\n  \"clientIdAliasEnabled\": true,\r\n  \"clientType\": \"CONFIDENTIAL\",\r\n  \"applicationType\": \"WEB\",\r\n  \"grantTypes\": [\r\n    \"AUTHORIZATION_CODE\",\r\n    \"REFRESH_TOKEN\"\r\n  ],\r\n  \"responseTypes\": [\r\n    \"CODE\",\r\n    \"TOKEN\"\r\n  ],\r\n  \"redirectUris\": [\r\n    \"https://my-client.example.com/cb1\",\r\n    \"https://my-client.example.com/cb2\"\r\n  ],\r\n  \"tokenAuthMethod\": \"CLIENT_SECRET_BASIC\",\r\n  \"attributes\": [\r\n    {\r\n      \"key\": \"attribute1-key\",\r\n      \"value\": \"attribute1-value\"\r\n    },\r\n    {\r\n      \"key\": \"attribute2-key\",\r\n      \"value\": \"attribute2-value\"\r\n    }\r\n  ],\r\n  \"jwks\": \"{\\\"keys\\\":[{\\\"kty\\\":\\\"EC\\\",\\\"use\\\":\\\"sig\\\",\\\"crv\\\":\\\"P-256\\\",\\\"kid\\\":\\\"KSyp_pfnNqyIfYrUNvRrTX75gD8--BYtdSQZWMf7MUg\\\",\\\"x\\\":\\\"uKRLFdBK7LCaUYnLhKYyF53vtmHBSQlKOUETjnZsKNQ\\\",\\\"y\\\":\\\"8X-mjomuPghfqMNY0wKKzMuEqQFKeGsj_aevIBjT4Pk\\\",\\\"alg\\\":\\\"ES256\\\"}]}\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{authleteServer}}/api/{{apiKey}}/client/update/{{clientId}}",
+							"host": [
+								"{{authleteServer}}"
+							],
+							"path": [
+								"api",
+								"{{apiKey}}",
+								"client",
+								"update",
+								"{{clientId}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update Client Lock",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"resultCode should be A293001\", function () {\r",
+									"    pm.response.to.have.jsonBody('resultCode', 'A293001');\r",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{organizationToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"clientLocked\": true\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{authleteServer}}/api/{{apiKey}}/client/lock_flag/update/{{clientId}}",
+							"host": [
+								"{{authleteServer}}"
+							],
+							"path": [
+								"api",
+								"{{apiKey}}",
+								"client",
+								"lock_flag",
+								"update",
+								"{{clientId}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update Client Lock (Unlock)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"resultCode should be A293001\", function () {\r",
+									"    pm.response.to.have.jsonBody('resultCode', 'A293001');\r",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{organizationToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"clientLocked\": false\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{authleteServer}}/api/{{apiKey}}/client/lock_flag/update/{{clientId}}",
+							"host": [
+								"{{authleteServer}}"
+							],
+							"path": [
+								"api",
+								"{{apiKey}}",
+								"client",
+								"lock_flag",
+								"update",
+								"{{clientId}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Rotate Client Secret",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"New client secret should be created\", function () {\r",
+									"    pm.response.to.have.jsonBody('newClientSecret');\r",
+									"    pm.response.to.have.jsonBody('oldClientSecret');\r",
+									"    pm.response.to.have.jsonBody('resultCode', 'A148001');\r",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{organizationToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"clientLocked\": true\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{authleteServer}}/api/{{apiKey}}/client/secret/refresh/{{clientId}}",
+							"host": [
+								"{{authleteServer}}"
+							],
+							"path": [
+								"api",
+								"{{apiKey}}",
+								"client",
+								"secret",
+								"refresh",
+								"{{clientId}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update Client Secret",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"New client secret should be created\", function () {\r",
+									"    pm.response.to.have.jsonBody('newClientSecret', 'my_updated_client_secret');\r",
+									"    pm.response.to.have.jsonBody('oldClientSecret');\r",
+									"    pm.response.to.have.jsonBody('resultCode', 'A149001');\r",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{organizationToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"clientSecret\": \"my_updated_client_secret\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{authleteServer}}/api/{{apiKey}}/client/secret/update/{{clientId}}",
+							"host": [
+								"{{authleteServer}}"
+							],
+							"path": [
+								"api",
+								"{{apiKey}}",
+								"client",
+								"secret",
+								"update",
+								"{{clientId}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Authorized Applications",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{organizationToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{authleteServer}}/api/{{apiKey}}/client/authorization/get/list?subject=john&start=0&end=5",
+							"host": [
+								"{{authleteServer}}"
+							],
+							"path": [
+								"api",
+								"{{apiKey}}",
+								"client",
+								"authorization",
+								"get",
+								"list"
+							],
+							"query": [
+								{
+									"key": "subject",
+									"value": "john",
+									"description": "(Required) Unique user ID of an end-user."
+								},
+								{
+									"key": "developer",
+									"value": null,
+									"description": "Unique ID of a client developer.\n",
+									"disabled": true
+								},
+								{
+									"key": "start",
+									"value": "0",
+									"description": "Start index of search results (inclusive). The default value is 0."
+								},
+								{
+									"key": "end",
+									"value": "5",
+									"description": "End index of search results (exclusive). The default value is 5.\n"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update Client Tokens",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"subject\": \"john\",\n  \"scopes\": [\n    \"openid\"\n  ]\n}",
+							"options": {
+								"raw": {
+									"headerFamily": "json",
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{authleteServer}}/api/{{apiKey}}/client/authorization/update/{{clientId}}",
+							"host": [
+								"{{authleteServer}}"
+							],
+							"path": [
+								"api",
+								"{{apiKey}}",
+								"client",
+								"authorization",
+								"update",
+								"{{clientId}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Client Tokens",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{authleteServer}}/api/{{apiKey}}/client/authorization/delete/{{clientId}}?subject=john",
+							"host": [
+								"{{authleteServer}}"
+							],
+							"path": [
+								"api",
+								"{{apiKey}}",
+								"client",
+								"authorization",
+								"delete",
+								"{{clientId}}"
+							],
+							"query": [
+								{
+									"key": "subject",
+									"value": "john",
+									"description": "(Required) Unique user ID of an end-user.\n"
+								}
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "Untitled Example",
+							"originalRequest": {
+								"method": "DELETE",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "<token>",
+										"description": "Added as a part of security scheme: oauth2"
+									}
+								],
+								"url": {
+									"raw": "{{baseUrl}}/api/:serviceId/client/authorization/delete/:clientId?subject=officia",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										":serviceId",
+										"client",
+										"authorization",
+										"delete",
+										":clientId"
+									],
+									"query": [
+										{
+											"key": "subject",
+											"value": "officia",
+											"description": "(Required) Unique user ID of an end-user.\n"
+										}
+									],
+									"variable": [
+										{
+											"key": "serviceId"
+										},
+										{
+											"key": "clientId"
+										}
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"resultCode\": \"A137001\",\n  \"resultMessage\": \"[A137001] Deleted 3 access token(s) issued to the client (ID = 26478243745571) of the service (API Key = 21653835348762).\"\n}"
+						},
+						{
+							"name": "Untitled Example",
+							"originalRequest": {
+								"method": "DELETE",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "<token>",
+										"description": "Added as a part of security scheme: oauth2"
+									}
+								],
+								"url": {
+									"raw": "{{baseUrl}}/api/:serviceId/client/authorization/delete/:clientId?subject=officia",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										":serviceId",
+										"client",
+										"authorization",
+										"delete",
+										":clientId"
+									],
+									"query": [
+										{
+											"key": "subject",
+											"value": "officia",
+											"description": "(Required) Unique user ID of an end-user.\n"
+										}
+									],
+									"variable": [
+										{
+											"key": "serviceId"
+										},
+										{
+											"key": "clientId"
+										}
+									]
+								}
+							},
+							"status": "Bad Request",
+							"code": 400,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"resultCode\": \"A001201\",\n  \"resultMessage\": \"[A001201] /auth/authorization, TLS must be used.\"\n}"
+						},
+						{
+							"name": "Untitled Example",
+							"originalRequest": {
+								"method": "DELETE",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "<token>",
+										"description": "Added as a part of security scheme: oauth2"
+									}
+								],
+								"url": {
+									"raw": "{{baseUrl}}/api/:serviceId/client/authorization/delete/:clientId?subject=officia",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										":serviceId",
+										"client",
+										"authorization",
+										"delete",
+										":clientId"
+									],
+									"query": [
+										{
+											"key": "subject",
+											"value": "officia",
+											"description": "(Required) Unique user ID of an end-user.\n"
+										}
+									],
+									"variable": [
+										{
+											"key": "serviceId"
+										},
+										{
+											"key": "clientId"
+										}
+									]
+								}
+							},
+							"status": "Unauthorized",
+							"code": 401,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"resultCode\": \"A001202\",\n  \"resultMessage\": \"[A001202] /auth/authorization, Authorization header is missing.\"\n}"
+						},
+						{
+							"name": "Untitled Example",
+							"originalRequest": {
+								"method": "DELETE",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "<token>",
+										"description": "Added as a part of security scheme: oauth2"
+									}
+								],
+								"url": {
+									"raw": "{{baseUrl}}/api/:serviceId/client/authorization/delete/:clientId?subject=officia",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										":serviceId",
+										"client",
+										"authorization",
+										"delete",
+										":clientId"
+									],
+									"query": [
+										{
+											"key": "subject",
+											"value": "officia",
+											"description": "(Required) Unique user ID of an end-user.\n"
+										}
+									],
+									"variable": [
+										{
+											"key": "serviceId"
+										},
+										{
+											"key": "clientId"
+										}
+									]
+								}
+							},
+							"status": "Forbidden",
+							"code": 403,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"resultCode\": \"A001215\",\n  \"resultMessage\": \"[A001215] /auth/authorization, The client (ID = 26837717140341) is locked.\"\n}"
+						},
+						{
+							"name": "Untitled Example",
+							"originalRequest": {
+								"method": "DELETE",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "<token>",
+										"description": "Added as a part of security scheme: oauth2"
+									}
+								],
+								"url": {
+									"raw": "{{baseUrl}}/api/:serviceId/client/authorization/delete/:clientId?subject=officia",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										":serviceId",
+										"client",
+										"authorization",
+										"delete",
+										":clientId"
+									],
+									"query": [
+										{
+											"key": "subject",
+											"value": "officia",
+											"description": "(Required) Unique user ID of an end-user.\n"
+										}
+									],
+									"variable": [
+										{
+											"key": "serviceId"
+										},
+										{
+											"key": "clientId"
+										}
+									]
+								}
+							},
+							"status": "Internal Server Error",
+							"code": 500,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"resultCode\": \"A001101\",\n  \"resultMessage\": \"[A001101] /auth/authorization, Authlete Server error.\"\n}"
+						}
+					]
+				},
+				{
+					"name": "Get Granted Scopes",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{authleteServer}}/api/{{apiKey}}/client/granted_scopes/get/{{clientId}}?subject=john",
+							"host": [
+								"{{authleteServer}}"
+							],
+							"path": [
+								"api",
+								"{{apiKey}}",
+								"client",
+								"granted_scopes",
+								"get",
+								"{{clientId}}"
+							],
+							"query": [
+								{
+									"key": "subject",
+									"value": "john",
+									"description": "(Required) Unique user ID of an end-user.\n"
+								}
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "Untitled Example",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "<token>",
+										"description": "Added as a part of security scheme: oauth2"
+									}
+								],
+								"url": {
+									"raw": "{{baseUrl}}/api/:serviceId/client/granted_scopes/get/:clientId?subject=officia",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										":serviceId",
+										"client",
+										"granted_scopes",
+										"get",
+										":clientId"
+									],
+									"query": [
+										{
+											"key": "subject",
+											"value": "officia",
+											"description": "(Required) Unique user ID of an end-user.\n"
+										}
+									],
+									"variable": [
+										{
+											"key": "serviceId"
+										},
+										{
+											"key": "clientId"
+										}
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"type\": \"GrantedScopesGetResponse\",\n  \"serviceApiKey\": 21653835348762,\n  \"clientId\": 26478243745571,\n  \"subject\": \"john\",\n  \"latestGrantedScopes\": [\n    \"history.read\"\n  ],\n  \"mergedGrantedScopes\": [\n    \"history.read\",\n    \"timeline.read\"\n  ]\n}"
+						},
+						{
+							"name": "Untitled Example",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "<token>",
+										"description": "Added as a part of security scheme: oauth2"
+									}
+								],
+								"url": {
+									"raw": "{{baseUrl}}/api/:serviceId/client/granted_scopes/get/:clientId?subject=officia",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										":serviceId",
+										"client",
+										"granted_scopes",
+										"get",
+										":clientId"
+									],
+									"query": [
+										{
+											"key": "subject",
+											"value": "officia",
+											"description": "(Required) Unique user ID of an end-user.\n"
+										}
+									],
+									"variable": [
+										{
+											"key": "serviceId"
+										},
+										{
+											"key": "clientId"
+										}
+									]
+								}
+							},
+							"status": "Bad Request",
+							"code": 400,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"resultCode\": \"A001201\",\n  \"resultMessage\": \"[A001201] /auth/authorization, TLS must be used.\"\n}"
+						},
+						{
+							"name": "Untitled Example",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "<token>",
+										"description": "Added as a part of security scheme: oauth2"
+									}
+								],
+								"url": {
+									"raw": "{{baseUrl}}/api/:serviceId/client/granted_scopes/get/:clientId?subject=officia",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										":serviceId",
+										"client",
+										"granted_scopes",
+										"get",
+										":clientId"
+									],
+									"query": [
+										{
+											"key": "subject",
+											"value": "officia",
+											"description": "(Required) Unique user ID of an end-user.\n"
+										}
+									],
+									"variable": [
+										{
+											"key": "serviceId"
+										},
+										{
+											"key": "clientId"
+										}
+									]
+								}
+							},
+							"status": "Unauthorized",
+							"code": 401,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"resultCode\": \"A001202\",\n  \"resultMessage\": \"[A001202] /auth/authorization, Authorization header is missing.\"\n}"
+						},
+						{
+							"name": "Untitled Example",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "<token>",
+										"description": "Added as a part of security scheme: oauth2"
+									}
+								],
+								"url": {
+									"raw": "{{baseUrl}}/api/:serviceId/client/granted_scopes/get/:clientId?subject=officia",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										":serviceId",
+										"client",
+										"granted_scopes",
+										"get",
+										":clientId"
+									],
+									"query": [
+										{
+											"key": "subject",
+											"value": "officia",
+											"description": "(Required) Unique user ID of an end-user.\n"
+										}
+									],
+									"variable": [
+										{
+											"key": "serviceId"
+										},
+										{
+											"key": "clientId"
+										}
+									]
+								}
+							},
+							"status": "Forbidden",
+							"code": 403,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"resultCode\": \"A001215\",\n  \"resultMessage\": \"[A001215] /auth/authorization, The client (ID = 26837717140341) is locked.\"\n}"
+						},
+						{
+							"name": "Untitled Example",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "<token>",
+										"description": "Added as a part of security scheme: oauth2"
+									}
+								],
+								"url": {
+									"raw": "{{baseUrl}}/api/:serviceId/client/granted_scopes/get/:clientId?subject=officia",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										":serviceId",
+										"client",
+										"granted_scopes",
+										"get",
+										":clientId"
+									],
+									"query": [
+										{
+											"key": "subject",
+											"value": "officia",
+											"description": "(Required) Unique user ID of an end-user.\n"
+										}
+									],
+									"variable": [
+										{
+											"key": "serviceId"
+										},
+										{
+											"key": "clientId"
+										}
+									]
+								}
+							},
+							"status": "Internal Server Error",
+							"code": 500,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"resultCode\": \"A001101\",\n  \"resultMessage\": \"[A001101] /auth/authorization, Authlete Server error.\"\n}"
+						}
+					]
+				},
+				{
+					"name": "Delete Granted Scopes",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{authleteServer}}/api/{{apiKey}}/client/granted_scopes/delete/{{clientId}}?subject=john",
+							"host": [
+								"{{authleteServer}}"
+							],
+							"path": [
+								"api",
+								"{{apiKey}}",
+								"client",
+								"granted_scopes",
+								"delete",
+								"{{clientId}}"
+							],
+							"query": [
+								{
+									"key": "subject",
+									"value": "john",
+									"description": "(Required) Unique user ID of an end-user.\n"
+								}
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "Untitled Example",
+							"originalRequest": {
+								"method": "DELETE",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "<token>",
+										"description": "Added as a part of security scheme: oauth2"
+									}
+								],
+								"url": {
+									"raw": "{{baseUrl}}/api/:serviceId/client/granted_scopes/delete/:clientId?subject=officia",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										":serviceId",
+										"client",
+										"granted_scopes",
+										"delete",
+										":clientId"
+									],
+									"query": [
+										{
+											"key": "subject",
+											"value": "officia",
+											"description": "(Required) Unique user ID of an end-user.\n"
+										}
+									],
+									"variable": [
+										{
+											"key": "serviceId"
+										},
+										{
+											"key": "clientId"
+										}
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"resultCode\": \"mollit cillum minim\",\n  \"resultMessage\": \"Duis minim laboris exercitation amet\"\n}"
+						},
+						{
+							"name": "Untitled Example",
+							"originalRequest": {
+								"method": "DELETE",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "<token>",
+										"description": "Added as a part of security scheme: oauth2"
+									}
+								],
+								"url": {
+									"raw": "{{baseUrl}}/api/:serviceId/client/granted_scopes/delete/:clientId?subject=officia",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										":serviceId",
+										"client",
+										"granted_scopes",
+										"delete",
+										":clientId"
+									],
+									"query": [
+										{
+											"key": "subject",
+											"value": "officia",
+											"description": "(Required) Unique user ID of an end-user.\n"
+										}
+									],
+									"variable": [
+										{
+											"key": "serviceId"
+										},
+										{
+											"key": "clientId"
+										}
+									]
+								}
+							},
+							"status": "Bad Request",
+							"code": 400,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"resultCode\": \"A001201\",\n  \"resultMessage\": \"[A001201] /auth/authorization, TLS must be used.\"\n}"
+						},
+						{
+							"name": "Untitled Example",
+							"originalRequest": {
+								"method": "DELETE",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "<token>",
+										"description": "Added as a part of security scheme: oauth2"
+									}
+								],
+								"url": {
+									"raw": "{{baseUrl}}/api/:serviceId/client/granted_scopes/delete/:clientId?subject=officia",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										":serviceId",
+										"client",
+										"granted_scopes",
+										"delete",
+										":clientId"
+									],
+									"query": [
+										{
+											"key": "subject",
+											"value": "officia",
+											"description": "(Required) Unique user ID of an end-user.\n"
+										}
+									],
+									"variable": [
+										{
+											"key": "serviceId"
+										},
+										{
+											"key": "clientId"
+										}
+									]
+								}
+							},
+							"status": "Unauthorized",
+							"code": 401,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"resultCode\": \"A001202\",\n  \"resultMessage\": \"[A001202] /auth/authorization, Authorization header is missing.\"\n}"
+						},
+						{
+							"name": "Untitled Example",
+							"originalRequest": {
+								"method": "DELETE",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "<token>",
+										"description": "Added as a part of security scheme: oauth2"
+									}
+								],
+								"url": {
+									"raw": "{{baseUrl}}/api/:serviceId/client/granted_scopes/delete/:clientId?subject=officia",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										":serviceId",
+										"client",
+										"granted_scopes",
+										"delete",
+										":clientId"
+									],
+									"query": [
+										{
+											"key": "subject",
+											"value": "officia",
+											"description": "(Required) Unique user ID of an end-user.\n"
+										}
+									],
+									"variable": [
+										{
+											"key": "serviceId"
+										},
+										{
+											"key": "clientId"
+										}
+									]
+								}
+							},
+							"status": "Forbidden",
+							"code": 403,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"resultCode\": \"A001215\",\n  \"resultMessage\": \"[A001215] /auth/authorization, The client (ID = 26837717140341) is locked.\"\n}"
+						},
+						{
+							"name": "Untitled Example",
+							"originalRequest": {
+								"method": "DELETE",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "<token>",
+										"description": "Added as a part of security scheme: oauth2"
+									}
+								],
+								"url": {
+									"raw": "{{baseUrl}}/api/:serviceId/client/granted_scopes/delete/:clientId?subject=officia",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										":serviceId",
+										"client",
+										"granted_scopes",
+										"delete",
+										":clientId"
+									],
+									"query": [
+										{
+											"key": "subject",
+											"value": "officia",
+											"description": "(Required) Unique user ID of an end-user.\n"
+										}
+									],
+									"variable": [
+										{
+											"key": "serviceId"
+										},
+										{
+											"key": "clientId"
+										}
+									]
+								}
+							},
+							"status": "Internal Server Error",
+							"code": 500,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"resultCode\": \"A001101\",\n  \"resultMessage\": \"[A001101] /auth/authorization, Authlete Server error.\"\n}"
+						}
+					]
+				},
+				{
+					"name": "Get Requestable Scopes",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{authleteServer}}/api/{{apiKey}}/client/extension/requestable_scopes/get/{{clientId}}",
+							"host": [
+								"{{authleteServer}}"
+							],
+							"path": [
+								"api",
+								"{{apiKey}}",
+								"client",
+								"extension",
+								"requestable_scopes",
+								"get",
+								"{{clientId}}"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "200 response",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "<token>",
+										"description": "Added as a part of security scheme: oauth2"
+									}
+								],
+								"url": {
+									"raw": "{{baseUrl}}/api/:serviceId/client/extension/requestable_scopes/get/:clientId",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										":serviceId",
+										"client",
+										"extension",
+										"requestable_scopes",
+										"get",
+										":clientId"
+									],
+									"variable": [
+										{
+											"key": "serviceId"
+										},
+										{
+											"key": "clientId"
+										}
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"requestableScopes\": [\n    \"magna dolore non ut\",\n    \"fugiat\"\n  ]\n}"
+						},
+						{
+							"name": "Untitled Example",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "<token>",
+										"description": "Added as a part of security scheme: oauth2"
+									}
+								],
+								"url": {
+									"raw": "{{baseUrl}}/api/:serviceId/client/extension/requestable_scopes/get/:clientId",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										":serviceId",
+										"client",
+										"extension",
+										"requestable_scopes",
+										"get",
+										":clientId"
+									],
+									"variable": [
+										{
+											"key": "serviceId"
+										},
+										{
+											"key": "clientId"
+										}
+									]
+								}
+							},
+							"status": "Bad Request",
+							"code": 400,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"resultCode\": \"A001201\",\n  \"resultMessage\": \"[A001201] /auth/authorization, TLS must be used.\"\n}"
+						},
+						{
+							"name": "Untitled Example",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "<token>",
+										"description": "Added as a part of security scheme: oauth2"
+									}
+								],
+								"url": {
+									"raw": "{{baseUrl}}/api/:serviceId/client/extension/requestable_scopes/get/:clientId",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										":serviceId",
+										"client",
+										"extension",
+										"requestable_scopes",
+										"get",
+										":clientId"
+									],
+									"variable": [
+										{
+											"key": "serviceId"
+										},
+										{
+											"key": "clientId"
+										}
+									]
+								}
+							},
+							"status": "Unauthorized",
+							"code": 401,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"resultCode\": \"A001202\",\n  \"resultMessage\": \"[A001202] /auth/authorization, Authorization header is missing.\"\n}"
+						},
+						{
+							"name": "Untitled Example",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "<token>",
+										"description": "Added as a part of security scheme: oauth2"
+									}
+								],
+								"url": {
+									"raw": "{{baseUrl}}/api/:serviceId/client/extension/requestable_scopes/get/:clientId",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										":serviceId",
+										"client",
+										"extension",
+										"requestable_scopes",
+										"get",
+										":clientId"
+									],
+									"variable": [
+										{
+											"key": "serviceId"
+										},
+										{
+											"key": "clientId"
+										}
+									]
+								}
+							},
+							"status": "Forbidden",
+							"code": 403,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"resultCode\": \"A001215\",\n  \"resultMessage\": \"[A001215] /auth/authorization, The client (ID = 26837717140341) is locked.\"\n}"
+						},
+						{
+							"name": "Untitled Example",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "<token>",
+										"description": "Added as a part of security scheme: oauth2"
+									}
+								],
+								"url": {
+									"raw": "{{baseUrl}}/api/:serviceId/client/extension/requestable_scopes/get/:clientId",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										":serviceId",
+										"client",
+										"extension",
+										"requestable_scopes",
+										"get",
+										":clientId"
+									],
+									"variable": [
+										{
+											"key": "serviceId"
+										},
+										{
+											"key": "clientId"
+										}
+									]
+								}
+							},
+							"status": "Internal Server Error",
+							"code": 500,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"resultCode\": \"A001101\",\n  \"resultMessage\": \"[A001101] /auth/authorization, Authlete Server error.\"\n}"
+						}
+					]
+				},
+				{
+					"name": "Update Requestable Scopes",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"requestableScopes\": [\n    \"openid\"\n  ]\n}",
+							"options": {
+								"raw": {
+									"headerFamily": "json",
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{authleteServer}}/api/{{apiKey}}/client/extension/requestable_scopes/update/{{clientId}}",
+							"host": [
+								"{{authleteServer}}"
+							],
+							"path": [
+								"api",
+								"{{apiKey}}",
+								"client",
+								"extension",
+								"requestable_scopes",
+								"update",
+								"{{clientId}}"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "200 response",
+							"originalRequest": {
+								"method": "PUT",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "Accept",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "<token>",
+										"description": "Added as a part of security scheme: oauth2"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"requestableScopes\": [\n    \"occaecat pariatur in cupidatat\",\n    \"au\"\n  ]\n}",
+									"options": {
+										"raw": {
+											"headerFamily": "json",
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/api/:serviceId/client/extension/requestable_scopes/update/:clientId",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										":serviceId",
+										"client",
+										"extension",
+										"requestable_scopes",
+										"update",
+										":clientId"
+									],
+									"variable": [
+										{
+											"key": "serviceId"
+										},
+										{
+											"key": "clientId"
+										}
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"requestableScopes\": [\n    \"magna dolore non ut\",\n    \"fugiat\"\n  ]\n}"
+						},
+						{
+							"name": "Untitled Example",
+							"originalRequest": {
+								"method": "PUT",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "Accept",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "<token>",
+										"description": "Added as a part of security scheme: oauth2"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"requestableScopes\": [\n    \"occaecat pariatur in cupidatat\",\n    \"au\"\n  ]\n}",
+									"options": {
+										"raw": {
+											"headerFamily": "json",
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/api/:serviceId/client/extension/requestable_scopes/update/:clientId",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										":serviceId",
+										"client",
+										"extension",
+										"requestable_scopes",
+										"update",
+										":clientId"
+									],
+									"variable": [
+										{
+											"key": "serviceId"
+										},
+										{
+											"key": "clientId"
+										}
+									]
+								}
+							},
+							"status": "Bad Request",
+							"code": 400,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"resultCode\": \"A001201\",\n  \"resultMessage\": \"[A001201] /auth/authorization, TLS must be used.\"\n}"
+						},
+						{
+							"name": "Untitled Example",
+							"originalRequest": {
+								"method": "PUT",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "Accept",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "<token>",
+										"description": "Added as a part of security scheme: oauth2"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"requestableScopes\": [\n    \"occaecat pariatur in cupidatat\",\n    \"au\"\n  ]\n}",
+									"options": {
+										"raw": {
+											"headerFamily": "json",
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/api/:serviceId/client/extension/requestable_scopes/update/:clientId",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										":serviceId",
+										"client",
+										"extension",
+										"requestable_scopes",
+										"update",
+										":clientId"
+									],
+									"variable": [
+										{
+											"key": "serviceId"
+										},
+										{
+											"key": "clientId"
+										}
+									]
+								}
+							},
+							"status": "Unauthorized",
+							"code": 401,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"resultCode\": \"A001202\",\n  \"resultMessage\": \"[A001202] /auth/authorization, Authorization header is missing.\"\n}"
+						},
+						{
+							"name": "Untitled Example",
+							"originalRequest": {
+								"method": "PUT",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "Accept",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "<token>",
+										"description": "Added as a part of security scheme: oauth2"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"requestableScopes\": [\n    \"occaecat pariatur in cupidatat\",\n    \"au\"\n  ]\n}",
+									"options": {
+										"raw": {
+											"headerFamily": "json",
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/api/:serviceId/client/extension/requestable_scopes/update/:clientId",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										":serviceId",
+										"client",
+										"extension",
+										"requestable_scopes",
+										"update",
+										":clientId"
+									],
+									"variable": [
+										{
+											"key": "serviceId"
+										},
+										{
+											"key": "clientId"
+										}
+									]
+								}
+							},
+							"status": "Forbidden",
+							"code": 403,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"resultCode\": \"A001215\",\n  \"resultMessage\": \"[A001215] /auth/authorization, The client (ID = 26837717140341) is locked.\"\n}"
+						},
+						{
+							"name": "Untitled Example",
+							"originalRequest": {
+								"method": "PUT",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "Accept",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "<token>",
+										"description": "Added as a part of security scheme: oauth2"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"requestableScopes\": [\n    \"occaecat pariatur in cupidatat\",\n    \"au\"\n  ]\n}",
+									"options": {
+										"raw": {
+											"headerFamily": "json",
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/api/:serviceId/client/extension/requestable_scopes/update/:clientId",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										":serviceId",
+										"client",
+										"extension",
+										"requestable_scopes",
+										"update",
+										":clientId"
+									],
+									"variable": [
+										{
+											"key": "serviceId"
+										},
+										{
+											"key": "clientId"
+										}
+									]
+								}
+							},
+							"status": "Internal Server Error",
+							"code": 500,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"resultCode\": \"A001101\",\n  \"resultMessage\": \"[A001101] /auth/authorization, Authlete Server error.\"\n}"
+						}
+					]
+				},
+				{
+					"name": "Delete Requestable Scopes",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be 204\", function(){\r",
+									"    pm.response.to.have.status(204);\r",
+									"})"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{authleteServer}}/api/{{apiKey}}/client/extension/requestable_scopes/delete/{{clientId}}",
+							"host": [
+								"{{authleteServer}}"
+							],
+							"path": [
+								"api",
+								"{{apiKey}}",
+								"client",
+								"extension",
+								"requestable_scopes",
+								"delete",
+								"{{clientId}}"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "Requestable scopes was successfully deleted.",
+							"originalRequest": {
+								"method": "DELETE",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "<token>",
+										"description": "Added as a part of security scheme: oauth2"
+									}
+								],
+								"url": {
+									"raw": "{{baseUrl}}/api/:serviceId/client/extension/requestable_scopes/delete/:clientId",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										":serviceId",
+										"client",
+										"extension",
+										"requestable_scopes",
+										"delete",
+										":clientId"
+									],
+									"variable": [
+										{
+											"key": "serviceId"
+										},
+										{
+											"key": "clientId"
+										}
+									]
+								}
+							},
+							"status": "No Content",
+							"code": 204,
+							"_postman_previewlanguage": "text",
+							"header": [],
+							"cookie": [],
+							"body": ""
+						},
+						{
+							"name": "Untitled Example",
+							"originalRequest": {
+								"method": "DELETE",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "<token>",
+										"description": "Added as a part of security scheme: oauth2"
+									}
+								],
+								"url": {
+									"raw": "{{baseUrl}}/api/:serviceId/client/extension/requestable_scopes/delete/:clientId",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										":serviceId",
+										"client",
+										"extension",
+										"requestable_scopes",
+										"delete",
+										":clientId"
+									],
+									"variable": [
+										{
+											"key": "serviceId"
+										},
+										{
+											"key": "clientId"
+										}
+									]
+								}
+							},
+							"status": "Bad Request",
+							"code": 400,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"resultCode\": \"A001201\",\n  \"resultMessage\": \"[A001201] /auth/authorization, TLS must be used.\"\n}"
+						},
+						{
+							"name": "Untitled Example",
+							"originalRequest": {
+								"method": "DELETE",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "<token>",
+										"description": "Added as a part of security scheme: oauth2"
+									}
+								],
+								"url": {
+									"raw": "{{baseUrl}}/api/:serviceId/client/extension/requestable_scopes/delete/:clientId",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										":serviceId",
+										"client",
+										"extension",
+										"requestable_scopes",
+										"delete",
+										":clientId"
+									],
+									"variable": [
+										{
+											"key": "serviceId"
+										},
+										{
+											"key": "clientId"
+										}
+									]
+								}
+							},
+							"status": "Unauthorized",
+							"code": 401,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"resultCode\": \"A001202\",\n  \"resultMessage\": \"[A001202] /auth/authorization, Authorization header is missing.\"\n}"
+						},
+						{
+							"name": "Untitled Example",
+							"originalRequest": {
+								"method": "DELETE",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "<token>",
+										"description": "Added as a part of security scheme: oauth2"
+									}
+								],
+								"url": {
+									"raw": "{{baseUrl}}/api/:serviceId/client/extension/requestable_scopes/delete/:clientId",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										":serviceId",
+										"client",
+										"extension",
+										"requestable_scopes",
+										"delete",
+										":clientId"
+									],
+									"variable": [
+										{
+											"key": "serviceId"
+										},
+										{
+											"key": "clientId"
+										}
+									]
+								}
+							},
+							"status": "Forbidden",
+							"code": 403,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"resultCode\": \"A001215\",\n  \"resultMessage\": \"[A001215] /auth/authorization, The client (ID = 26837717140341) is locked.\"\n}"
+						},
+						{
+							"name": "Untitled Example",
+							"originalRequest": {
+								"method": "DELETE",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "<token>",
+										"description": "Added as a part of security scheme: oauth2"
+									}
+								],
+								"url": {
+									"raw": "{{baseUrl}}/api/:serviceId/client/extension/requestable_scopes/delete/:clientId",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										":serviceId",
+										"client",
+										"extension",
+										"requestable_scopes",
+										"delete",
+										":clientId"
+									],
+									"variable": [
+										{
+											"key": "serviceId"
+										},
+										{
+											"key": "clientId"
+										}
+									]
+								}
+							},
+							"status": "Internal Server Error",
+							"code": 500,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"resultCode\": \"A001101\",\n  \"resultMessage\": \"[A001101] /auth/authorization, Authlete Server error.\"\n}"
+						}
+					]
+				},
+				{
+					"name": "Delete Client",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 204\", function () {\r",
+									"    pm.response.to.have.status(204);\r",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"developer\": \"john\",\r\n  \"clientName\": \"My Client Updated\",\r\n  \"clientIdAlias\": \"my-client-updated\",\r\n  \"clientIdAliasEnabled\": true,\r\n  \"clientType\": \"CONFIDENTIAL\",\r\n  \"applicationType\": \"WEB\",\r\n  \"grantTypes\": [\r\n    \"AUTHORIZATION_CODE\",\r\n    \"REFRESH_TOKEN\"\r\n  ],\r\n  \"responseTypes\": [\r\n    \"CODE\",\r\n    \"TOKEN\"\r\n  ],\r\n  \"redirectUris\": [\r\n    \"https://my-client.example.com/cb1\",\r\n    \"https://my-client.example.com/cb2\"\r\n  ],\r\n  \"tokenAuthMethod\": \"CLIENT_SECRET_BASIC\",\r\n  \"attributes\": [\r\n    {\r\n      \"key\": \"attribute1-key\",\r\n      \"value\": \"attribute1-value\"\r\n    },\r\n    {\r\n      \"key\": \"attribute2-key\",\r\n      \"value\": \"attribute2-value\"\r\n    }\r\n  ]\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{authleteServer}}/api/{{apiKey}}/client/delete/{{clientId}}",
+							"host": [
+								"{{authleteServer}}"
+							],
+							"path": [
+								"api",
+								"{{apiKey}}",
+								"client",
+								"delete",
+								"{{clientId}}"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "03 token management",
+			"item": [
+				{
+					"name": "List Issued Tokens",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{authleteServer}}/api/{{apiKey}}/auth/token/get/list?clientIdentifier={{clientIdAlias}}&subject=john",
+							"host": [
+								"{{authleteServer}}"
+							],
+							"path": [
+								"api",
+								"{{apiKey}}",
+								"auth",
+								"token",
+								"get",
+								"list"
+							],
+							"query": [
+								{
+									"key": "clientIdentifier",
+									"value": "{{clientIdAlias}}",
+									"description": "Client Identifier (client ID or client ID alias).\n"
+								},
+								{
+									"key": "subject",
+									"value": "john",
+									"description": "Unique user ID.\n"
+								},
+								{
+									"key": "start",
+									"value": "-96329083",
+									"description": "Start index of search results (inclusive). The default value is 0.",
+									"disabled": true
+								},
+								{
+									"key": "end",
+									"value": "-96329083",
+									"description": "End index of search results (exclusive). The default value is 5.\n",
+									"disabled": true
+								}
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "Untitled Example",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "<token>",
+										"description": "Added as a part of security scheme: oauth2"
+									}
+								],
+								"url": {
+									"raw": "{{baseUrl}}/api/:serviceId/auth/token/get/list?clientIdentifier=officia&subject=officia&start=-96329083&end=-96329083",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										":serviceId",
+										"auth",
+										"token",
+										"get",
+										"list"
+									],
+									"query": [
+										{
+											"key": "clientIdentifier",
+											"value": "officia",
+											"description": "Client Identifier (client ID or client ID alias).\n"
+										},
+										{
+											"key": "subject",
+											"value": "officia",
+											"description": "Unique user ID.\n"
+										},
+										{
+											"key": "start",
+											"value": "-96329083",
+											"description": "Start index of search results (inclusive). The default value is 0."
+										},
+										{
+											"key": "end",
+											"value": "-96329083",
+											"description": "End index of search results (exclusive). The default value is 5.\n"
+										}
+									],
+									"variable": [
+										{
+											"key": "serviceId"
+										}
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"accessTokens\": [\n    {\n      \"accessTokenExpiresAt\": 1642048149000,\n      \"accessTokenHash\": \"tC5hpjGylLiiw-vsd5_tqVHtYSUHblAGimEJ-5xqAco\",\n      \"clientId\": 26888344961664,\n      \"createdAt\": 1642044549000,\n      \"grantType\": \"AUTHORIZATION_CODE\",\n      \"lastRefreshedAt\": 0,\n      \"refreshTokenExpiresAt\": 1642048149000,\n      \"refreshTokenHash\": \"jv4B_7_kpY-Rez_E7bYIxGYnZk43w18uigkaeUe6tc4\",\n      \"scopes\": [\n        \"history.read\"\n      ],\n      \"subject\": \"john\"\n    },\n    {\n      \"accessTokenExpiresAt\": 1642051604000,\n      \"accessTokenHash\": \"Bk1QneTxkoLKw_RRB8ToVL25Plt075RvPK68N9cWWtg\",\n      \"clientId\": 26888344961664,\n      \"createdAt\": 1642048004000,\n      \"grantType\": \"AUTHORIZATION_CODE\",\n      \"lastRefreshedAt\": 0,\n      \"refreshTokenExpiresAt\": 1642051604000,\n      \"refreshTokenHash\": \"YHmwk4xETvoIJ_maWCpJDlpvmcFLkxmaaSS-v9KPng4\",\n      \"scopes\": [\n        \"history.read\",\n        \"openid\",\n        \"timeline.read\"\n      ],\n      \"subject\": \"john\"\n    },\n    {\n      \"accessTokenExpiresAt\": 1642052094000,\n      \"accessTokenHash\": \"UUatYXjkqYFbRQlnItjq03DtUYA2MRRtuL88GCbQpbw\",\n      \"clientId\": 26888344961664,\n      \"createdAt\": 1642048494000,\n      \"grantType\": \"AUTHORIZATION_CODE\",\n      \"lastRefreshedAt\": 0,\n      \"refreshTokenExpiresAt\": 1642052094000,\n      \"refreshTokenHash\": \"wjc-IXoScxDiVyBmRrB92I-B0zMXSSKw_qwP_WK1lFM\",\n      \"scopes\": [\n        \"history.read\"\n      ],\n      \"subject\": \"john\"\n    }\n  ],\n  \"client\": {\n    \"clientId\": 26888344961664,\n    \"clientIdAliasEnabled\": false,\n    \"clientName\": \"My Device Flow Client\",\n    \"clientType\": \"CONFIDENTIAL\",\n    \"number\": 6260\n  },\n  \"end\": 3,\n  \"start\": 0,\n  \"subject\": \"john\",\n  \"totalCount\": 3\n}"
+						},
+						{
+							"name": "Untitled Example",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "<token>",
+										"description": "Added as a part of security scheme: oauth2"
+									}
+								],
+								"url": {
+									"raw": "{{baseUrl}}/api/:serviceId/auth/token/get/list?clientIdentifier=officia&subject=officia&start=-96329083&end=-96329083",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										":serviceId",
+										"auth",
+										"token",
+										"get",
+										"list"
+									],
+									"query": [
+										{
+											"key": "clientIdentifier",
+											"value": "officia",
+											"description": "Client Identifier (client ID or client ID alias).\n"
+										},
+										{
+											"key": "subject",
+											"value": "officia",
+											"description": "Unique user ID.\n"
+										},
+										{
+											"key": "start",
+											"value": "-96329083",
+											"description": "Start index of search results (inclusive). The default value is 0."
+										},
+										{
+											"key": "end",
+											"value": "-96329083",
+											"description": "End index of search results (exclusive). The default value is 5.\n"
+										}
+									],
+									"variable": [
+										{
+											"key": "serviceId"
+										}
+									]
+								}
+							},
+							"status": "Bad Request",
+							"code": 400,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"resultCode\": \"A001201\",\n  \"resultMessage\": \"[A001201] /auth/authorization, TLS must be used.\"\n}"
+						},
+						{
+							"name": "Untitled Example",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "<token>",
+										"description": "Added as a part of security scheme: oauth2"
+									}
+								],
+								"url": {
+									"raw": "{{baseUrl}}/api/:serviceId/auth/token/get/list?clientIdentifier=officia&subject=officia&start=-96329083&end=-96329083",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										":serviceId",
+										"auth",
+										"token",
+										"get",
+										"list"
+									],
+									"query": [
+										{
+											"key": "clientIdentifier",
+											"value": "officia",
+											"description": "Client Identifier (client ID or client ID alias).\n"
+										},
+										{
+											"key": "subject",
+											"value": "officia",
+											"description": "Unique user ID.\n"
+										},
+										{
+											"key": "start",
+											"value": "-96329083",
+											"description": "Start index of search results (inclusive). The default value is 0."
+										},
+										{
+											"key": "end",
+											"value": "-96329083",
+											"description": "End index of search results (exclusive). The default value is 5.\n"
+										}
+									],
+									"variable": [
+										{
+											"key": "serviceId"
+										}
+									]
+								}
+							},
+							"status": "Unauthorized",
+							"code": 401,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"resultCode\": \"A001202\",\n  \"resultMessage\": \"[A001202] /auth/authorization, Authorization header is missing.\"\n}"
+						},
+						{
+							"name": "Untitled Example",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "<token>",
+										"description": "Added as a part of security scheme: oauth2"
+									}
+								],
+								"url": {
+									"raw": "{{baseUrl}}/api/:serviceId/auth/token/get/list?clientIdentifier=officia&subject=officia&start=-96329083&end=-96329083",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										":serviceId",
+										"auth",
+										"token",
+										"get",
+										"list"
+									],
+									"query": [
+										{
+											"key": "clientIdentifier",
+											"value": "officia",
+											"description": "Client Identifier (client ID or client ID alias).\n"
+										},
+										{
+											"key": "subject",
+											"value": "officia",
+											"description": "Unique user ID.\n"
+										},
+										{
+											"key": "start",
+											"value": "-96329083",
+											"description": "Start index of search results (inclusive). The default value is 0."
+										},
+										{
+											"key": "end",
+											"value": "-96329083",
+											"description": "End index of search results (exclusive). The default value is 5.\n"
+										}
+									],
+									"variable": [
+										{
+											"key": "serviceId"
+										}
+									]
+								}
+							},
+							"status": "Forbidden",
+							"code": 403,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"resultCode\": \"A001215\",\n  \"resultMessage\": \"[A001215] /auth/authorization, The client (ID = 26837717140341) is locked.\"\n}"
+						},
+						{
+							"name": "Untitled Example",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "<token>",
+										"description": "Added as a part of security scheme: oauth2"
+									}
+								],
+								"url": {
+									"raw": "{{baseUrl}}/api/:serviceId/auth/token/get/list?clientIdentifier=officia&subject=officia&start=-96329083&end=-96329083",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										":serviceId",
+										"auth",
+										"token",
+										"get",
+										"list"
+									],
+									"query": [
+										{
+											"key": "clientIdentifier",
+											"value": "officia",
+											"description": "Client Identifier (client ID or client ID alias).\n"
+										},
+										{
+											"key": "subject",
+											"value": "officia",
+											"description": "Unique user ID.\n"
+										},
+										{
+											"key": "start",
+											"value": "-96329083",
+											"description": "Start index of search results (inclusive). The default value is 0."
+										},
+										{
+											"key": "end",
+											"value": "-96329083",
+											"description": "End index of search results (exclusive). The default value is 5.\n"
+										}
+									],
+									"variable": [
+										{
+											"key": "serviceId"
+										}
+									]
+								}
+							},
+							"status": "Internal Server Error",
+							"code": 500,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"resultCode\": \"A001101\",\n  \"resultMessage\": \"[A001101] /auth/authorization, Authlete Server error.\"\n}"
+						}
+					]
+				},
+				{
+					"name": "Create Access Token",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.environment.set(\"accessToken\", pm.response.json().accessToken);"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"grantType\": \"AUTHORIZATION_CODE\",\n  \"clientId\": {{clientId}},\n  \"clientIdentifier\": \"{{clientIdAlias}}\",\n  \"subject\": \"john\",\n  \"scopes\": [\n    \"openid\"\n  ]\n}",
+							"options": {
+								"raw": {
+									"headerFamily": "json",
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{authleteServer}}/api/{{apiKey}}/auth/token/create",
+							"host": [
+								"{{authleteServer}}"
+							],
+							"path": [
+								"api",
+								"{{apiKey}}",
+								"auth",
+								"token",
+								"create"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "Untitled Example",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "Accept",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "<token>",
+										"description": "Added as a part of security scheme: oauth2"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"grantType\": \"AUTHORIZATION_CODE\",\n  \"clientId\": 26888344961664,\n  \"subject\": \"john\",\n  \"scopes\": [\n    \"history.read\",\n    \"timeline.read\"\n  ]\n}",
+									"options": {
+										"raw": {
+											"headerFamily": "json",
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/api/:serviceId/auth/token/create",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										":serviceId",
+										"auth",
+										"token",
+										"create"
+									],
+									"variable": [
+										{
+											"key": "serviceId"
+										}
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"resultCode\": \"A109001\",\n  \"resultMessage\": \"[A109001] An access token was created successfully: authorization_code, client = 26888344961664\",\n  \"accessToken\": \"Z5a40U6dWvw2gMoCOAFbZcM85q4HC0Z--0YKD9-Nf6Q\",\n  \"action\": \"OK\",\n  \"clientId\": 26888344961664,\n  \"expiresAt\": 1642048148973,\n  \"expiresIn\": 3600,\n  \"grantType\": \"AUTHORIZATION_CODE\",\n  \"refreshToken\": \"9beh15GWkGLseBBO1tPobnsGpKLHV3mTkm0EWnNBa4g\",\n  \"scopes\": [\n    \"history.read\",\n    \"timeline.read\"\n  ],\n  \"subject\": \"john\",\n  \"tokenType\": \"Bearer\"\n}"
+						},
+						{
+							"name": "Untitled Example",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "Accept",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "<token>",
+										"description": "Added as a part of security scheme: oauth2"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"grantType\": \"AUTHORIZATION_CODE\",\n  \"clientId\": 26888344961664,\n  \"subject\": \"john\",\n  \"scopes\": [\n    \"history.read\",\n    \"timeline.read\"\n  ]\n}",
+									"options": {
+										"raw": {
+											"headerFamily": "json",
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/api/:serviceId/auth/token/create",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										":serviceId",
+										"auth",
+										"token",
+										"create"
+									],
+									"variable": [
+										{
+											"key": "serviceId"
+										}
+									]
+								}
+							},
+							"status": "Bad Request",
+							"code": 400,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"resultCode\": \"A001201\",\n  \"resultMessage\": \"[A001201] /auth/authorization, TLS must be used.\"\n}"
+						},
+						{
+							"name": "Untitled Example",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "Accept",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "<token>",
+										"description": "Added as a part of security scheme: oauth2"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"grantType\": \"AUTHORIZATION_CODE\",\n  \"clientId\": 26888344961664,\n  \"subject\": \"john\",\n  \"scopes\": [\n    \"history.read\",\n    \"timeline.read\"\n  ]\n}",
+									"options": {
+										"raw": {
+											"headerFamily": "json",
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/api/:serviceId/auth/token/create",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										":serviceId",
+										"auth",
+										"token",
+										"create"
+									],
+									"variable": [
+										{
+											"key": "serviceId"
+										}
+									]
+								}
+							},
+							"status": "Unauthorized",
+							"code": 401,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"resultCode\": \"A001202\",\n  \"resultMessage\": \"[A001202] /auth/authorization, Authorization header is missing.\"\n}"
+						},
+						{
+							"name": "Untitled Example",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "Accept",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "<token>",
+										"description": "Added as a part of security scheme: oauth2"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"grantType\": \"AUTHORIZATION_CODE\",\n  \"clientId\": 26888344961664,\n  \"subject\": \"john\",\n  \"scopes\": [\n    \"history.read\",\n    \"timeline.read\"\n  ]\n}",
+									"options": {
+										"raw": {
+											"headerFamily": "json",
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/api/:serviceId/auth/token/create",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										":serviceId",
+										"auth",
+										"token",
+										"create"
+									],
+									"variable": [
+										{
+											"key": "serviceId"
+										}
+									]
+								}
+							},
+							"status": "Forbidden",
+							"code": 403,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"resultCode\": \"A001215\",\n  \"resultMessage\": \"[A001215] /auth/authorization, The client (ID = 26837717140341) is locked.\"\n}"
+						},
+						{
+							"name": "Untitled Example",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "Accept",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "<token>",
+										"description": "Added as a part of security scheme: oauth2"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"grantType\": \"AUTHORIZATION_CODE\",\n  \"clientId\": 26888344961664,\n  \"subject\": \"john\",\n  \"scopes\": [\n    \"history.read\",\n    \"timeline.read\"\n  ]\n}",
+									"options": {
+										"raw": {
+											"headerFamily": "json",
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/api/:serviceId/auth/token/create",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										":serviceId",
+										"auth",
+										"token",
+										"create"
+									],
+									"variable": [
+										{
+											"key": "serviceId"
+										}
+									]
+								}
+							},
+							"status": "Internal Server Error",
+							"code": 500,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"resultCode\": \"A001101\",\n  \"resultMessage\": \"[A001101] /auth/authorization, Authlete Server error.\"\n}"
+						}
+					]
+				},
+				{
+					"name": "Update Access Token",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"accessToken\": \"{{accessToken}}\",\n  \"scopes\": [\n    \"history.read\"\n  ]\n}",
+							"options": {
+								"raw": {
+									"headerFamily": "json",
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{authleteServer}}/api/{{apiKey}}/auth/token/update",
+							"host": [
+								"{{authleteServer}}"
+							],
+							"path": [
+								"api",
+								"{{apiKey}}",
+								"auth",
+								"token",
+								"update"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "Untitled Example",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "Accept",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "<token>",
+										"description": "Added as a part of security scheme: oauth2"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"accessToken\": \"Z5a40U6dWvw2gMoCOAFbZcM85q4HC0Z--0YKD9-Nf6Q\",\n  \"scopes\": [\n    \"history.read\"\n  ]\n}",
+									"options": {
+										"raw": {
+											"headerFamily": "json",
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/api/:serviceId/auth/token/update",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										":serviceId",
+										"auth",
+										"token",
+										"update"
+									],
+									"variable": [
+										{
+											"key": "serviceId"
+										}
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"resultCode\": \"A135001\",\n  \"resultMessage\": \"[A135001] Updated the access token successfully.\",\n  \"accessToken\": \"Z5a40U6dWvw2gMoCOAFbZcM85q4HC0Z--0YKD9-Nf6Q\",\n  \"accessTokenExpiresAt\": 1642048149000,\n  \"action\": \"OK\",\n  \"scopes\": [\n    \"history.read\"\n  ],\n  \"tokenType\": \"Bearer\"\n}"
+						},
+						{
+							"name": "Untitled Example",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "Accept",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "<token>",
+										"description": "Added as a part of security scheme: oauth2"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"accessToken\": \"Z5a40U6dWvw2gMoCOAFbZcM85q4HC0Z--0YKD9-Nf6Q\",\n  \"scopes\": [\n    \"history.read\"\n  ]\n}",
+									"options": {
+										"raw": {
+											"headerFamily": "json",
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/api/:serviceId/auth/token/update",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										":serviceId",
+										"auth",
+										"token",
+										"update"
+									],
+									"variable": [
+										{
+											"key": "serviceId"
+										}
+									]
+								}
+							},
+							"status": "Bad Request",
+							"code": 400,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"resultCode\": \"A001201\",\n  \"resultMessage\": \"[A001201] /auth/authorization, TLS must be used.\"\n}"
+						},
+						{
+							"name": "Untitled Example",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "Accept",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "<token>",
+										"description": "Added as a part of security scheme: oauth2"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"accessToken\": \"Z5a40U6dWvw2gMoCOAFbZcM85q4HC0Z--0YKD9-Nf6Q\",\n  \"scopes\": [\n    \"history.read\"\n  ]\n}",
+									"options": {
+										"raw": {
+											"headerFamily": "json",
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/api/:serviceId/auth/token/update",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										":serviceId",
+										"auth",
+										"token",
+										"update"
+									],
+									"variable": [
+										{
+											"key": "serviceId"
+										}
+									]
+								}
+							},
+							"status": "Unauthorized",
+							"code": 401,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"resultCode\": \"A001202\",\n  \"resultMessage\": \"[A001202] /auth/authorization, Authorization header is missing.\"\n}"
+						},
+						{
+							"name": "Untitled Example",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "Accept",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "<token>",
+										"description": "Added as a part of security scheme: oauth2"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"accessToken\": \"Z5a40U6dWvw2gMoCOAFbZcM85q4HC0Z--0YKD9-Nf6Q\",\n  \"scopes\": [\n    \"history.read\"\n  ]\n}",
+									"options": {
+										"raw": {
+											"headerFamily": "json",
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/api/:serviceId/auth/token/update",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										":serviceId",
+										"auth",
+										"token",
+										"update"
+									],
+									"variable": [
+										{
+											"key": "serviceId"
+										}
+									]
+								}
+							},
+							"status": "Forbidden",
+							"code": 403,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"resultCode\": \"A001215\",\n  \"resultMessage\": \"[A001215] /auth/authorization, The client (ID = 26837717140341) is locked.\"\n}"
+						},
+						{
+							"name": "Untitled Example",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "Accept",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "<token>",
+										"description": "Added as a part of security scheme: oauth2"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"accessToken\": \"Z5a40U6dWvw2gMoCOAFbZcM85q4HC0Z--0YKD9-Nf6Q\",\n  \"scopes\": [\n    \"history.read\"\n  ]\n}",
+									"options": {
+										"raw": {
+											"headerFamily": "json",
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/api/:serviceId/auth/token/update",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										":serviceId",
+										"auth",
+										"token",
+										"update"
+									],
+									"variable": [
+										{
+											"key": "serviceId"
+										}
+									]
+								}
+							},
+							"status": "Internal Server Error",
+							"code": 500,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"resultCode\": \"A001101\",\n  \"resultMessage\": \"[A001101] /auth/authorization, Authlete Server error.\"\n}"
+						}
+					]
+				},
+				{
+					"name": "Revoke Access Token",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"accessTokenIdentifier\": \"{{accessToken}}\"\n}",
+							"options": {
+								"raw": {
+									"headerFamily": "json",
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{authleteServer}}/api/{{apiKey}}/auth/token/revoke",
+							"host": [
+								"{{authleteServer}}"
+							],
+							"path": [
+								"api",
+								"{{apiKey}}",
+								"auth",
+								"token",
+								"revoke"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "Untitled Example",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "Accept",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "<token>",
+										"description": "Added as a part of security scheme: oauth2"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"accessTokenIdentifier\": \"Z5a40U6dWvw2gMoCOAFbZcM85q4HC0Z--0YKD9-Nf6Q\"\n}",
+									"options": {
+										"raw": {
+											"headerFamily": "json",
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/api/:serviceId/auth/token/revoke",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										":serviceId",
+										"auth",
+										"token",
+										"revoke"
+									],
+									"variable": [
+										{
+											"key": "serviceId"
+										}
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"resultCode\": \"A135001\",\n  \"resultMessage\": \"[A135001] Updated the access token successfully.\",\n  \"accessToken\": \"Z5a40U6dWvw2gMoCOAFbZcM85q4HC0Z--0YKD9-Nf6Q\",\n  \"accessTokenExpiresAt\": 1642048149000,\n  \"action\": \"OK\",\n  \"scopes\": [\n    \"history.read\"\n  ],\n  \"tokenType\": \"Bearer\"\n}"
+						},
+						{
+							"name": "Untitled Example",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "Accept",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "<token>",
+										"description": "Added as a part of security scheme: oauth2"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"accessTokenIdentifier\": \"Z5a40U6dWvw2gMoCOAFbZcM85q4HC0Z--0YKD9-Nf6Q\"\n}",
+									"options": {
+										"raw": {
+											"headerFamily": "json",
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/api/:serviceId/auth/token/revoke",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										":serviceId",
+										"auth",
+										"token",
+										"revoke"
+									],
+									"variable": [
+										{
+											"key": "serviceId"
+										}
+									]
+								}
+							},
+							"status": "Bad Request",
+							"code": 400,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"resultCode\": \"A001201\",\n  \"resultMessage\": \"[A001201] /auth/authorization, TLS must be used.\"\n}"
+						},
+						{
+							"name": "Untitled Example",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "Accept",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "<token>",
+										"description": "Added as a part of security scheme: oauth2"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"accessTokenIdentifier\": \"Z5a40U6dWvw2gMoCOAFbZcM85q4HC0Z--0YKD9-Nf6Q\"\n}",
+									"options": {
+										"raw": {
+											"headerFamily": "json",
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/api/:serviceId/auth/token/revoke",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										":serviceId",
+										"auth",
+										"token",
+										"revoke"
+									],
+									"variable": [
+										{
+											"key": "serviceId"
+										}
+									]
+								}
+							},
+							"status": "Unauthorized",
+							"code": 401,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"resultCode\": \"A001202\",\n  \"resultMessage\": \"[A001202] /auth/authorization, Authorization header is missing.\"\n}"
+						},
+						{
+							"name": "Untitled Example",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "Accept",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "<token>",
+										"description": "Added as a part of security scheme: oauth2"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"accessTokenIdentifier\": \"Z5a40U6dWvw2gMoCOAFbZcM85q4HC0Z--0YKD9-Nf6Q\"\n}",
+									"options": {
+										"raw": {
+											"headerFamily": "json",
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/api/:serviceId/auth/token/revoke",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										":serviceId",
+										"auth",
+										"token",
+										"revoke"
+									],
+									"variable": [
+										{
+											"key": "serviceId"
+										}
+									]
+								}
+							},
+							"status": "Forbidden",
+							"code": 403,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"resultCode\": \"A001215\",\n  \"resultMessage\": \"[A001215] /auth/authorization, The client (ID = 26837717140341) is locked.\"\n}"
+						},
+						{
+							"name": "Untitled Example",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "Accept",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "<token>",
+										"description": "Added as a part of security scheme: oauth2"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"accessTokenIdentifier\": \"Z5a40U6dWvw2gMoCOAFbZcM85q4HC0Z--0YKD9-Nf6Q\"\n}",
+									"options": {
+										"raw": {
+											"headerFamily": "json",
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/api/:serviceId/auth/token/revoke",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										":serviceId",
+										"auth",
+										"token",
+										"revoke"
+									],
+									"variable": [
+										{
+											"key": "serviceId"
+										}
+									]
+								}
+							},
+							"status": "Internal Server Error",
+							"code": 500,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"resultCode\": \"A001101\",\n  \"resultMessage\": \"[A001101] /auth/authorization, Authlete Server error.\"\n}"
+						}
+					]
+				},
+				{
+					"name": "Create Access Token",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.environment.set(\"accessToken\", pm.response.json().accessToken);"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"grantType\": \"AUTHORIZATION_CODE\",\n  \"clientId\": {{clientId}},\n  \"clientIdentifier\": \"{{clientIdAlias}}\",\n  \"subject\": \"john\",\n  \"scopes\": [\n    \"openid\"\n  ]\n}",
+							"options": {
+								"raw": {
+									"headerFamily": "json",
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{authleteServer}}/api/{{apiKey}}/auth/token/create",
+							"host": [
+								"{{authleteServer}}"
+							],
+							"path": [
+								"api",
+								"{{apiKey}}",
+								"auth",
+								"token",
+								"create"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "Untitled Example",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "Accept",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "<token>",
+										"description": "Added as a part of security scheme: oauth2"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"grantType\": \"AUTHORIZATION_CODE\",\n  \"clientId\": 26888344961664,\n  \"subject\": \"john\",\n  \"scopes\": [\n    \"history.read\",\n    \"timeline.read\"\n  ]\n}",
+									"options": {
+										"raw": {
+											"headerFamily": "json",
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/api/:serviceId/auth/token/create",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										":serviceId",
+										"auth",
+										"token",
+										"create"
+									],
+									"variable": [
+										{
+											"key": "serviceId"
+										}
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"resultCode\": \"A109001\",\n  \"resultMessage\": \"[A109001] An access token was created successfully: authorization_code, client = 26888344961664\",\n  \"accessToken\": \"Z5a40U6dWvw2gMoCOAFbZcM85q4HC0Z--0YKD9-Nf6Q\",\n  \"action\": \"OK\",\n  \"clientId\": 26888344961664,\n  \"expiresAt\": 1642048148973,\n  \"expiresIn\": 3600,\n  \"grantType\": \"AUTHORIZATION_CODE\",\n  \"refreshToken\": \"9beh15GWkGLseBBO1tPobnsGpKLHV3mTkm0EWnNBa4g\",\n  \"scopes\": [\n    \"history.read\",\n    \"timeline.read\"\n  ],\n  \"subject\": \"john\",\n  \"tokenType\": \"Bearer\"\n}"
+						},
+						{
+							"name": "Untitled Example",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "Accept",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "<token>",
+										"description": "Added as a part of security scheme: oauth2"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"grantType\": \"AUTHORIZATION_CODE\",\n  \"clientId\": 26888344961664,\n  \"subject\": \"john\",\n  \"scopes\": [\n    \"history.read\",\n    \"timeline.read\"\n  ]\n}",
+									"options": {
+										"raw": {
+											"headerFamily": "json",
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/api/:serviceId/auth/token/create",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										":serviceId",
+										"auth",
+										"token",
+										"create"
+									],
+									"variable": [
+										{
+											"key": "serviceId"
+										}
+									]
+								}
+							},
+							"status": "Bad Request",
+							"code": 400,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"resultCode\": \"A001201\",\n  \"resultMessage\": \"[A001201] /auth/authorization, TLS must be used.\"\n}"
+						},
+						{
+							"name": "Untitled Example",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "Accept",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "<token>",
+										"description": "Added as a part of security scheme: oauth2"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"grantType\": \"AUTHORIZATION_CODE\",\n  \"clientId\": 26888344961664,\n  \"subject\": \"john\",\n  \"scopes\": [\n    \"history.read\",\n    \"timeline.read\"\n  ]\n}",
+									"options": {
+										"raw": {
+											"headerFamily": "json",
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/api/:serviceId/auth/token/create",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										":serviceId",
+										"auth",
+										"token",
+										"create"
+									],
+									"variable": [
+										{
+											"key": "serviceId"
+										}
+									]
+								}
+							},
+							"status": "Unauthorized",
+							"code": 401,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"resultCode\": \"A001202\",\n  \"resultMessage\": \"[A001202] /auth/authorization, Authorization header is missing.\"\n}"
+						},
+						{
+							"name": "Untitled Example",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "Accept",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "<token>",
+										"description": "Added as a part of security scheme: oauth2"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"grantType\": \"AUTHORIZATION_CODE\",\n  \"clientId\": 26888344961664,\n  \"subject\": \"john\",\n  \"scopes\": [\n    \"history.read\",\n    \"timeline.read\"\n  ]\n}",
+									"options": {
+										"raw": {
+											"headerFamily": "json",
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/api/:serviceId/auth/token/create",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										":serviceId",
+										"auth",
+										"token",
+										"create"
+									],
+									"variable": [
+										{
+											"key": "serviceId"
+										}
+									]
+								}
+							},
+							"status": "Forbidden",
+							"code": 403,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"resultCode\": \"A001215\",\n  \"resultMessage\": \"[A001215] /auth/authorization, The client (ID = 26837717140341) is locked.\"\n}"
+						},
+						{
+							"name": "Untitled Example",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "Accept",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "<token>",
+										"description": "Added as a part of security scheme: oauth2"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"grantType\": \"AUTHORIZATION_CODE\",\n  \"clientId\": 26888344961664,\n  \"subject\": \"john\",\n  \"scopes\": [\n    \"history.read\",\n    \"timeline.read\"\n  ]\n}",
+									"options": {
+										"raw": {
+											"headerFamily": "json",
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/api/:serviceId/auth/token/create",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										":serviceId",
+										"auth",
+										"token",
+										"create"
+									],
+									"variable": [
+										{
+											"key": "serviceId"
+										}
+									]
+								}
+							},
+							"status": "Internal Server Error",
+							"code": 500,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"resultCode\": \"A001101\",\n  \"resultMessage\": \"[A001101] /auth/authorization, Authlete Server error.\"\n}"
+						}
+					]
+				},
+				{
+					"name": "Delete Access Token",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{authleteServer}}/api/{{apiKey}}/auth/token/delete/{{accessToken}}",
+							"host": [
+								"{{authleteServer}}"
+							],
+							"path": [
+								"api",
+								"{{apiKey}}",
+								"auth",
+								"token",
+								"delete",
+								"{{accessToken}}"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "The access token was successfully deleted.\n",
+							"originalRequest": {
+								"method": "DELETE",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "<token>",
+										"description": "Added as a part of security scheme: oauth2"
+									}
+								],
+								"url": {
+									"raw": "{{baseUrl}}/api/:serviceId/auth/token/delete/:accessTokenIdentifier",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										":serviceId",
+										"auth",
+										"token",
+										"delete",
+										":accessTokenIdentifier"
+									],
+									"variable": [
+										{
+											"key": "serviceId"
+										},
+										{
+											"key": "accessTokenIdentifier"
+										}
+									]
+								}
+							},
+							"status": "No Content",
+							"code": 204,
+							"_postman_previewlanguage": "text",
+							"header": [],
+							"cookie": [],
+							"body": ""
+						},
+						{
+							"name": "Untitled Example",
+							"originalRequest": {
+								"method": "DELETE",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "<token>",
+										"description": "Added as a part of security scheme: oauth2"
+									}
+								],
+								"url": {
+									"raw": "{{baseUrl}}/api/:serviceId/auth/token/delete/:accessTokenIdentifier",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										":serviceId",
+										"auth",
+										"token",
+										"delete",
+										":accessTokenIdentifier"
+									],
+									"variable": [
+										{
+											"key": "serviceId"
+										},
+										{
+											"key": "accessTokenIdentifier"
+										}
+									]
+								}
+							},
+							"status": "Bad Request",
+							"code": 400,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"resultCode\": \"A001201\",\n  \"resultMessage\": \"[A001201] /auth/authorization, TLS must be used.\"\n}"
+						},
+						{
+							"name": "Untitled Example",
+							"originalRequest": {
+								"method": "DELETE",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "<token>",
+										"description": "Added as a part of security scheme: oauth2"
+									}
+								],
+								"url": {
+									"raw": "{{baseUrl}}/api/:serviceId/auth/token/delete/:accessTokenIdentifier",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										":serviceId",
+										"auth",
+										"token",
+										"delete",
+										":accessTokenIdentifier"
+									],
+									"variable": [
+										{
+											"key": "serviceId"
+										},
+										{
+											"key": "accessTokenIdentifier"
+										}
+									]
+								}
+							},
+							"status": "Unauthorized",
+							"code": 401,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"resultCode\": \"A001202\",\n  \"resultMessage\": \"[A001202] /auth/authorization, Authorization header is missing.\"\n}"
+						},
+						{
+							"name": "Untitled Example",
+							"originalRequest": {
+								"method": "DELETE",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "<token>",
+										"description": "Added as a part of security scheme: oauth2"
+									}
+								],
+								"url": {
+									"raw": "{{baseUrl}}/api/:serviceId/auth/token/delete/:accessTokenIdentifier",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										":serviceId",
+										"auth",
+										"token",
+										"delete",
+										":accessTokenIdentifier"
+									],
+									"variable": [
+										{
+											"key": "serviceId"
+										},
+										{
+											"key": "accessTokenIdentifier"
+										}
+									]
+								}
+							},
+							"status": "Forbidden",
+							"code": 403,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"resultCode\": \"A001215\",\n  \"resultMessage\": \"[A001215] /auth/authorization, The client (ID = 26837717140341) is locked.\"\n}"
+						},
+						{
+							"name": "Untitled Example",
+							"originalRequest": {
+								"method": "DELETE",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "<token>",
+										"description": "Added as a part of security scheme: oauth2"
+									}
+								],
+								"url": {
+									"raw": "{{baseUrl}}/api/:serviceId/auth/token/delete/:accessTokenIdentifier",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										":serviceId",
+										"auth",
+										"token",
+										"delete",
+										":accessTokenIdentifier"
+									],
+									"variable": [
+										{
+											"key": "serviceId"
+										},
+										{
+											"key": "accessTokenIdentifier"
+										}
+									]
+								}
+							},
+							"status": "Internal Server Error",
+							"code": 500,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"resultCode\": \"A001101\",\n  \"resultMessage\": \"[A001101] /auth/authorization, Authlete Server error.\"\n}"
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "04 jose object",
+			"item": [
+				{
+					"name": "mkjose (Generate JOSE with mkjose.org)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.environment.set('jose', pm.response.text())"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "payload",
+									"value": "{ \"sub\": \"dummySub\",\"exp\": 1841536000, \"iat\": 1737936000 , \"jti\": \"myJWTId\" }",
+									"type": "text"
+								},
+								{
+									"key": "signing-alg",
+									"value": "ES256",
+									"type": "text"
+								},
+								{
+									"key": "jwk-signing-alg",
+									"value": "{{sampleJwk}}",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "https://mkjose.org/api/jose/generate",
+							"protocol": "https",
+							"host": [
+								"mkjose",
+								"org"
+							],
+							"path": [
+								"api",
+								"jose",
+								"generate"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Verify JOSE",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"jose\": \"{{jose}}\",\n  \"clockSkew\": 100,\n  \"signedByClient\": true,\n  \"clientIdentifier\": \"{{clientIdAlias}}\"\n}",
+							"options": {
+								"raw": {
+									"headerFamily": "json",
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{authleteServer}}/api/{{apiKey}}/jose/verify",
+							"host": [
+								"{{authleteServer}}"
+							],
+							"path": [
+								"api",
+								"{{apiKey}}",
+								"jose",
+								"verify"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "Untitled Example",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "Accept",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "<token>",
+										"description": "Added as a part of security scheme: oauth2"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"jose\": \"eyJhbGciOiJFUzI1NiJ9.eyJleHAiOjE1NTk4MTE3NTAsImlzcyI6IjU3Mjk3NDA4ODY3In0K.csmdholMVcmjqHe59YWgLGNvm7I5Whp4phQCoGxyrlRGMnTgsfxtwyxBgMXQqEPD5q5k9FaEWNk37K8uAtSwrA\",\n  \"clockSkew\": 100,\n  \"signedByClient\": true,\n  \"clientIdentifier\": \"57297408867\"\n}",
+									"options": {
+										"raw": {
+											"headerFamily": "json",
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/api/:serviceId/jose/verify",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										":serviceId",
+										"jose",
+										"verify"
+									],
+									"variable": [
+										{
+											"key": "serviceId"
+										}
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"resultCode\": \"A160001\",\n  \"resultMessage\": \"[A160001] The JOSE is valid.\",\n  \"signatureValid\": true,\n  \"valid\": true\n}"
+						},
+						{
+							"name": "Untitled Example",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "Accept",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "<token>",
+										"description": "Added as a part of security scheme: oauth2"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"jose\": \"eyJhbGciOiJFUzI1NiJ9.eyJleHAiOjE1NTk4MTE3NTAsImlzcyI6IjU3Mjk3NDA4ODY3In0K.csmdholMVcmjqHe59YWgLGNvm7I5Whp4phQCoGxyrlRGMnTgsfxtwyxBgMXQqEPD5q5k9FaEWNk37K8uAtSwrA\",\n  \"clockSkew\": 100,\n  \"signedByClient\": true,\n  \"clientIdentifier\": \"57297408867\"\n}",
+									"options": {
+										"raw": {
+											"headerFamily": "json",
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/api/:serviceId/jose/verify",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										":serviceId",
+										"jose",
+										"verify"
+									],
+									"variable": [
+										{
+											"key": "serviceId"
+										}
+									]
+								}
+							},
+							"status": "Bad Request",
+							"code": 400,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"resultCode\": \"A001201\",\n  \"resultMessage\": \"[A001201] /auth/authorization, TLS must be used.\"\n}"
+						},
+						{
+							"name": "Untitled Example",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "Accept",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "<token>",
+										"description": "Added as a part of security scheme: oauth2"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"jose\": \"eyJhbGciOiJFUzI1NiJ9.eyJleHAiOjE1NTk4MTE3NTAsImlzcyI6IjU3Mjk3NDA4ODY3In0K.csmdholMVcmjqHe59YWgLGNvm7I5Whp4phQCoGxyrlRGMnTgsfxtwyxBgMXQqEPD5q5k9FaEWNk37K8uAtSwrA\",\n  \"clockSkew\": 100,\n  \"signedByClient\": true,\n  \"clientIdentifier\": \"57297408867\"\n}",
+									"options": {
+										"raw": {
+											"headerFamily": "json",
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/api/:serviceId/jose/verify",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										":serviceId",
+										"jose",
+										"verify"
+									],
+									"variable": [
+										{
+											"key": "serviceId"
+										}
+									]
+								}
+							},
+							"status": "Unauthorized",
+							"code": 401,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"resultCode\": \"A001202\",\n  \"resultMessage\": \"[A001202] /auth/authorization, Authorization header is missing.\"\n}"
+						},
+						{
+							"name": "Untitled Example",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "Accept",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "<token>",
+										"description": "Added as a part of security scheme: oauth2"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"jose\": \"eyJhbGciOiJFUzI1NiJ9.eyJleHAiOjE1NTk4MTE3NTAsImlzcyI6IjU3Mjk3NDA4ODY3In0K.csmdholMVcmjqHe59YWgLGNvm7I5Whp4phQCoGxyrlRGMnTgsfxtwyxBgMXQqEPD5q5k9FaEWNk37K8uAtSwrA\",\n  \"clockSkew\": 100,\n  \"signedByClient\": true,\n  \"clientIdentifier\": \"57297408867\"\n}",
+									"options": {
+										"raw": {
+											"headerFamily": "json",
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/api/:serviceId/jose/verify",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										":serviceId",
+										"jose",
+										"verify"
+									],
+									"variable": [
+										{
+											"key": "serviceId"
+										}
+									]
+								}
+							},
+							"status": "Forbidden",
+							"code": 403,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"resultCode\": \"A001215\",\n  \"resultMessage\": \"[A001215] /auth/authorization, The client (ID = 26837717140341) is locked.\"\n}"
+						},
+						{
+							"name": "Untitled Example",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "Accept",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "<token>",
+										"description": "Added as a part of security scheme: oauth2"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"jose\": \"eyJhbGciOiJFUzI1NiJ9.eyJleHAiOjE1NTk4MTE3NTAsImlzcyI6IjU3Mjk3NDA4ODY3In0K.csmdholMVcmjqHe59YWgLGNvm7I5Whp4phQCoGxyrlRGMnTgsfxtwyxBgMXQqEPD5q5k9FaEWNk37K8uAtSwrA\",\n  \"clockSkew\": 100,\n  \"signedByClient\": true,\n  \"clientIdentifier\": \"57297408867\"\n}",
+									"options": {
+										"raw": {
+											"headerFamily": "json",
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/api/:serviceId/jose/verify",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										":serviceId",
+										"jose",
+										"verify"
+									],
+									"variable": [
+										{
+											"key": "serviceId"
+										}
+									]
+								}
+							},
+							"status": "Internal Server Error",
+							"code": 500,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"resultCode\": \"A001101\",\n  \"resultMessage\": \"[A001101] /auth/authorization, Authlete Server error.\"\n}"
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "99 tear down",
+			"item": [
+				{
+					"name": "Delete Service via IdP",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"serviceId\": {{apiKey}},\r\n    \"apiServerId\": {{apiServerId}},\r\n    \"organizationId\": {{organizationId}}\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "https://login.authlete.com/api/service/remove",
+							"protocol": "https",
+							"host": [
+								"login",
+								"authlete",
+								"com"
+							],
+							"path": [
+								"api",
+								"service",
+								"remove"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	]
+}
