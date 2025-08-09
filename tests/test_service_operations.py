@@ -12,8 +12,8 @@ from mcp.client.stdio import stdio_client
 async def test_list_services():
     """Test listing services with real credentials."""
     token = os.getenv("ORGANIZATION_ACCESS_TOKEN")
-    if not token:
-        pytest.skip("ORGANIZATION_ACCESS_TOKEN not set - skipping integration test")
+    if not token or token == "dummy_token_for_ci":
+        pytest.skip("Real ORGANIZATION_ACCESS_TOKEN not set - skipping integration test")
 
     server_params = StdioServerParameters(
         command="uv",
@@ -43,7 +43,7 @@ async def test_list_services():
 async def test_create_service():
     """Test creating a service with real credentials."""
     token = os.getenv("ORGANIZATION_ACCESS_TOKEN")
-    if not token:
+    if not token or token == "dummy_token_for_ci":
         pytest.skip("ORGANIZATION_ACCESS_TOKEN not set - skipping integration test")
 
     server_params = StdioServerParameters(
@@ -80,7 +80,7 @@ async def test_create_service():
 async def test_create_service_detailed():
     """Test creating a detailed service configuration."""
     token = os.getenv("ORGANIZATION_ACCESS_TOKEN")
-    if not token:
+    if not token or token == "dummy_token_for_ci":
         pytest.skip("ORGANIZATION_ACCESS_TOKEN not set - skipping integration test")
 
     server_params = StdioServerParameters(

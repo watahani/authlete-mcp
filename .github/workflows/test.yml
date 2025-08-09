@@ -49,30 +49,37 @@ jobs:
 
       - name: Run integration tests
         env:
-          # Use dummy tokens for integration tests in CI
-          # Real integration tests would need actual credentials
-          ORGANIZATION_ACCESS_TOKEN: "dummy_token_for_ci"
-          ORGANIZATION_ID: "12345"
+          ORGANIZATION_ACCESS_TOKEN: ${{ secrets.ORGANIZATION_ACCESS_TOKEN }}
+          ORGANIZATION_ID: ${{ secrets.ORGANIZATION_ID }}
           AUTHLETE_BASE_URL: "https://jp.authlete.com"
           AUTHLETE_IDP_URL: "https://login.authlete.com"
           AUTHLETE_API_SERVER_ID: "53285"
         run: |
-          echo "Running integration tests (with mock credentials)..."
-          # Integration tests will fail with dummy credentials but test the code paths
-          uv run pytest -m integration -v --tb=short --no-header || true
+          echo "Running integration tests..."
+          if [ -z "$ORGANIZATION_ACCESS_TOKEN" ]; then
+            echo "❌ ORGANIZATION_ACCESS_TOKEN secret not configured"
+            exit 1
+          fi
+          if [ -z "$ORGANIZATION_ID" ]; then
+            echo "❌ ORGANIZATION_ID secret not configured"
+            exit 1
+          fi
+          echo "🔑 Using configured secrets - running integration tests"
+          uv run pytest -m integration -v --tb=short --no-header
 
       - name: Run all tests with coverage
         env:
-          ORGANIZATION_ACCESS_TOKEN: "dummy_token_for_ci"
-          ORGANIZATION_ID: "12345"
+          ORGANIZATION_ACCESS_TOKEN: ${{ secrets.ORGANIZATION_ACCESS_TOKEN }}
+          ORGANIZATION_ID: ${{ secrets.ORGANIZATION_ID }}
         run: |
-          echo "Running all tests..."
+          echo "Running all tests with coverage..."
+          # Run all tests (both unit and integration) with real credentials
           uv run pytest --tb=short --no-header
 
       - name: Test MCP server startup
         env:
-          ORGANIZATION_ACCESS_TOKEN: "dummy_token_for_ci"
-          ORGANIZATION_ID: "12345"
+          ORGANIZATION_ACCESS_TOKEN: ${{ secrets.ORGANIZATION_ACCESS_TOKEN }}
+          ORGANIZATION_ID: ${{ secrets.ORGANIZATION_ID }}
         run: |
           echo "Testing MCP server startup..."
           timeout 10s uv run python main.py --help > /dev/null 2>&1 || true

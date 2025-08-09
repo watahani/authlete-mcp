@@ -12,7 +12,7 @@ from mcp.client.stdio import stdio_client
 async def test_get_authorized_applications():
     """Test getting authorized applications without service_api_key."""
     token = os.getenv("ORGANIZATION_ACCESS_TOKEN")
-    if not token:
+    if not token or token == "dummy_token_for_ci":
         pytest.skip("ORGANIZATION_ACCESS_TOKEN not set - skipping integration test")
 
     server_params = StdioServerParameters(
@@ -52,7 +52,7 @@ async def test_get_authorized_applications_missing_subject():
 async def test_update_client_tokens():
     """Test updating client tokens without service_api_key."""
     token = os.getenv("ORGANIZATION_ACCESS_TOKEN")
-    if not token:
+    if not token or token == "dummy_token_for_ci":
         pytest.skip("ORGANIZATION_ACCESS_TOKEN not set - skipping integration test")
 
     server_params = StdioServerParameters(
@@ -104,7 +104,7 @@ async def test_update_client_tokens_missing_params():
 async def test_delete_client_tokens():
     """Test deleting client tokens without service_api_key."""
     token = os.getenv("ORGANIZATION_ACCESS_TOKEN")
-    if not token:
+    if not token or token == "dummy_token_for_ci":
         pytest.skip("ORGANIZATION_ACCESS_TOKEN not set - skipping integration test")
 
     server_params = StdioServerParameters(
@@ -130,7 +130,7 @@ async def test_delete_client_tokens():
 async def test_get_granted_scopes():
     """Test getting granted scopes without service_api_key."""
     token = os.getenv("ORGANIZATION_ACCESS_TOKEN")
-    if not token:
+    if not token or token == "dummy_token_for_ci":
         pytest.skip("ORGANIZATION_ACCESS_TOKEN not set - skipping integration test")
 
     server_params = StdioServerParameters(
@@ -156,7 +156,7 @@ async def test_get_granted_scopes():
 async def test_delete_granted_scopes():
     """Test deleting granted scopes without service_api_key."""
     token = os.getenv("ORGANIZATION_ACCESS_TOKEN")
-    if not token:
+    if not token or token == "dummy_token_for_ci":
         pytest.skip("ORGANIZATION_ACCESS_TOKEN not set - skipping integration test")
 
     server_params = StdioServerParameters(
@@ -182,7 +182,7 @@ async def test_delete_granted_scopes():
 async def test_get_requestable_scopes():
     """Test getting requestable scopes without service_api_key."""
     token = os.getenv("ORGANIZATION_ACCESS_TOKEN")
-    if not token:
+    if not token or token == "dummy_token_for_ci":
         pytest.skip("ORGANIZATION_ACCESS_TOKEN not set - skipping integration test")
 
     server_params = StdioServerParameters(
@@ -222,7 +222,7 @@ async def test_get_requestable_scopes_missing_client_id():
 async def test_update_requestable_scopes():
     """Test updating requestable scopes without service_api_key."""
     token = os.getenv("ORGANIZATION_ACCESS_TOKEN")
-    if not token:
+    if not token or token == "dummy_token_for_ci":
         pytest.skip("ORGANIZATION_ACCESS_TOKEN not set - skipping integration test")
 
     server_params = StdioServerParameters(
@@ -269,7 +269,7 @@ async def test_update_requestable_scopes_invalid_json():
 async def test_delete_requestable_scopes():
     """Test deleting requestable scopes without service_api_key."""
     token = os.getenv("ORGANIZATION_ACCESS_TOKEN")
-    if not token:
+    if not token or token == "dummy_token_for_ci":
         pytest.skip("ORGANIZATION_ACCESS_TOKEN not set - skipping integration test")
 
     server_params = StdioServerParameters(

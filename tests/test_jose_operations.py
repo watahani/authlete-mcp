@@ -12,7 +12,7 @@ from mcp.client.stdio import stdio_client
 async def test_generate_jose():
     """Test generating JOSE without service_api_key."""
     token = os.getenv("ORGANIZATION_ACCESS_TOKEN")
-    if not token:
+    if not token or token == "dummy_token_for_ci":
         pytest.skip("ORGANIZATION_ACCESS_TOKEN not set - skipping integration test")
 
     server_params = StdioServerParameters(
@@ -80,7 +80,7 @@ async def test_generate_jose_invalid_json():
 async def test_verify_jose():
     """Test verifying JOSE without service_api_key."""
     token = os.getenv("ORGANIZATION_ACCESS_TOKEN")
-    if not token:
+    if not token or token == "dummy_token_for_ci":
         pytest.skip("ORGANIZATION_ACCESS_TOKEN not set - skipping integration test")
 
     server_params = StdioServerParameters(

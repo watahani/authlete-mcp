@@ -12,7 +12,7 @@ from mcp.client.stdio import stdio_client
 async def test_list_issued_tokens():
     """Test listing issued tokens without service_api_key."""
     token = os.getenv("ORGANIZATION_ACCESS_TOKEN")
-    if not token:
+    if not token or token == "dummy_token_for_ci":
         pytest.skip("ORGANIZATION_ACCESS_TOKEN not set - skipping integration test")
 
     server_params = StdioServerParameters(
@@ -56,7 +56,7 @@ async def test_list_issued_tokens_without_token():
 async def test_create_access_token():
     """Test creating access token without service_api_key."""
     token = os.getenv("ORGANIZATION_ACCESS_TOKEN")
-    if not token:
+    if not token or token == "dummy_token_for_ci":
         pytest.skip("ORGANIZATION_ACCESS_TOKEN not set - skipping integration test")
 
     server_params = StdioServerParameters(
@@ -104,7 +104,7 @@ async def test_create_access_token_invalid_json():
 async def test_update_access_token():
     """Test updating access token without service_api_key."""
     token = os.getenv("ORGANIZATION_ACCESS_TOKEN")
-    if not token:
+    if not token or token == "dummy_token_for_ci":
         pytest.skip("ORGANIZATION_ACCESS_TOKEN not set - skipping integration test")
 
     server_params = StdioServerParameters(
@@ -147,7 +147,7 @@ async def test_update_access_token_missing_params():
 async def test_revoke_access_token():
     """Test revoking access token without service_api_key."""
     token = os.getenv("ORGANIZATION_ACCESS_TOKEN")
-    if not token:
+    if not token or token == "dummy_token_for_ci":
         pytest.skip("ORGANIZATION_ACCESS_TOKEN not set - skipping integration test")
 
     server_params = StdioServerParameters(
@@ -171,7 +171,7 @@ async def test_revoke_access_token():
 async def test_delete_access_token():
     """Test deleting access token without service_api_key."""
     token = os.getenv("ORGANIZATION_ACCESS_TOKEN")
-    if not token:
+    if not token or token == "dummy_token_for_ci":
         pytest.skip("ORGANIZATION_ACCESS_TOKEN not set - skipping integration test")
 
     server_params = StdioServerParameters(

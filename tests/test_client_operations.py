@@ -12,7 +12,7 @@ from mcp.client.stdio import stdio_client
 async def test_list_clients():
     """Test listing clients with real credentials."""
     token = os.getenv("ORGANIZATION_ACCESS_TOKEN")
-    if not token:
+    if not token or token == "dummy_token_for_ci":
         pytest.skip("ORGANIZATION_ACCESS_TOKEN not set - skipping integration test")
 
     server_params = StdioServerParameters(
@@ -41,7 +41,7 @@ async def test_list_clients():
 async def test_create_client():
     """Test creating a client with real credentials."""
     token = os.getenv("ORGANIZATION_ACCESS_TOKEN")
-    if not token:
+    if not token or token == "dummy_token_for_ci":
         pytest.skip("ORGANIZATION_ACCESS_TOKEN not set - skipping integration test")
 
     server_params = StdioServerParameters(
@@ -125,7 +125,7 @@ async def test_client_operations_without_token():
 async def test_rotate_client_secret():
     """Test rotating client secret."""
     token = os.getenv("ORGANIZATION_ACCESS_TOKEN")
-    if not token:
+    if not token or token == "dummy_token_for_ci":
         pytest.skip("ORGANIZATION_ACCESS_TOKEN not set - skipping integration test")
 
     server_params = StdioServerParameters(
@@ -162,7 +162,7 @@ async def test_rotate_client_secret():
 async def test_update_client_secret():
     """Test updating client secret."""
     token = os.getenv("ORGANIZATION_ACCESS_TOKEN")
-    if not token:
+    if not token or token == "dummy_token_for_ci":
         pytest.skip("ORGANIZATION_ACCESS_TOKEN not set - skipping integration test")
 
     server_params = StdioServerParameters(
@@ -271,12 +271,12 @@ async def test_update_client_secret_invalid_json():
 async def test_client_secret_operations_with_service_api_key():
     """Test client secret operations with valid service_api_key."""
     token = os.getenv("ORGANIZATION_ACCESS_TOKEN")
-    if not token:
-        pytest.skip("ORGANIZATION_ACCESS_TOKEN not set - skipping integration test")
+    if not token or token == "dummy_token_for_ci":
+        pytest.skip("Real ORGANIZATION_ACCESS_TOKEN not set - skipping integration test")
 
     org_id = os.getenv("ORGANIZATION_ID")
-    if not org_id:
-        pytest.skip("ORGANIZATION_ID not set - skipping integration test")
+    if not org_id or org_id == "12345":
+        pytest.skip("Real ORGANIZATION_ID not set - skipping integration test")
 
     server_params = StdioServerParameters(
         command="uv",

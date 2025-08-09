@@ -12,7 +12,7 @@ from mcp.client.stdio import stdio_client
 async def test_delete_service_with_real_credentials():
     """Test service deletion with real credentials."""
     token = os.getenv("ORGANIZATION_ACCESS_TOKEN")
-    if not token:
+    if not token or token == "dummy_token_for_ci":
         pytest.skip("ORGANIZATION_ACCESS_TOKEN not set - skipping integration test")
 
     server_params = StdioServerParameters(
