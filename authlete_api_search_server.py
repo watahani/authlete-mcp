@@ -416,7 +416,7 @@ async def handle_list_tools() -> list[Tool]:
         ),
         Tool(
             name="get_api_detail",
-            description="Get detailed information for specific API (parameters, request/response, sample code)",
+            description="Get detailed information for specific API (parameters, request/response, sample code). Provide either operation_id OR both path and method.",
             inputSchema={
                 "type": "object",
                 "properties": {
@@ -428,12 +428,11 @@ async def handle_list_tools() -> list[Tool]:
                         "description": "Sample code language (curl, javascript, python, java, etc.)",
                     },
                 },
-                "anyOf": [{"required": ["path", "method"]}, {"required": ["operation_id"]}],
             },
         ),
         Tool(
             name="get_sample_code",
-            description="Get sample code for specific API in specified language",
+            description="Get sample code for specific API in specified language. Provide language and either operation_id OR both path and method.",
             inputSchema={
                 "type": "object",
                 "properties": {
@@ -443,7 +442,6 @@ async def handle_list_tools() -> list[Tool]:
                     "language": {"type": "string", "description": "Programming language"},
                 },
                 "required": ["language"],
-                "anyOf": [{"required": ["path", "method", "language"]}, {"required": ["operation_id", "language"]}],
             },
         ),
     ]
