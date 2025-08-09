@@ -36,7 +36,7 @@ async def delete_service_by_api_key(config: AuthleteConfig, service_api_key: str
             api_key=service_api_key,
             base_url=config.base_url,
             idp_url=config.idp_url,
-            api_server_id=config.api_server_id
+            api_server_id=config.api_server_id,
         )
 
         service_details = await make_authlete_request("GET", "service", service_config)
@@ -49,14 +49,14 @@ async def delete_service_by_api_key(config: AuthleteConfig, service_api_key: str
         # Delete using IdP API
         delete_data = {
             "organizationId": config.organization_id or os.getenv("ORGANIZATION_ID", ""),
-            "serviceId": service_id
+            "serviceId": service_id,
         }
 
         org_config = AuthleteConfig(
             api_key=config.api_key,  # Use organization token for IdP operations
             base_url=config.base_url,
             idp_url=config.idp_url,
-            api_server_id=config.api_server_id
+            api_server_id=config.api_server_id,
         )
 
         await make_authlete_idp_request("POST", "service/remove", org_config, delete_data)
@@ -83,19 +83,13 @@ async def cleanup_test_services():
         print("⚠️ ORGANIZATION_ID not set, using empty string")
 
     # Create config
-    config = AuthleteConfig(
-        api_key=org_token,
-        organization_id=organization_id
-    )
+    config = AuthleteConfig(api_key=org_token, organization_id=organization_id)
 
     # List all services
     services = await list_all_services(config)
 
     # Filter services that start with "pytest-"
-    test_services = [
-        service for service in services
-        if service.get("serviceName", "").startswith("pytest-")
-    ]
+    test_services = [service for service in services if service.get("serviceName", "").startswith("pytest-")]
 
     if not test_services:
         print("✅ No pytest services found to clean up")
