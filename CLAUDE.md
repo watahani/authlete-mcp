@@ -143,7 +143,9 @@ When implementing or modifying MCP tools, follow these established patterns:
 
 ## GitHub Development Workflow
 
-このプロジェクトでは、機能追加やバグ修正において以下のGitHubワークフローを採用します：
+このプロジェクトでは、機能追加やバグ修正において以下のGitHubワークフローを採用します。
+
+**重要**: このプロジェクトではGitHub操作にGitHub MCPを使用します。Claude CodeがGitHub MCP (Model Context Protocol) を通じて、プルリクエストの作成、マージ、ワークフロー管理を自動化します。手動でGitHub CLIコマンドを実行する必要はありません。
 
 ### ブランチ戦略
 - **main**: 安定版リリースブランチ。常にデプロイ可能な状態を維持
@@ -190,24 +192,9 @@ When implementing or modifying MCP tools, follow these established patterns:
    ```bash
    # ブランチをプッシュ
    git push origin feature/add-new-api-endpoints
-   
-   # GitHub CLIを使用してPR作成（推奨）
-   gh pr create --title "feat: add token management API endpoints" --body "$(cat <<'EOF'
-   ## Summary
-   - Add 5 new token management API endpoints (list, create, update, revoke, delete)
-   - Add comprehensive test coverage with 8 new test cases  
-   - Update OpenAPI specification with new endpoint definitions
-   
-   ## Test plan
-   - [x] Unit tests pass (pytest -m unit)
-   - [x] Code quality checks pass (ruff check/format)
-   - [x] All existing tests still pass
-   - [ ] Manual testing with real Authlete API (integration test)
-   
-   🤖 Generated with [Claude Code](https://claude.ai/code)
-   EOF
-   )"
    ```
+   
+   **Note**: プルリクエストの作成にはGitHub MCPを使用します。Claude Codeが自動的にGitHub MCPを利用してPRを作成し、適切なタイトルと説明を設定します。手動でGitHub CLIコマンドを実行する必要はありません。
 
 5. **レビュープロセス**
    ```bash
