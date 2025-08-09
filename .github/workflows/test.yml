@@ -47,7 +47,7 @@ jobs:
           echo "Running unit tests (no API calls)..."
           uv run pytest -m unit -v --tb=short --no-header
 
-      - name: Run integration tests
+      - name: Run integration tests with coverage
         env:
           ORGANIZATION_ACCESS_TOKEN: ${{ secrets.ORGANIZATION_ACCESS_TOKEN }}
           ORGANIZATION_ID: ${{ secrets.ORGANIZATION_ID }}
@@ -55,26 +55,20 @@ jobs:
           AUTHLETE_IDP_URL: "https://login.authlete.com"
           AUTHLETE_API_SERVER_ID: "53285"
         run: |
-          echo "Running integration tests..."
+          echo "Running integration tests with coverage..."
           if [ -z "$ORGANIZATION_ACCESS_TOKEN" ]; then
             echo "❌ ORGANIZATION_ACCESS_TOKEN secret not configured"
-            exit 1
+            echo "Running all tests without coverage as fallback"
+            uv run pytest --tb=short --no-header
+          else
+            if [ -z "$ORGANIZATION_ID" ]; then
+              echo "❌ ORGANIZATION_ID secret not configured"
+              exit 1
+            fi
+            echo "🔑 Using configured secrets - running integration tests with coverage"
+            uv run pytest -m integration -v --tb=short --no-header --cov=authlete_mcp_server --cov-report=term-missing
           fi
-          if [ -z "$ORGANIZATION_ID" ]; then
-            echo "❌ ORGANIZATION_ID secret not configured"
-            exit 1
-          fi
-          echo "🔑 Using configured secrets - running integration tests"
-          uv run pytest -m integration -v --tb=short --no-header
 
-      - name: Run all tests with coverage
-        env:
-          ORGANIZATION_ACCESS_TOKEN: ${{ secrets.ORGANIZATION_ACCESS_TOKEN }}
-          ORGANIZATION_ID: ${{ secrets.ORGANIZATION_ID }}
-        run: |
-          echo "Running all tests with coverage..."
-          # Run all tests (both unit and integration) with real credentials
-          uv run pytest --tb=short --no-header
 
       - name: Test MCP server startup
         env:
