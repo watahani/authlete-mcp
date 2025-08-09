@@ -1,0 +1,119 @@
+#!/bin/bash
+# Pre-commit hook for Python project quality checks
+# This runs the same checks as in our GitHub Actions workflows
+
+set -e
+
+echo "🔍 Running pre-commit quality checks..."
+
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[0;33m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
+
+# Function to print colored output
+print_status() {
+    echo -e "${BLUE}[INFO]${NC} $1"
+}
+
+print_success() {
+    echo -e "${GREEN}[SUCCESS]${NC} $1"
+}
+
+print_warning() {
+    echo -e "${YELLOW}[WARNING]${NC} $1"
+}
+
+print_error() {
+    echo -e "${RED}[ERROR]${NC} $1"
+}
+
+# Check if uv is installed
+if ! command -v uv &> /dev/null; then
+    print_error "uv is not installed. Please install uv first."
+    exit 1
+fi
+
+# Check if we're in the right directory
+if [ ! -f "pyproject.toml" ]; then
+    print_error "pyproject.toml not found. Are you in the project root?"
+    exit 1
+fi
+
+# Ensure dependencies are synced
+print_status "Syncing dependencies..."
+uv sync --quiet
+
+# 1. Linting and Formatting Check
+print_status "Running linting checks..."
+if uv run ruff check authlete_api_search_server.py tests/ scripts/; then
+    print_success "Linting passed"
+else
+    print_error "Linting failed. Run 'uv run ruff check --fix' to auto-fix some issues."
+    exit 1
+fi
+
+print_status "Running format checks..."
+if uv run ruff format --check authlete_api_search_server.py tests/ scripts/; then
+    print_success "Code formatting is correct"
+else
+    print_error "Code formatting failed. Run 'uv run ruff format' to fix formatting."
+    exit 1
+fi
+
+# 2. YAML Lint (for GitHub Actions)
+print_status "Checking YAML files..."
+if uv run yamllint .github/ 2>/dev/null; then
+    print_success "YAML files are valid"
+else
+    print_warning "YAML lint issues found (non-blocking)"
+fi
+
+# 3. Type Checking (if mypy is available)
+print_status "Running type checks (if available)..."
+if uv run --quiet python -c "import mypy" 2>/dev/null; then
+    if uv run mypy authlete_api_search_server.py --ignore-missing-imports; then
+        print_success "Type checking passed"
+    else
+        print_warning "Type checking issues found (non-blocking)"
+    fi
+else
+    print_status "Mypy not available, skipping type checking"
+fi
+
+# 4. Unit Tests
+print_status "Running unit tests..."
+if uv run pytest tests/ -x -q; then
+    print_success "All tests passed"
+else
+    print_error "Tests failed. Fix failing tests before committing."
+    exit 1
+fi
+
+# 5. Database Creation Test (if OpenAPI spec exists)
+if [ -f "resources/openapi-spec.json" ]; then
+    print_status "Testing search database creation..."
+    if uv run python scripts/create_search_database.py > /dev/null 2>&1; then
+        print_success "Search database creation test passed"
+    else
+        print_error "Search database creation failed."
+        exit 1
+    fi
+else
+    print_status "OpenAPI spec not found, skipping database test"
+fi
+
+# 6. Check for sensitive data
+print_status "Scanning for potential secrets..."
+if git diff --cached --name-only | grep -E '\.(py|yml|yaml|json|md)$' | xargs grep -l -i -E '(password|secret|key|token).*=.*["\'][^"\']{8,}["\']' 2>/dev/null; then
+    print_warning "Potential secrets detected. Please review before committing."
+    git diff --cached --name-only | grep -E '\.(py|yml|yaml|json|md)$' | xargs grep -n -i -E '(password|secret|key|token).*=.*["\'][^"\']{8,}["\']' 2>/dev/null || true
+fi
+
+# Success message
+print_success "All pre-commit checks passed! ✨"
+print_status "Committing changes..."
+
+exit 0

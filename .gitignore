@@ -201,3 +201,6 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Old TypeScript MCP server (archived)
+mcp-server/
