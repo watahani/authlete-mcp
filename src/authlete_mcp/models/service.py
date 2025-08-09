@@ -1,6 +1,5 @@
 """Service-related models for Authlete API."""
 
-
 from pydantic import BaseModel, Field
 
 

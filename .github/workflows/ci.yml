@@ -2,9 +2,9 @@ name: Continuous Integration
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ main ]
+    branches: [main]
   workflow_dispatch:
 
 permissions:
@@ -16,187 +16,191 @@ jobs:
   # Run tests first
   test:
     uses: ./.github/workflows/test.yml
-    
+
   # Check for breaking changes in API
   api-compatibility:
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request'
-    
+
     steps:
-    - name: Checkout PR branch
-      uses: actions/checkout@v4
-      with:
-        ref: ${{ github.head_ref }}
-        path: pr
-    
-    - name: Checkout main branch
-      uses: actions/checkout@v4
-      with:
-        ref: main
-        path: main
-    
-    - name: Check for MCP tool changes
-      run: |
-        echo "Checking for changes in MCP tools..."
-        
-        # Check if any tool functions were removed or renamed
-        cd main
-        MAIN_TOOLS=$(find src/authlete_mcp/tools/ -name "*.py" -exec grep -l "async def " {} \; | xargs grep "^async def " | sort)
-        cd ../pr
-        PR_TOOLS=$(find src/authlete_mcp/tools/ -name "*.py" -exec grep -l "async def " {} \; | xargs grep "^async def " | sort)
-        
-        echo "Main branch tools:"
-        echo "$MAIN_TOOLS"
-        echo ""
-        echo "PR branch tools:"  
-        echo "$PR_TOOLS"
-        
-        # Simple check for breaking changes
-        if [ "$(echo "$MAIN_TOOLS" | wc -l)" -gt "$(echo "$PR_TOOLS" | wc -l)" ]; then
-          echo "⚠️ WARNING: Some MCP tools may have been removed"
-          echo "removed-tools=true" >> $GITHUB_OUTPUT
-        else
-          echo "✅ No MCP tools were removed"
-          echo "removed-tools=false" >> $GITHUB_OUTPUT
-        fi
-    
-    - name: Check OpenAPI spec changes
-      run: |
-        echo "Checking for OpenAPI specification changes..."
-        
-        if ! cmp -s main/resources/openapi-spec.json pr/resources/openapi-spec.json; then
-          echo "📋 OpenAPI specification was updated"
-          echo "spec-updated=true" >> $GITHUB_OUTPUT
-          
-          # Show basic diff info
-          echo "Changes detected in OpenAPI spec:"
-          echo "Main branch version: $(jq -r '.info.version // "unknown"' main/resources/openapi-spec.json)"
-          echo "PR branch version: $(jq -r '.info.version // "unknown"' pr/resources/openapi-spec.json)"
-        else
-          echo "No changes in OpenAPI specification"
-          echo "spec-updated=false" >> $GITHUB_OUTPUT
-        fi
+      - name: Checkout PR branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+          path: pr
+
+      - name: Checkout main branch
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          path: main
+
+      - name: Check for MCP tool changes
+        run: |
+          echo "Checking for changes in MCP tools..."
+
+          # Check if any tool functions were removed or renamed
+          cd main
+          MAIN_TOOLS=$(find src/authlete_mcp/tools/ -name "*.py" \
+            -exec grep -l "async def " {} \; | xargs grep "^async def " | sort)
+          cd ../pr
+          PR_TOOLS=$(find src/authlete_mcp/tools/ -name "*.py" \
+            -exec grep -l "async def " {} \; | xargs grep "^async def " | sort)
+
+          echo "Main branch tools:"
+          echo "$MAIN_TOOLS"
+          echo ""
+          echo "PR branch tools:"
+          echo "$PR_TOOLS"
+
+          # Simple check for breaking changes
+          if [ "$(echo "$MAIN_TOOLS" | wc -l)" -gt "$(echo "$PR_TOOLS" | wc -l)" ]; then
+            echo "⚠️ WARNING: Some MCP tools may have been removed"
+            echo "removed-tools=true" >> $GITHUB_OUTPUT
+          else
+            echo "✅ No MCP tools were removed"
+            echo "removed-tools=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Check OpenAPI spec changes
+        run: |
+          echo "Checking for OpenAPI specification changes..."
+
+          if ! cmp -s main/resources/openapi-spec.json pr/resources/openapi-spec.json; then
+            echo "📋 OpenAPI specification was updated"
+            echo "spec-updated=true" >> $GITHUB_OUTPUT
+
+            # Show basic diff info
+            echo "Changes detected in OpenAPI spec:"
+            echo "Main branch version: $(jq -r '.info.version // "unknown"' \
+              main/resources/openapi-spec.json)"
+            echo "PR branch version: $(jq -r '.info.version // "unknown"' \
+              pr/resources/openapi-spec.json)"
+          else
+            echo "No changes in OpenAPI specification"
+            echo "spec-updated=false" >> $GITHUB_OUTPUT
+          fi
 
   # Performance and load testing
   performance-test:
     runs-on: ubuntu-latest
     needs: test
-    
+
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
-    
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.10'
-    
-    - name: Install uv
-      uses: astral-sh/setup-uv@v3
-    
-    - name: Install dependencies
-      run: uv sync
-    
-    - name: Run performance tests
-      env:
-        ORGANIZATION_ACCESS_TOKEN: "dummy_token_for_ci"
-        ORGANIZATION_ID: "12345"
-      run: |
-        echo "Running performance tests..."
-        
-        # Test MCP server startup time
-        START_TIME=$(date +%s%N)
-        timeout 30s uv run python main.py --help > /dev/null 2>&1 || true
-        END_TIME=$(date +%s%N)
-        STARTUP_TIME=$((($END_TIME - $START_TIME) / 1000000))
-        
-        echo "MCP server startup time: ${STARTUP_TIME}ms"
-        
-        # Test import time for main modules
-        echo "Testing module import performance..."
-        uv run python -c "
-        import time
-        start = time.time()
-        import src.authlete_mcp.server
-        end = time.time()
-        print(f'Server module import time: {(end-start)*1000:.2f}ms')
-        
-        start = time.time()  
-        from src.authlete_mcp.tools import service_tools, client_tools, token_tools, jose_tools
-        end = time.time()
-        print(f'Tools import time: {(end-start)*1000:.2f}ms')
-        "
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+
+      - name: Install dependencies
+        run: uv sync
+
+      - name: Run performance tests
+        env:
+          ORGANIZATION_ACCESS_TOKEN: "dummy_token_for_ci"
+          ORGANIZATION_ID: "12345"
+        run: |
+          echo "Running performance tests..."
+
+          # Test MCP server startup time
+          START_TIME=$(date +%s%N)
+          timeout 30s uv run python main.py --help > /dev/null 2>&1 || true
+          END_TIME=$(date +%s%N)
+          STARTUP_TIME=$((($END_TIME - $START_TIME) / 1000000))
+
+          echo "MCP server startup time: ${STARTUP_TIME}ms"
+
+          # Test import time for main modules
+          echo "Testing module import performance..."
+          uv run python -c "
+          import time
+          start = time.time()
+          import src.authlete_mcp.server
+          end = time.time()
+          print(f'Server module import time: {(end-start)*1000:.2f}ms')
+
+          start = time.time()
+          from src.authlete_mcp.tools import service_tools, client_tools, token_tools, jose_tools
+          end = time.time()
+          print(f'Tools import time: {(end-start)*1000:.2f}ms')
+          "
 
   # Generate test coverage report
   coverage:
     runs-on: ubuntu-latest
     needs: test
-    
+
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
-    
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.10'
-    
-    - name: Install uv
-      uses: astral-sh/setup-uv@v3
-    
-    - name: Install dependencies
-      run: |
-        uv sync
-        uv add coverage pytest-cov
-    
-    - name: Run tests with coverage
-      env:
-        ORGANIZATION_ACCESS_TOKEN: "dummy_token_for_ci" 
-        ORGANIZATION_ID: "12345"
-      run: |
-        echo "Running tests with coverage..."
-        uv run pytest --cov=src/authlete_mcp --cov-report=xml --cov-report=html -m unit
-    
-    - name: Upload coverage to Codecov
-      uses: codecov/codecov-action@v4
-      if: always()
-      with:
-        file: ./coverage.xml
-        flags: unittests
-        name: codecov-umbrella
-        fail_ci_if_error: false
-    
-    - name: Upload coverage HTML report
-      uses: actions/upload-artifact@v4
-      if: always()
-      with:
-        name: coverage-report
-        path: htmlcov/
-        retention-days: 30
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+
+      - name: Install dependencies
+        run: |
+          uv sync
+          uv add coverage pytest-cov
+
+      - name: Run tests with coverage
+        env:
+          ORGANIZATION_ACCESS_TOKEN: "dummy_token_for_ci"
+          ORGANIZATION_ID: "12345"
+        run: |
+          echo "Running tests with coverage..."
+          uv run pytest --cov=src/authlete_mcp --cov-report=xml --cov-report=html -m unit
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        if: always()
+        with:
+          file: ./coverage.xml
+          flags: unittests
+          name: codecov-umbrella
+          fail_ci_if_error: false
+
+      - name: Upload coverage HTML report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage-report
+          path: htmlcov/
+          retention-days: 30
 
   # Final status check
   ci-success:
     runs-on: ubuntu-latest
     needs: [test, api-compatibility, performance-test, coverage]
     if: always()
-    
+
     steps:
-    - name: Check all jobs status
-      run: |
-        echo "## CI Pipeline Results" >> $GITHUB_STEP_SUMMARY
-        echo "" >> $GITHUB_STEP_SUMMARY
-        echo "| Component | Status |" >> $GITHUB_STEP_SUMMARY  
-        echo "|-----------|--------|" >> $GITHUB_STEP_SUMMARY
-        echo "| Tests | ${{ needs.test.result }} |" >> $GITHUB_STEP_SUMMARY
-        echo "| API Compatibility | ${{ needs.api-compatibility.result }} |" >> $GITHUB_STEP_SUMMARY
-        echo "| Performance | ${{ needs.performance-test.result }} |" >> $GITHUB_STEP_SUMMARY
-        echo "| Coverage | ${{ needs.coverage.result }} |" >> $GITHUB_STEP_SUMMARY
-        echo "" >> $GITHUB_STEP_SUMMARY
-        
-        if [ "${{ needs.test.result }}" = "success" ] && [ "${{ needs.performance-test.result }}" = "success" ]; then
-          echo "✅ CI pipeline completed successfully!" >> $GITHUB_STEP_SUMMARY
-          exit 0
-        else
-          echo "❌ CI pipeline failed. Check individual job logs for details." >> $GITHUB_STEP_SUMMARY
-          exit 1
-        fi
+      - name: Check all jobs status
+        run: |
+          echo "## CI Pipeline Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Component | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-----------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Tests | ${{ needs.test.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| API Compatibility | ${{ needs.api-compatibility.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Performance | ${{ needs.performance-test.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Coverage | ${{ needs.coverage.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if [ "${{ needs.test.result }}" = "success" ] && [ "${{ needs.performance-test.result }}" = "success" ]; then
+            echo "✅ CI pipeline completed successfully!" >> $GITHUB_STEP_SUMMARY
+            exit 0
+          else
+            echo "❌ CI pipeline failed. Check individual job logs for details." >> $GITHUB_STEP_SUMMARY
+            exit 1
+          fi
