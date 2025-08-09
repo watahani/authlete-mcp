@@ -194,7 +194,10 @@ When implementing or modifying MCP tools, follow these established patterns:
    git push origin feature/add-new-api-endpoints
    ```
    
-   **Note**: プルリクエストの作成にはGitHub MCPを使用します。Claude Codeが自動的にGitHub MCPを利用してPRを作成し、適切なタイトルと説明を設定します。手動でGitHub CLIコマンドを実行する必要はありません。
+   **GitHub MCP使用**: プルリクエストの作成は`mcp__github__create_pull_request`ツールを使用します。Claude Codeが自動的に以下の処理を行います：
+   - `mcp__github__create_branch`: 新しいブランチ作成（必要に応じて）
+   - `mcp__github__create_pull_request`: 適切なタイトルと説明でPR作成
+   - `mcp__github__update_pull_request`: レビューワーの設定やラベル追加
 
 5. **レビュープロセス**
    ```bash
@@ -207,10 +210,14 @@ When implementing or modifying MCP tools, follow these established patterns:
    ```
 
 6. **マージ**
-   ```bash
-   # レビュー承認後、GitHubでSquash and Mergeを実行
-   # ブランチは自動削除される設定
+   **GitHub MCP使用**: マージは`mcp__github__merge_pull_request`ツールを使用します：
    ```
+   mcp__github__merge_pull_request:
+   - merge_method: "squash" (Squash and Merge)
+   - commit_title: 適切なコミットタイトル
+   - commit_message: 詳細なコミットメッセージ
+   ```
+   ブランチは自動削除される設定です。
 
 ### PR作成時のガイドライン
 
@@ -262,8 +269,7 @@ git pull origin main
 git checkout -b hotfix/critical-bug-description
 # 修正・テスト・コミット
 git push origin hotfix/critical-bug-description
-gh pr create --title "hotfix: critical bug description" --body "緊急修正の詳細"
-# 即座にマージ
+# GitHub MCPを使用してPR作成・マージ (Claude Codeが自動実行)
 ```
 
 ## YOU SHOULD DO
