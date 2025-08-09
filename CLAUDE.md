@@ -35,9 +35,15 @@ uv run pytest --tb=long                # Detailed traceback
 # Update OpenAPI specification
 uv run python scripts/update_openapi_spec.py  # Update resources/openapi-spec.json from latest Authlete docs
 
+# Clean up test services
+uv run python scripts/cleanup_test_services.py  # Delete services with "pytest-" prefix
+
 # Lint and format code
-ruff check authlete_mcp_server.py
-ruff format authlete_mcp_server.py
+ruff check src/ tests/ scripts/
+ruff format src/ tests/ scripts/
+
+# Lint YAML files
+uv run yamllint .github/                # Lint YAML files with yamllint
 ```
 
 ## Environment Configuration
@@ -135,6 +141,144 @@ When implementing or modifying MCP tools, follow these established patterns:
 - **Extended Client Operations**: Authorization, scopes, and token management for clients
 - **JOSE Operations**: JWT/JWS/JWE generation and verification utilities
 
-## YOU SHOUD DO
+## GitHub Development Workflow
+
+このプロジェクトでは、機能追加やバグ修正において以下のGitHubワークフローを採用します：
+
+### ブランチ戦略
+- **main**: 安定版リリースブランチ。常にデプロイ可能な状態を維持
+- **feature branches**: 機能追加・修正用のブランチ（命名規則: `feature/issue-description`, `fix/bug-description`）
+
+### 基本的な開発フロー
+
+1. **Issue作成 (Optional)**
+   ```bash
+   # GitHubでIssueを作成して作業内容を明確化
+   # 特に大きな機能追加の場合は必須
+   ```
+
+2. **機能ブランチの作成**
+   ```bash
+   # mainから最新のブランチを作成
+   git checkout main
+   git pull origin main
+   git checkout -b feature/add-new-api-endpoints
+   ```
+
+3. **開発・テスト・コミット**
+   ```bash
+   # 開発
+   # 必ずテストを実行してから次のステップへ
+   uv run pytest -m unit
+   uv run ruff check src/ tests/ scripts/
+   uv run ruff format src/ tests/ scripts/
+   
+   # コミット
+   git add .
+   git commit -m "feat: add new token management API endpoints
+   
+   - Add list_issued_tokens, create_access_token, update_access_token
+   - Add comprehensive test coverage for token operations  
+   - Update OpenAPI spec with new endpoints
+   
+   🤖 Generated with [Claude Code](https://claude.ai/code)
+   
+   Co-Authored-By: Claude <noreply@anthropic.com>"
+   ```
+
+4. **プルリクエスト作成**
+   ```bash
+   # ブランチをプッシュ
+   git push origin feature/add-new-api-endpoints
+   
+   # GitHub CLIを使用してPR作成（推奨）
+   gh pr create --title "feat: add token management API endpoints" --body "$(cat <<'EOF'
+   ## Summary
+   - Add 5 new token management API endpoints (list, create, update, revoke, delete)
+   - Add comprehensive test coverage with 8 new test cases  
+   - Update OpenAPI specification with new endpoint definitions
+   
+   ## Test plan
+   - [x] Unit tests pass (pytest -m unit)
+   - [x] Code quality checks pass (ruff check/format)
+   - [x] All existing tests still pass
+   - [ ] Manual testing with real Authlete API (integration test)
+   
+   🤖 Generated with [Claude Code](https://claude.ai/code)
+   EOF
+   )"
+   ```
+
+5. **レビュープロセス**
+   ```bash
+   # レビューリクエスト（自動的にwatahaniがレビューワーに設定されます）
+   # GitHub Actionsによる自動チェック
+   # - Tests (複数Python版でのテスト実行)
+   # - Linting and Formatting
+   # - Security Scan (bandit)
+   # - YAML Lint
+   ```
+
+6. **マージ**
+   ```bash
+   # レビュー承認後、GitHubでSquash and Mergeを実行
+   # ブランチは自動削除される設定
+   ```
+
+### PR作成時のガイドライン
+
+#### PRタイトル規則
+- `feat: 新機能追加の説明`
+- `fix: バグ修正の説明`  
+- `docs: ドキュメント更新`
+- `test: テスト追加・修正`
+- `refactor: リファクタリング`
+- `chore: 依存関係更新、設定変更等`
+
+#### PR説明テンプレート
+```markdown
+## Summary
+- 変更内容の箇条書きサマリー
+- なぜこの変更が必要なのかの背景
+
+## Test plan
+- [ ] Unit tests pass (pytest -m unit)  
+- [ ] Integration tests pass (pytest -m integration) ※実際のAPI呼び出しが必要な場合
+- [ ] Code quality checks pass (ruff check/format)
+- [ ] Manual testing completed ※手動テストが必要な場合
+
+## Breaking Changes
+- 破壊的変更がある場合のみ記載
+- API変更、設定変更等
+
+🤖 Generated with [Claude Code](https://claude.ai/code)
+```
+
+### レビュー観点
+1. **機能性**: 要求仕様を満たしているか
+2. **コード品質**: 既存パターンに従っているか、可読性は十分か
+3. **テスト**: 適切なテストカバレッジがあるか
+4. **パフォーマンス**: パフォーマンスに影響がないか
+5. **セキュリティ**: セキュリティリスクがないか
+6. **文書化**: 必要に応じてドキュメントが更新されているか
+
+### GitHub Actions自動チェック
+- **Test Workflow**: Python 3.10-3.12での単体・統合テスト
+- **CI Workflow**: API互換性チェック、パフォーマンステスト、カバレッジ生成
+- **OpenAPI Spec Update**: 毎日自動でAuthlete仕様書をチェック・更新PR作成
+
+### Hotfix対応
+緊急バグ修正の場合は、以下の簡素化されたフローを使用：
+```bash
+git checkout main
+git pull origin main  
+git checkout -b hotfix/critical-bug-description
+# 修正・テスト・コミット
+git push origin hotfix/critical-bug-description
+gh pr create --title "hotfix: critical bug description" --body "緊急修正の詳細"
+# 即座にマージ
+```
+
+## YOU SHOULD DO
 
 1. Please respond in Japanese.
