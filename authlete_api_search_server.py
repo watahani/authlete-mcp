@@ -252,21 +252,22 @@ class AuthleteApiSearcher:
         for row in results:
             path, method, operation_id, summary, description, tags, sample_languages, sample_codes, score = row
 
-            # Parse JSON data
-            try:
-                tags_list = json.loads(tags) if tags else []
-                sample_languages_list = json.loads(sample_languages) if sample_languages else []
-            except json.JSONDecodeError:
-                tags_list = []
-                sample_languages_list = []
+            # Handle tags and sample_languages (already as lists from DuckDB)
+            tags_list = tags if tags else []
+            sample_languages_list = sample_languages if sample_languages else []
 
+            # Truncate description to first 100 characters for search results
+            truncated_description = (description or "")[:100]
+            if len(description or "") > 100:
+                truncated_description += "..."
+            
             formatted.append(
                 {
                     "path": path,
                     "method": method,
                     "operation_id": operation_id,
                     "summary": summary or "",
-                    "description": description or "",
+                    "description": truncated_description,
                     "tags": tags_list,
                     "sample_languages": sample_languages_list,
                     "score": float(score),
@@ -275,19 +276,36 @@ class AuthleteApiSearcher:
 
         return formatted
 
-    async def get_api_detail(self, path: str, method: str, language: str | None = None) -> dict[str, Any] | None:
-        """Get detailed API information"""
+    async def get_api_detail(
+        self, path: str = None, method: str = None, operation_id: str = None, language: str | None = None
+    ) -> dict[str, Any] | None:
+        """Get detailed information for a specific API by path+method or operationId"""
 
         try:
-            result = self.conn.execute(
-                """
-                SELECT path, method, operation_id, summary, description, tags,
-                       parameters, request_body, responses, sample_codes
-                FROM api_endpoints
-                WHERE path = ? AND method = ?
-            """,
-                [path, method.upper()],
-            ).fetchone()
+            if operation_id:
+                # Search by operationId
+                result = self.conn.execute(
+                    """
+                    SELECT path, method, operation_id, summary, description, tags,
+                           parameters, request_body, responses, sample_codes
+                    FROM api_endpoints
+                    WHERE operation_id = ?
+                """,
+                    [operation_id],
+                ).fetchone()
+            elif path and method:
+                # Search by path and method
+                result = self.conn.execute(
+                    """
+                    SELECT path, method, operation_id, summary, description, tags,
+                           parameters, request_body, responses, sample_codes
+                    FROM api_endpoints
+                    WHERE path = ? AND method = ?
+                """,
+                    [path, method.upper()],
+                ).fetchone()
+            else:
+                return None
 
             if not result:
                 return None
@@ -305,15 +323,14 @@ class AuthleteApiSearcher:
                 sample_codes,
             ) = result
 
-            # Parse JSON data
+            # Parse JSON data (tags are already lists from DuckDB)
+            tags_list = tags if tags else []
             try:
-                tags_list = json.loads(tags) if tags else []
                 parameters_list = json.loads(parameters) if parameters else []
                 request_body_obj = json.loads(request_body) if request_body else None
                 responses_obj = json.loads(responses) if responses else {}
                 sample_codes_dict = json.loads(sample_codes) if sample_codes else {}
             except json.JSONDecodeError:
-                tags_list = []
                 parameters_list = []
                 request_body_obj = None
                 responses_obj = {}
@@ -363,7 +380,7 @@ async def handle_list_tools() -> list[Tool]:
     return [
         Tool(
             name="search_apis",
-            description="Natural language API search. Semantic matching like 'revoke token' → 'This API revokes access tokens'. High-speed search with DuckDB.",
+            description="Natural language API search. Semantic matching like 'revoke token' → 'This API revokes access tokens'. Returns description truncated to ~100 chars. Use get_api_detail for full information.",
             inputSchema={
                 "type": "object",
                 "properties": {
@@ -403,14 +420,15 @@ async def handle_list_tools() -> list[Tool]:
             inputSchema={
                 "type": "object",
                 "properties": {
-                    "path": {"type": "string", "description": "API path (use path obtained from search_apis)"},
-                    "method": {"type": "string", "description": "HTTP method (use method obtained from search_apis)"},
+                    "path": {"type": "string", "description": "API path (required if operation_id not provided)"},
+                    "method": {"type": "string", "description": "HTTP method (required if operation_id not provided)"},
+                    "operation_id": {"type": "string", "description": "Operation ID (alternative to path+method)"},
                     "language": {
                         "type": "string",
                         "description": "Sample code language (curl, javascript, python, java, etc.)",
                     },
                 },
-                "required": ["path", "method"],
+                "anyOf": [{"required": ["path", "method"]}, {"required": ["operation_id"]}],
             },
         ),
         Tool(
@@ -419,11 +437,13 @@ async def handle_list_tools() -> list[Tool]:
             inputSchema={
                 "type": "object",
                 "properties": {
-                    "path": {"type": "string", "description": "API path"},
-                    "method": {"type": "string", "description": "HTTP method"},
+                    "path": {"type": "string", "description": "API path (required if operation_id not provided)"},
+                    "method": {"type": "string", "description": "HTTP method (required if operation_id not provided)"},
+                    "operation_id": {"type": "string", "description": "Operation ID (alternative to path+method)"},
                     "language": {"type": "string", "description": "Programming language"},
                 },
-                "required": ["path", "method", "language"],
+                "required": ["language"],
+                "anyOf": [{"required": ["path", "method", "language"]}, {"required": ["operation_id", "language"]}],
             },
         ),
     ]
@@ -467,12 +487,17 @@ async def handle_call_tool(name: str, arguments: dict[str, Any]) -> list[TextCon
         try:
             path = arguments.get("path")
             method = arguments.get("method")
+            operation_id = arguments.get("operation_id")
             language = arguments.get("language")
 
-            if not path or not method:
-                return [TextContent(type="text", text="path and method parameters are required.")]
+            if not operation_id and (not path or not method):
+                return [
+                    TextContent(
+                        type="text", text="Either 'operation_id' or both 'path' and 'method' parameters are required."
+                    )
+                ]
 
-            detail = await searcher.get_api_detail(path, method, language)
+            detail = await searcher.get_api_detail(path, method, operation_id, language)
 
             if not detail:
                 return [TextContent(type="text", text=f"API details not found: {method} {path}")]
@@ -486,12 +511,20 @@ async def handle_call_tool(name: str, arguments: dict[str, Any]) -> list[TextCon
         try:
             path = arguments.get("path")
             method = arguments.get("method")
+            operation_id = arguments.get("operation_id")
             language = arguments.get("language")
 
-            if not all([path, method, language]):
-                return [TextContent(type="text", text="path, method, and language parameters are all required.")]
+            if not language:
+                return [TextContent(type="text", text="language parameter is required.")]
 
-            detail = await searcher.get_api_detail(path, method, language)
+            if not operation_id and (not path or not method):
+                return [
+                    TextContent(
+                        type="text", text="Either 'operation_id' or both 'path' and 'method' parameters are required."
+                    )
+                ]
+
+            detail = await searcher.get_api_detail(path, method, operation_id, language)
 
             if not detail or not detail.get("sample_code"):
                 return [TextContent(type="text", text=f"Sample code not found: {method} {path} ({language})")]
