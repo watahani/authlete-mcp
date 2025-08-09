@@ -45,6 +45,10 @@ uv run ruff check --fix authlete_mcp_server.py tests/      # Auto-fix fixable er
 
 # Lint YAML files
 uv run yamllint .github/                # Lint YAML files with yamllint
+
+# Set up Git hooks for automated quality checks
+./setup-hooks.sh                        # Install pre-commit hooks (run once)
+# Pre-commit hooks will automatically run: linting, formatting, tests, and database validation
 ```
 
 ## Environment Configuration

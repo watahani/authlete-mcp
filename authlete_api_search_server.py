@@ -123,11 +123,11 @@ class AuthleteApiSearcher:
 
         # Query with relevance score calculation (summary/path priority)
         sql = f"""
-        SELECT 
-            path, method, operation_id, summary, description, tags, 
+        SELECT
+            path, method, operation_id, summary, description, tags,
             sample_languages, sample_codes,
             (
-                CASE 
+                CASE
                     -- Complete phrase match (highest score)
                     WHEN LOWER(search_content) LIKE ? THEN 150
                     -- Summary partial match (very high score)
@@ -163,9 +163,9 @@ class AuthleteApiSearcher:
             escaped_word = word.replace("'", "''")
             # Give high scores for summary/path matches
             expressions.append(f"""
-                CASE 
+                CASE
                     WHEN LOWER(summary) LIKE '%{escaped_word}%' THEN 15
-                    WHEN LOWER(path) LIKE '%{escaped_word}%' THEN 12 
+                    WHEN LOWER(path) LIKE '%{escaped_word}%' THEN 12
                     WHEN LOWER(description) LIKE '%{escaped_word}%' THEN 8
                     WHEN LOWER(search_content) LIKE '%{escaped_word}%' THEN 5
                     ELSE 0
@@ -186,10 +186,10 @@ class AuthleteApiSearcher:
         where_clause = " AND ".join(where_conditions)
 
         sql = f"""
-        SELECT 
+        SELECT
             path, method, operation_id, summary, description, tags,
-            sample_languages, sample_codes, 
-            CASE 
+            sample_languages, sample_codes,
+            CASE
                 WHEN path = ? THEN 100
                 WHEN LOWER(path) LIKE ? THEN 80
                 ELSE 50
@@ -225,12 +225,12 @@ class AuthleteApiSearcher:
         where_clause = " AND ".join(where_conditions)
 
         sql = f"""
-        SELECT 
+        SELECT
             path, method, operation_id, summary, description, tags,
             sample_languages, sample_codes,
             CASE
                 WHEN LOWER(summary) LIKE ? THEN 100
-                WHEN LOWER(description) LIKE ? THEN 90  
+                WHEN LOWER(description) LIKE ? THEN 90
                 ELSE 30
             END as relevance_score
         FROM api_endpoints
@@ -260,7 +260,7 @@ class AuthleteApiSearcher:
             truncated_description = (description or "")[:100]
             if len(description or "") > 100:
                 truncated_description += "..."
-            
+
             formatted.append(
                 {
                     "path": path,
