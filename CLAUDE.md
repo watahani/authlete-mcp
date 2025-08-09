@@ -39,8 +39,9 @@ uv run python scripts/update_openapi_spec.py  # Update resources/openapi-spec.js
 uv run python scripts/cleanup_test_services.py  # Delete services with "pytest-" prefix
 
 # Lint and format code
-ruff check src/ tests/ scripts/
-ruff format src/ tests/ scripts/
+uv run ruff check authlete_mcp_server.py tests/ scripts/    # Check for linting errors
+uv run ruff format authlete_mcp_server.py tests/ scripts/   # Auto-format files
+uv run ruff check --fix authlete_mcp_server.py tests/      # Auto-fix fixable errors
 
 # Lint YAML files
 uv run yamllint .github/                # Lint YAML files with yamllint
@@ -261,15 +262,21 @@ When implementing or modifying MCP tools, follow these established patterns:
 - **CI Workflow**: API互換性チェック、パフォーマンステスト、カバレッジ生成
 - **OpenAPI Spec Update**: 毎日自動でAuthlete仕様書をチェック・更新PR作成
 
-### Hotfix対応
-緊急バグ修正の場合は、以下の簡素化されたフローを使用：
+### CI/CD失敗時の対応
+
+GitHub Actionsでlintingやテストが失敗した場合の修正方法：
+
+#### Lintingエラーの修正
 ```bash
-git checkout main
-git pull origin main  
-git checkout -b hotfix/critical-bug-description
-# 修正・テスト・コミット
-git push origin hotfix/critical-bug-description
-# GitHub MCPを使用してPR作成・マージ (Claude Codeが自動実行)
+# エラーの確認
+uv run ruff check authlete_mcp_server.py tests/
+
+# 自動修正可能なエラーを修正
+uv run ruff check --fix authlete_mcp_server.py tests/
+
+# フォーマットの修正
+uv run ruff format authlete_mcp_server.py tests/
+
 ```
 
 ## YOU SHOULD DO

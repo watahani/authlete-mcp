@@ -1,7 +1,6 @@
 """Tests for JWKS generation functionality."""
 
 import json
-from unittest.mock import AsyncMock, patch
 
 import pytest
 from mcp import ClientSession, StdioServerParameters
@@ -12,8 +11,7 @@ from mcp.client.stdio import stdio_client
 async def test_jwks_generation_tool_exists():
     """Test that generate_jwks tool is available."""
     server_params = StdioServerParameters(
-        command="uv", args=["run", "python", "authlete_mcp_server.py"], 
-        env={"ORGANIZATION_ACCESS_TOKEN": "test-token"}
+        command="uv", args=["run", "python", "authlete_mcp_server.py"], env={"ORGANIZATION_ACCESS_TOKEN": "test-token"}
     )
 
     async with stdio_client(server_params) as (read_stream, write_stream):
@@ -36,8 +34,7 @@ async def test_jwks_generation_tool_exists():
 async def test_generate_jwks_default_rsa():
     """Test RSA key generation with default parameters."""
     server_params = StdioServerParameters(
-        command="uv", args=["run", "python", "authlete_mcp_server.py"],
-        env={"ORGANIZATION_ACCESS_TOKEN": "test-token"}
+        command="uv", args=["run", "python", "authlete_mcp_server.py"], env={"ORGANIZATION_ACCESS_TOKEN": "test-token"}
     )
 
     async with stdio_client(server_params) as (read_stream, write_stream):
@@ -56,7 +53,7 @@ async def test_generate_jwks_default_rsa():
             assert "jwks" in data
             assert "pub" in data
             assert data["jwk"]["kty"] == "RSA"
-            
+
             # Verify RSA key components exist
             jwk = data["jwk"]
             assert "n" in jwk  # RSA modulus
@@ -67,8 +64,7 @@ async def test_generate_jwks_default_rsa():
 async def test_generate_jwks_ec_with_curve():
     """Test EC key generation with curve parameter."""
     server_params = StdioServerParameters(
-        command="uv", args=["run", "python", "authlete_mcp_server.py"],
-        env={"ORGANIZATION_ACCESS_TOKEN": "test-token"}
+        command="uv", args=["run", "python", "authlete_mcp_server.py"], env={"ORGANIZATION_ACCESS_TOKEN": "test-token"}
     )
 
     async with stdio_client(server_params) as (read_stream, write_stream):
@@ -76,12 +72,9 @@ async def test_generate_jwks_ec_with_curve():
             await session.initialize()
 
             # Call generate_jwks tool with EC parameters
-            result = await session.call_tool("generate_jwks", {
-                "kty": "ec",
-                "crv": "P-256",
-                "use": "sig",
-                "alg": "ES256"
-            })
+            result = await session.call_tool(
+                "generate_jwks", {"kty": "ec", "crv": "P-256", "use": "sig", "alg": "ES256"}
+            )
             assert result.content
 
             response_text = result.content[0].text
@@ -91,7 +84,7 @@ async def test_generate_jwks_ec_with_curve():
             assert data["jwk"]["crv"] == "P-256"
             assert data["jwk"]["use"] == "sig"
             assert data["jwk"]["alg"] == "ES256"
-            
+
             # Verify EC key components exist
             jwk = data["jwk"]
             assert "x" in jwk  # EC x coordinate
@@ -102,8 +95,7 @@ async def test_generate_jwks_ec_with_curve():
 async def test_generate_jwks_ec_missing_curve():
     """Test EC key generation fails without curve parameter."""
     server_params = StdioServerParameters(
-        command="uv", args=["run", "python", "authlete_mcp_server.py"],
-        env={"ORGANIZATION_ACCESS_TOKEN": "test-token"}
+        command="uv", args=["run", "python", "authlete_mcp_server.py"], env={"ORGANIZATION_ACCESS_TOKEN": "test-token"}
     )
 
     async with stdio_client(server_params) as (read_stream, write_stream):
@@ -111,10 +103,7 @@ async def test_generate_jwks_ec_missing_curve():
             await session.initialize()
 
             # Call generate_jwks tool with EC but no curve
-            result = await session.call_tool("generate_jwks", {
-                "kty": "ec",
-                "use": "sig"
-            })
+            result = await session.call_tool("generate_jwks", {"kty": "ec", "use": "sig"})
             assert result.content
 
             response_text = result.content[0].text
@@ -125,8 +114,7 @@ async def test_generate_jwks_ec_missing_curve():
 async def test_generate_jwks_with_x509():
     """Test key generation with X.509 certificate."""
     server_params = StdioServerParameters(
-        command="uv", args=["run", "python", "authlete_mcp_server.py"],
-        env={"ORGANIZATION_ACCESS_TOKEN": "test-token"}
+        command="uv", args=["run", "python", "authlete_mcp_server.py"], env={"ORGANIZATION_ACCESS_TOKEN": "test-token"}
     )
 
     async with stdio_client(server_params) as (read_stream, write_stream):
@@ -134,12 +122,7 @@ async def test_generate_jwks_with_x509():
             await session.initialize()
 
             # Call generate_jwks tool with X.509
-            result = await session.call_tool("generate_jwks", {
-                "kty": "rsa",
-                "x509": True,
-                "size": 2048,
-                "use": "sig"
-            })
+            result = await session.call_tool("generate_jwks", {"kty": "rsa", "x509": True, "size": 2048, "use": "sig"})
             assert result.content
 
             response_text = result.content[0].text
@@ -148,7 +131,7 @@ async def test_generate_jwks_with_x509():
             assert "cert" in data
             assert "x509pub" in data
             assert "x509priv" in data
-            
+
             # Verify X.509 certificate format
             assert data["cert"].startswith("-----BEGIN CERTIFICATE-----")
             assert data["x509pub"].startswith("-----BEGIN PUBLIC KEY-----")
@@ -159,8 +142,7 @@ async def test_generate_jwks_with_x509():
 async def test_generate_jwks_okp_with_curve():
     """Test OKP key generation with Ed25519 curve."""
     server_params = StdioServerParameters(
-        command="uv", args=["run", "python", "authlete_mcp_server.py"],
-        env={"ORGANIZATION_ACCESS_TOKEN": "test-token"}
+        command="uv", args=["run", "python", "authlete_mcp_server.py"], env={"ORGANIZATION_ACCESS_TOKEN": "test-token"}
     )
 
     async with stdio_client(server_params) as (read_stream, write_stream):
@@ -168,12 +150,9 @@ async def test_generate_jwks_okp_with_curve():
             await session.initialize()
 
             # Call generate_jwks tool with OKP parameters
-            result = await session.call_tool("generate_jwks", {
-                "kty": "okp",
-                "crv": "Ed25519",
-                "use": "sig",
-                "alg": "EdDSA"
-            })
+            result = await session.call_tool(
+                "generate_jwks", {"kty": "okp", "crv": "Ed25519", "use": "sig", "alg": "EdDSA"}
+            )
             assert result.content
 
             response_text = result.content[0].text
@@ -183,7 +162,7 @@ async def test_generate_jwks_okp_with_curve():
             assert data["jwk"]["crv"] == "Ed25519"
             assert data["jwk"]["use"] == "sig"
             assert data["jwk"]["alg"] == "EdDSA"
-            
+
             # Verify OKP key components exist
             jwk = data["jwk"]
             assert "x" in jwk  # OKP x coordinate
@@ -193,8 +172,7 @@ async def test_generate_jwks_okp_with_curve():
 async def test_generate_jwks_oct_with_size():
     """Test oct (symmetric) key generation with custom size."""
     server_params = StdioServerParameters(
-        command="uv", args=["run", "python", "authlete_mcp_server.py"],
-        env={"ORGANIZATION_ACCESS_TOKEN": "test-token"}
+        command="uv", args=["run", "python", "authlete_mcp_server.py"], env={"ORGANIZATION_ACCESS_TOKEN": "test-token"}
     )
 
     async with stdio_client(server_params) as (read_stream, write_stream):
@@ -202,12 +180,7 @@ async def test_generate_jwks_oct_with_size():
             await session.initialize()
 
             # Call generate_jwks tool with oct parameters
-            result = await session.call_tool("generate_jwks", {
-                "kty": "oct",
-                "size": 256,
-                "use": "sig",
-                "alg": "HS256"
-            })
+            result = await session.call_tool("generate_jwks", {"kty": "oct", "size": 256, "use": "sig", "alg": "HS256"})
             assert result.content
 
             response_text = result.content[0].text
@@ -216,7 +189,7 @@ async def test_generate_jwks_oct_with_size():
             assert data["jwk"]["kty"] == "oct"
             assert data["jwk"]["use"] == "sig"
             assert data["jwk"]["alg"] == "HS256"
-            
+
             # Verify oct key components exist
             jwk = data["jwk"]
             assert "k" in jwk  # Symmetric key value
@@ -226,8 +199,7 @@ async def test_generate_jwks_oct_with_size():
 async def test_generate_jwks_with_kid_generation():
     """Test key generation with automatic key ID generation."""
     server_params = StdioServerParameters(
-        command="uv", args=["run", "python", "authlete_mcp_server.py"],
-        env={"ORGANIZATION_ACCESS_TOKEN": "test-token"}
+        command="uv", args=["run", "python", "authlete_mcp_server.py"], env={"ORGANIZATION_ACCESS_TOKEN": "test-token"}
     )
 
     async with stdio_client(server_params) as (read_stream, write_stream):
@@ -235,17 +207,14 @@ async def test_generate_jwks_with_kid_generation():
             await session.initialize()
 
             # Call generate_jwks tool with date generation
-            result = await session.call_tool("generate_jwks", {
-                "kty": "rsa",
-                "gen": "date"
-            })
+            result = await session.call_tool("generate_jwks", {"kty": "rsa", "gen": "date"})
             assert result.content
 
             response_text = result.content[0].text
             data = json.loads(response_text)
 
             assert "kid" in data["jwk"]
-            
+
             # The key ID should be generated automatically
             kid = data["jwk"]["kid"]
             assert kid is not None
@@ -256,8 +225,7 @@ async def test_generate_jwks_with_kid_generation():
 async def test_generate_jwks_real_api():
     """Integration test with actual mkjwk.org API."""
     server_params = StdioServerParameters(
-        command="uv", args=["run", "python", "authlete_mcp_server.py"],
-        env={"ORGANIZATION_ACCESS_TOKEN": "test-token"}
+        command="uv", args=["run", "python", "authlete_mcp_server.py"], env={"ORGANIZATION_ACCESS_TOKEN": "test-token"}
     )
 
     async with stdio_client(server_params) as (read_stream, write_stream):
@@ -265,12 +233,9 @@ async def test_generate_jwks_real_api():
             await session.initialize()
 
             # Call generate_jwks tool with real API
-            result = await session.call_tool("generate_jwks", {
-                "kty": "rsa",
-                "size": 2048,
-                "use": "sig",
-                "alg": "RS256"
-            })
+            result = await session.call_tool(
+                "generate_jwks", {"kty": "rsa", "size": 2048, "use": "sig", "alg": "RS256"}
+            )
             assert result.content
 
             response_text = result.content[0].text
@@ -280,7 +245,7 @@ async def test_generate_jwks_real_api():
             assert "jwk" in data
             assert "jwks" in data
             assert "pub" in data
-            
+
             # Verify RSA key components
             jwk = data["jwk"]
             assert jwk["kty"] == "RSA"
@@ -289,13 +254,13 @@ async def test_generate_jwks_real_api():
             assert "n" in jwk  # RSA modulus
             assert "e" in jwk  # RSA exponent
             assert "d" in jwk  # Private exponent (private key)
-            
+
             # Verify JWKS structure
             jwks = data["jwks"]
             assert "keys" in jwks
             assert len(jwks["keys"]) == 1
             assert jwks["keys"][0]["kty"] == "RSA"
-            
+
             # Verify public key doesn't have private components
             pub = data["pub"]
             assert pub["kty"] == "RSA"

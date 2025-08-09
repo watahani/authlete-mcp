@@ -3,13 +3,12 @@
 A Model Context Protocol server that provides tools for managing Authlete services and clients.
 """
 
-import asyncio
 import json
 import os
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import httpx
-from mcp.server.fastmcp import FastMCP, Context
+from mcp.server.fastmcp import Context, FastMCP
 from pydantic import BaseModel, Field
 
 mcp = FastMCP("Authlete Management Server")
@@ -24,7 +23,7 @@ DEFAULT_ORGANIZATION_ID = os.getenv("ORGANIZATION_ID", "")
 
 class AuthleteConfig(BaseModel):
     """Configuration for Authlete API."""
-    
+
     api_key: str = Field(..., description="Organization access token")
     base_url: str = Field(default=AUTHLETE_BASE_URL, description="Authlete base URL")
     idp_url: str = Field(default=AUTHLETE_IDP_URL, description="Authlete IdP URL")
@@ -33,70 +32,71 @@ class AuthleteConfig(BaseModel):
 
 class Scope(BaseModel):
     """Scope definition."""
+
     name: str = Field(..., description="Scope name")
     defaultEntry: bool = Field(False, description="Whether this scope is default")
-    description: Optional[str] = Field(None, description="Scope description")
+    description: str | None = Field(None, description="Scope description")
 
 
 class ServiceDetail(BaseModel):
     """Detailed service configuration based on Authlete Service schema."""
-    
+
     serviceName: str = Field(..., description="The name of this service")
-    description: Optional[str] = Field(None, description="The description about the service")
-    issuer: Optional[str] = Field(None, description="The issuer identifier of the service. A URL that starts with https://")
-    
+    description: str | None = Field(None, description="The description about the service")
+    issuer: str | None = Field(
+        None, description="The issuer identifier of the service. A URL that starts with https://"
+    )
+
     # Supported features
-    supportedScopes: Optional[List[Scope]] = Field(None, description="Scopes supported by the service")
-    supportedResponseTypes: Optional[List[str]] = Field(None, description="Response types supported (e.g., CODE, ID_TOKEN)")
-    supportedGrantTypes: Optional[List[str]] = Field(None, description="Grant types supported (e.g., AUTHORIZATION_CODE, CLIENT_CREDENTIALS)")
-    supportedTokenAuthMethods: Optional[List[str]] = Field(None, description="Token endpoint authentication methods")
-    
+    supportedScopes: list[Scope] | None = Field(None, description="Scopes supported by the service")
+    supportedResponseTypes: list[str] | None = Field(
+        None, description="Response types supported (e.g., CODE, ID_TOKEN)"
+    )
+    supportedGrantTypes: list[str] | None = Field(
+        None, description="Grant types supported (e.g., AUTHORIZATION_CODE, CLIENT_CREDENTIALS)"
+    )
+    supportedTokenAuthMethods: list[str] | None = Field(None, description="Token endpoint authentication methods")
+
     # Endpoints
-    authorizationEndpoint: Optional[str] = Field(None, description="Authorization endpoint URL")
-    tokenEndpoint: Optional[str] = Field(None, description="Token endpoint URL")
-    userInfoEndpoint: Optional[str] = Field(None, description="UserInfo endpoint URL")
-    revocationEndpoint: Optional[str] = Field(None, description="Token revocation endpoint URL")
-    jwksUri: Optional[str] = Field(None, description="JWK Set endpoint URL")
-    
+    authorizationEndpoint: str | None = Field(None, description="Authorization endpoint URL")
+    tokenEndpoint: str | None = Field(None, description="Token endpoint URL")
+    userInfoEndpoint: str | None = Field(None, description="UserInfo endpoint URL")
+    revocationEndpoint: str | None = Field(None, description="Token revocation endpoint URL")
+    jwksUri: str | None = Field(None, description="JWK Set endpoint URL")
+
     # Security settings
-    pkceRequired: Optional[bool] = Field(None, description="Whether PKCE is required")
-    pkceS256Required: Optional[bool] = Field(None, description="Whether S256 is required for PKCE")
-    
+    pkceRequired: bool | None = Field(None, description="Whether PKCE is required")
+    pkceS256Required: bool | None = Field(None, description="Whether S256 is required for PKCE")
+
     # Token settings
-    accessTokenDuration: Optional[int] = Field(None, description="Access token duration in seconds")
-    refreshTokenDuration: Optional[int] = Field(None, description="Refresh token duration in seconds")
-    idTokenDuration: Optional[int] = Field(None, description="ID token duration in seconds")
-    
+    accessTokenDuration: int | None = Field(None, description="Access token duration in seconds")
+    refreshTokenDuration: int | None = Field(None, description="Refresh token duration in seconds")
+    idTokenDuration: int | None = Field(None, description="ID token duration in seconds")
+
     # Advanced settings
-    jwks: Optional[str] = Field(None, description="JWK Set document content")
-    directAuthorizationEndpointEnabled: Optional[bool] = Field(None, description="Enable direct authorization endpoint")
-    directTokenEndpointEnabled: Optional[bool] = Field(None, description="Enable direct token endpoint")
-    directUserInfoEndpointEnabled: Optional[bool] = Field(None, description="Enable direct userinfo endpoint")
+    jwks: str | None = Field(None, description="JWK Set document content")
+    directAuthorizationEndpointEnabled: bool | None = Field(None, description="Enable direct authorization endpoint")
+    directTokenEndpointEnabled: bool | None = Field(None, description="Enable direct token endpoint")
+    directUserInfoEndpointEnabled: bool | None = Field(None, description="Enable direct userinfo endpoint")
 
 
 class ClientCreateRequest(BaseModel):
     """Request model for creating a client."""
-    
+
     name: str = Field(..., description="Client name")
-    description: Optional[str] = Field(None, description="Client description")
-    client_type: Optional[str] = Field(None, description="Client type")
-    redirect_uris: Optional[List[str]] = Field(None, description="Redirect URIs")
+    description: str | None = Field(None, description="Client description")
+    client_type: str | None = Field(None, description="Client type")
+    redirect_uris: list[str] | None = Field(None, description="Redirect URIs")
 
 
 async def make_authlete_request(
-    method: str,
-    endpoint: str,
-    config: AuthleteConfig,
-    data: Optional[Dict[str, Any]] = None
-) -> Dict[str, Any]:
+    method: str, endpoint: str, config: AuthleteConfig, data: dict[str, Any] | None = None
+) -> dict[str, Any]:
     """Make a request to the Authlete API."""
-    
+
     url = f"{config.base_url}/api/{endpoint}"
-    headers = {
-        "Authorization": f"Bearer {config.api_key}",
-        "Content-Type": "application/json"
-    }
-    
+    headers = {"Authorization": f"Bearer {config.api_key}", "Content-Type": "application/json"}
+
     async with httpx.AsyncClient() as client:
         if method.upper() == "GET":
             response = await client.get(url, headers=headers)
@@ -108,34 +108,28 @@ async def make_authlete_request(
             response = await client.delete(url, headers=headers)
         else:
             raise ValueError(f"Unsupported HTTP method: {method}")
-    
+
     if response.status_code >= 400:
         error_detail = response.text
         try:
             error_json = response.json()
             if "resultMessage" in error_json:
                 error_detail = f"Authlete API Error: {error_json['resultMessage']}"
-        except:
+        except json.JSONDecodeError:
             pass
         raise httpx.HTTPStatusError(error_detail, request=response.request, response=response)
-    
+
     return response.json()
 
 
 async def make_authlete_idp_request(
-    method: str,
-    endpoint: str,
-    config: AuthleteConfig,
-    data: Optional[Dict[str, Any]] = None
-) -> Dict[str, Any]:
+    method: str, endpoint: str, config: AuthleteConfig, data: dict[str, Any] | None = None
+) -> dict[str, Any]:
     """Make a request to the Authlete IdP API."""
-    
+
     url = f"{config.idp_url}/api/{endpoint}"
-    headers = {
-        "Authorization": f"Bearer {config.api_key}",
-        "Content-Type": "application/json"
-    }
-    
+    headers = {"Authorization": f"Bearer {config.api_key}", "Content-Type": "application/json"}
+
     async with httpx.AsyncClient() as client:
         if method.upper() == "GET":
             response = await client.get(url, headers=headers)
@@ -147,25 +141,25 @@ async def make_authlete_idp_request(
             response = await client.delete(url, headers=headers)
         else:
             raise ValueError(f"Unsupported HTTP method: {method}")
-    
+
     if response.status_code >= 400:
         error_detail = response.text
         try:
             error_json = response.json()
             if "resultMessage" in error_json:
                 error_detail = f"Authlete IdP API Error: {error_json['resultMessage']}"
-        except:
+        except json.JSONDecodeError:
             pass
         raise httpx.HTTPStatusError(error_detail, request=response.request, response=response)
-    
-    # Handle 204 No Content (successful deletion)  
+
+    # Handle 204 No Content (successful deletion)
     if response.status_code == 204:
         return {"success": True, "message": "Service deleted successfully"}
-    
+
     # Handle empty response body
     try:
         return response.json()
-    except:
+    except json.JSONDecodeError:
         # If response body is empty but status is success, return success message
         if 200 <= response.status_code < 300:
             return {"success": True, "message": f"Operation completed with status {response.status_code}"}
@@ -174,14 +168,9 @@ async def make_authlete_idp_request(
 
 # Service Management Tools
 @mcp.tool()
-async def create_service(
-    name: str,
-    organization_id: str = "",
-    description: str = "",
-    ctx: Context = None
-) -> str:
+async def create_service(name: str, organization_id: str = "", description: str = "", ctx: Context = None) -> str:
     """Create a new Authlete service via IdP with basic configuration.
-    
+
     Args:
         name: Service name
         organization_id: Organization ID (if empty, uses ORGANIZATION_ID env var)
@@ -189,13 +178,13 @@ async def create_service(
     """
     if not DEFAULT_API_KEY:
         return "Error: ORGANIZATION_ACCESS_TOKEN environment variable not set"
-    
+
     org_id = organization_id if organization_id else DEFAULT_ORGANIZATION_ID
     if not org_id:
         return "Error: organization_id parameter or ORGANIZATION_ID environment variable must be set"
-    
+
     config = AuthleteConfig(api_key=DEFAULT_API_KEY)
-    
+
     # Create service configuration for IdP API (without number, serviceOwnerNumber, apiKey, cluster)
     service_data = {
         "serviceName": name,
@@ -203,7 +192,7 @@ async def create_service(
         "supportedScopes": [
             {"name": "openid", "defaultEntry": False},
             {"name": "profile", "defaultEntry": False},
-            {"name": "email", "defaultEntry": False}
+            {"name": "email", "defaultEntry": False},
         ],
         "supportedResponseTypes": ["CODE"],
         "supportedGrantTypes": ["AUTHORIZATION_CODE"],
@@ -285,22 +274,18 @@ async def create_service(
         "dpopNonceRequired": False,
         "dpopNonceDuration": 0,
         "clientAssertionAudRestrictedToIssuer": False,
-        "nativeSsoSupported": False
+        "nativeSsoSupported": False,
     }
-    
-    data = {
-        "apiServerId": int(config.api_server_id),
-        "organizationId": int(org_id),
-        "service": service_data
-    }
-    
+
+    data = {"apiServerId": int(config.api_server_id), "organizationId": int(org_id), "service": service_data}
+
     try:
         print(f"DEBUG: Sending request to IdP API with data: {json.dumps(data, indent=2)}")
         result = await make_authlete_idp_request("POST", "service", config, data)
         return json.dumps(result, indent=2)
     except Exception as e:
         print(f"DEBUG: Exception details: {type(e).__name__}: {str(e)}")
-        if hasattr(e, 'response'):
+        if hasattr(e, "response"):
             print(f"DEBUG: Response status: {e.response.status_code}")
             print(f"DEBUG: Response text: {e.response.text}")
         return f"Error creating service: {str(e)}"
@@ -330,10 +315,10 @@ async def create_service_detailed(
     direct_token_endpoint_enabled: bool = True,
     direct_userinfo_endpoint_enabled: bool = True,
     jwks: str = None,
-    ctx: Context = None
+    ctx: Context = None,
 ) -> str:
     """Create a new Authlete service via IdP with detailed configuration.
-    
+
     Args:
         name: Service name
         organization_id: Organization ID (if empty, uses ORGANIZATION_ID env var)
@@ -360,24 +345,21 @@ async def create_service_detailed(
     """
     if not DEFAULT_API_KEY:
         return "Error: ORGANIZATION_ACCESS_TOKEN environment variable not set"
-    
+
     org_id = organization_id if organization_id else DEFAULT_ORGANIZATION_ID
     if not org_id:
         return "Error: organization_id parameter or ORGANIZATION_ID environment variable must be set"
-    
+
     config = AuthleteConfig(api_key=DEFAULT_API_KEY)
-    
+
     try:
         # Parse supported scopes
         scope_list = []
         for scope_name in supported_scopes.split(","):
             scope_name = scope_name.strip()
             if scope_name:
-                scope_list.append({
-                    "name": scope_name,
-                    "defaultEntry": scope_name == "openid"
-                })
-        
+                scope_list.append({"name": scope_name, "defaultEntry": scope_name == "openid"})
+
         # Build service configuration
         service_dict = {
             "serviceName": name,
@@ -393,9 +375,9 @@ async def create_service_detailed(
             "idTokenDuration": id_token_duration,
             "directAuthorizationEndpointEnabled": direct_authorization_endpoint_enabled,
             "directTokenEndpointEnabled": direct_token_endpoint_enabled,
-            "directUserInfoEndpointEnabled": direct_userinfo_endpoint_enabled
+            "directUserInfoEndpointEnabled": direct_userinfo_endpoint_enabled,
         }
-        
+
         # Add optional fields if provided
         if issuer:
             service_dict["issuer"] = issuer
@@ -411,85 +393,70 @@ async def create_service_detailed(
             service_dict["jwksUri"] = jwks_uri
         if jwks:
             service_dict["jwks"] = jwks
-        
-        data = {
-            "apiServerId": int(config.api_server_id),
-            "organizationId": int(org_id),
-            "service": service_dict
-        }
-        
+
+        data = {"apiServerId": int(config.api_server_id), "organizationId": int(org_id), "service": service_dict}
+
         result = await make_authlete_idp_request("POST", "service", config, data)
         return json.dumps(result, indent=2)
-        
+
     except Exception as e:
         return f"Error creating service: {str(e)}"
 
 
 @mcp.tool()
-async def get_service_schema_example(
-    ctx: Context = None
-) -> str:
+async def get_service_schema_example(ctx: Context = None) -> str:
     """Get an example of service configuration schema for create_service_detailed.
-    
+
     This returns a comprehensive JSON example that can be used as a template
     for the service_config parameter in create_service_detailed.
     """
-    
+
     example_config = {
         "serviceName": "My OIDC Service",
         "description": "A comprehensive OpenID Connect service",
         "issuer": "https://example.com/auth",
-        
         "supportedScopes": [
             {"name": "openid", "defaultEntry": True, "description": "OpenID Connect authentication"},
             {"name": "profile", "defaultEntry": False, "description": "Access to profile information"},
             {"name": "email", "defaultEntry": False, "description": "Access to email address"},
             {"name": "address", "defaultEntry": False, "description": "Access to address information"},
             {"name": "phone", "defaultEntry": False, "description": "Access to phone number"},
-            {"name": "offline_access", "defaultEntry": False, "description": "Access to refresh tokens"}
+            {"name": "offline_access", "defaultEntry": False, "description": "Access to refresh tokens"},
         ],
-        
         "supportedResponseTypes": ["CODE", "ID_TOKEN", "CODE_ID_TOKEN"],
         "supportedGrantTypes": ["AUTHORIZATION_CODE", "CLIENT_CREDENTIALS", "REFRESH_TOKEN"],
         "supportedTokenAuthMethods": ["CLIENT_SECRET_BASIC", "CLIENT_SECRET_POST", "NONE"],
-        
         "authorizationEndpoint": "https://example.com/auth/authorize",
-        "tokenEndpoint": "https://example.com/auth/token", 
+        "tokenEndpoint": "https://example.com/auth/token",
         "userInfoEndpoint": "https://example.com/auth/userinfo",
         "revocationEndpoint": "https://example.com/auth/revoke",
         "jwksUri": "https://example.com/auth/jwks",
-        
         "pkceRequired": True,
         "pkceS256Required": True,
-        
         "accessTokenDuration": 3600,
         "refreshTokenDuration": 86400,
         "idTokenDuration": 3600,
-        
         "directAuthorizationEndpointEnabled": True,
         "directTokenEndpointEnabled": True,
-        "directUserInfoEndpointEnabled": True
+        "directUserInfoEndpointEnabled": True,
     }
-    
+
     return json.dumps(example_config, indent=2)
 
 
 @mcp.tool()
-async def get_service(
-    service_api_key: str = "",
-    ctx: Context = None
-) -> str:
+async def get_service(service_api_key: str = "", ctx: Context = None) -> str:
     """Get an Authlete service by API key.
-    
+
     Args:
         service_api_key: Service API key to retrieve (if empty, uses the main token)
     """
     if not DEFAULT_API_KEY:
         return "Error: ORGANIZATION_ACCESS_TOKEN environment variable not set"
-    
+
     config = AuthleteConfig(api_key=DEFAULT_API_KEY)
     key_to_use = service_api_key if service_api_key else DEFAULT_API_KEY
-    
+
     try:
         result = await make_authlete_request("GET", f"{key_to_use}/service/get/", config)
         return json.dumps(result, indent=2)
@@ -498,16 +465,13 @@ async def get_service(
 
 
 @mcp.tool()
-async def list_services(
-    ctx: Context = None
-) -> str:
-    """List all Authlete services.
-    """
+async def list_services(ctx: Context = None) -> str:
+    """List all Authlete services."""
     if not DEFAULT_API_KEY:
         return "Error: ORGANIZATION_ACCESS_TOKEN environment variable not set"
-    
+
     config = AuthleteConfig(api_key=DEFAULT_API_KEY)
-    
+
     try:
         result = await make_authlete_request("GET", "service/get/list", config)
         return json.dumps(result, indent=2)
@@ -516,23 +480,19 @@ async def list_services(
 
 
 @mcp.tool()
-async def update_service(
-    service_data: str,
-    service_api_key: str = "",
-    ctx: Context = None
-) -> str:
+async def update_service(service_data: str, service_api_key: str = "", ctx: Context = None) -> str:
     """Update an Authlete service.
-    
+
     Args:
         service_data: JSON string containing service data to update
         service_api_key: Service API key (if empty, uses the main token)
     """
     if not DEFAULT_API_KEY:
         return "Error: ORGANIZATION_ACCESS_TOKEN environment variable not set"
-    
+
     config = AuthleteConfig(api_key=DEFAULT_API_KEY)
     key_to_use = service_api_key if service_api_key else DEFAULT_API_KEY
-    
+
     try:
         data = json.loads(service_data)
         result = await make_authlete_request("POST", f"{key_to_use}/service/update", config, data)
@@ -544,33 +504,25 @@ async def update_service(
 
 
 @mcp.tool()
-async def delete_service(
-    service_id: str,
-    organization_id: str = "",
-    ctx: Context = None
-) -> str:
+async def delete_service(service_id: str, organization_id: str = "", ctx: Context = None) -> str:
     """Delete an Authlete service via IdP.
-    
+
     Args:
         service_id: Service ID (apiKey) to delete
         organization_id: Organization ID (if empty, uses ORGANIZATION_ID env var)
     """
     if not DEFAULT_API_KEY:
         return "Error: ORGANIZATION_ACCESS_TOKEN environment variable not set"
-    
+
     org_id = organization_id if organization_id else DEFAULT_ORGANIZATION_ID
     if not org_id:
         return "Error: organization_id parameter or ORGANIZATION_ID environment variable must be set"
-    
+
     config = AuthleteConfig(api_key=DEFAULT_API_KEY)
-    
+
     # Try with environment variable values first
-    data = {
-        "serviceId": int(service_id),
-        "apiServerId": int(config.api_server_id),
-        "organizationId": int(org_id)
-    }
-    
+    data = {"serviceId": int(service_id), "apiServerId": int(config.api_server_id), "organizationId": int(org_id)}
+
     try:
         result = await make_authlete_idp_request("POST", "service/remove", config, data)
         return json.dumps(result, indent=2)
@@ -580,23 +532,19 @@ async def delete_service(
 
 # Client Management Tools
 @mcp.tool()
-async def create_client(
-    client_data: str,
-    service_api_key: str = "",
-    ctx: Context = None
-) -> str:
+async def create_client(client_data: str, service_api_key: str = "", ctx: Context = None) -> str:
     """Create a new Authlete client.
-    
+
     Args:
         client_data: JSON string containing client data
         service_api_key: Service API key (if empty, uses the main token)
     """
     if not DEFAULT_API_KEY:
         return "Error: ORGANIZATION_ACCESS_TOKEN environment variable not set"
-    
+
     config = AuthleteConfig(api_key=DEFAULT_API_KEY)
     key_to_use = service_api_key if service_api_key else DEFAULT_API_KEY
-    
+
     try:
         data = json.loads(client_data)
         result = await make_authlete_request("POST", f"{key_to_use}/client/create", config, data)
@@ -608,23 +556,19 @@ async def create_client(
 
 
 @mcp.tool()
-async def get_client(
-    client_id: str,
-    service_api_key: str = "",
-    ctx: Context = None
-) -> str:
+async def get_client(client_id: str, service_api_key: str = "", ctx: Context = None) -> str:
     """Get an Authlete client by ID.
-    
+
     Args:
         client_id: Client ID to retrieve
         service_api_key: Service API key (if empty, uses the main token)
     """
     if not DEFAULT_API_KEY:
         return "Error: ORGANIZATION_ACCESS_TOKEN environment variable not set"
-    
+
     config = AuthleteConfig(api_key=DEFAULT_API_KEY)
     key_to_use = service_api_key if service_api_key else DEFAULT_API_KEY
-    
+
     try:
         result = await make_authlete_request("GET", f"{key_to_use}/client/get/{client_id}", config)
         return json.dumps(result, indent=2)
@@ -633,21 +577,18 @@ async def get_client(
 
 
 @mcp.tool()
-async def list_clients(
-    service_api_key: str = "",
-    ctx: Context = None
-) -> str:
+async def list_clients(service_api_key: str = "", ctx: Context = None) -> str:
     """List all Authlete clients.
-    
+
     Args:
         service_api_key: Service API key (if empty, uses the main token)
     """
     if not DEFAULT_API_KEY:
         return "Error: ORGANIZATION_ACCESS_TOKEN environment variable not set"
-    
+
     config = AuthleteConfig(api_key=DEFAULT_API_KEY)
     key_to_use = service_api_key if service_api_key else DEFAULT_API_KEY
-    
+
     try:
         result = await make_authlete_request("GET", f"{key_to_use}/client/get/list", config)
         return json.dumps(result, indent=2)
@@ -656,14 +597,9 @@ async def list_clients(
 
 
 @mcp.tool()
-async def update_client(
-    client_id: str,
-    client_data: str,
-    service_api_key: str = "",
-    ctx: Context = None
-) -> str:
+async def update_client(client_id: str, client_data: str, service_api_key: str = "", ctx: Context = None) -> str:
     """Update an Authlete client.
-    
+
     Args:
         client_id: Client ID to update
         client_data: JSON string containing client data to update
@@ -671,10 +607,10 @@ async def update_client(
     """
     if not DEFAULT_API_KEY:
         return "Error: ORGANIZATION_ACCESS_TOKEN environment variable not set"
-    
+
     config = AuthleteConfig(api_key=DEFAULT_API_KEY)
     key_to_use = service_api_key if service_api_key else DEFAULT_API_KEY
-    
+
     try:
         data = json.loads(client_data)
         result = await make_authlete_request("POST", f"{key_to_use}/client/update/{client_id}", config, data)
@@ -686,23 +622,19 @@ async def update_client(
 
 
 @mcp.tool()
-async def delete_client(
-    client_id: str,
-    service_api_key: str = "",
-    ctx: Context = None
-) -> str:
+async def delete_client(client_id: str, service_api_key: str = "", ctx: Context = None) -> str:
     """Delete an Authlete client.
-    
+
     Args:
         client_id: Client ID to delete
         service_api_key: Service API key (if empty, uses the main token)
     """
     if not DEFAULT_API_KEY:
         return "Error: ORGANIZATION_ACCESS_TOKEN environment variable not set"
-    
+
     config = AuthleteConfig(api_key=DEFAULT_API_KEY)
     key_to_use = service_api_key if service_api_key else DEFAULT_API_KEY
-    
+
     try:
         result = await make_authlete_request("DELETE", f"{key_to_use}/client/delete/{client_id}", config)
         return json.dumps(result, indent=2)
@@ -712,23 +644,19 @@ async def delete_client(
 
 # Additional Client Management Tools
 @mcp.tool()
-async def rotate_client_secret(
-    client_id: str,
-    service_api_key: str = "",
-    ctx: Context = None
-) -> str:
+async def rotate_client_secret(client_id: str, service_api_key: str = "", ctx: Context = None) -> str:
     """Rotate an Authlete client secret.
-    
+
     Args:
         client_id: Client ID
         service_api_key: Service API key (if empty, uses the main token)
     """
     if not DEFAULT_API_KEY:
         return "Error: ORGANIZATION_ACCESS_TOKEN environment variable not set"
-    
+
     config = AuthleteConfig(api_key=DEFAULT_API_KEY)
     key_to_use = service_api_key if service_api_key else DEFAULT_API_KEY
-    
+
     try:
         result = await make_authlete_request("GET", f"{key_to_use}/client/secret/refresh/{client_id}", config)
         return json.dumps(result, indent=2)
@@ -737,14 +665,9 @@ async def rotate_client_secret(
 
 
 @mcp.tool()
-async def update_client_secret(
-    client_id: str,
-    secret_data: str,
-    service_api_key: str = "",
-    ctx: Context = None
-) -> str:
+async def update_client_secret(client_id: str, secret_data: str, service_api_key: str = "", ctx: Context = None) -> str:
     """Update an Authlete client secret.
-    
+
     Args:
         client_id: Client ID
         secret_data: JSON string containing new secret data
@@ -752,10 +675,10 @@ async def update_client_secret(
     """
     if not DEFAULT_API_KEY:
         return "Error: ORGANIZATION_ACCESS_TOKEN environment variable not set"
-    
+
     config = AuthleteConfig(api_key=DEFAULT_API_KEY)
     key_to_use = service_api_key if service_api_key else DEFAULT_API_KEY
-    
+
     try:
         data = json.loads(secret_data)
         result = await make_authlete_request("POST", f"{key_to_use}/client/secret/update/{client_id}", config, data)
@@ -767,14 +690,9 @@ async def update_client_secret(
 
 
 @mcp.tool()
-async def update_client_lock(
-    client_id: str,
-    lock_flag: bool,
-    service_api_key: str = "",
-    ctx: Context = None
-) -> str:
+async def update_client_lock(client_id: str, lock_flag: bool, service_api_key: str = "", ctx: Context = None) -> str:
     """Update an Authlete client lock status.
-    
+
     Args:
         client_id: Client ID
         lock_flag: True to lock, False to unlock
@@ -782,12 +700,12 @@ async def update_client_lock(
     """
     if not DEFAULT_API_KEY:
         return "Error: ORGANIZATION_ACCESS_TOKEN environment variable not set"
-    
+
     config = AuthleteConfig(api_key=DEFAULT_API_KEY)
     key_to_use = service_api_key if service_api_key else DEFAULT_API_KEY
-    
+
     data = {"locked": lock_flag}
-    
+
     try:
         result = await make_authlete_request("POST", f"{key_to_use}/client/lock_flag/update/{client_id}", config, data)
         return json.dumps(result, indent=2)
@@ -799,18 +717,18 @@ async def update_client_lock(
 async def generate_jwks(
     kty: str = "rsa",
     size: int = 2048,
-    use: Optional[str] = None,
-    alg: Optional[str] = None,
-    kid: Optional[str] = None,
+    use: str | None = None,
+    alg: str | None = None,
+    kid: str | None = None,
     gen: str = "specified",
-    crv: Optional[str] = None,
+    crv: str | None = None,
     x509: bool = False,
-    ctx: Context = None
+    ctx: Context = None,
 ) -> str:
     """Generate JSON Web Key Set (JWKS) using mkjwk.org API.
-    
+
     This tool generates cryptographic keys in JWK/JWKS format for use in OAuth 2.0/OpenID Connect implementations.
-    
+
     Args:
         kty: Key type - "rsa", "ec", "oct", or "okp" (default: "rsa")
         size: Key size in bits for RSA/oct keys (default: 2048, minimum 512, step 8)
@@ -828,7 +746,7 @@ async def generate_jwks(
         gen: Key ID generation method - "specified" (use kid param), "sha256", "sha1", "date", "timestamp" (default: "specified")
         crv: Curve for EC/OKP keys - EC: "P-256","P-384","P-521","secp256k1", OKP: "Ed25519","Ed448","X25519","X448"
         x509: Generate X.509 certificate wrapper for RSA/EC keys (default: False)
-    
+
     Returns:
         JSON string containing generated keys with jwk, jwks, and pub (public key) fields
     """
@@ -836,7 +754,7 @@ async def generate_jwks(
         # Build the request URL
         url = f"https://mkjwk.org/jwk/{kty}"
         params = {}
-        
+
         # Add parameters if provided
         if alg:
             params["alg"] = alg
@@ -846,28 +764,28 @@ async def generate_jwks(
             params["kid"] = kid
         if gen != "specified":
             params["gen"] = gen
-        
+
         # Key type specific parameters
         if kty in ["rsa", "ec"]:
             params["x509"] = str(x509).lower()
-        
+
         if kty in ["rsa", "oct"]:
             params["size"] = str(size)
-            
+
         if kty in ["ec", "okp"]:
             if not crv:
                 return "Error: curve (crv) parameter is required for EC and OKP key types"
             params["crv"] = crv
-        
+
         # Make the request
         async with httpx.AsyncClient(timeout=30.0) as client:
             response = await client.get(url, params=params)
             response.raise_for_status()
-            
+
             # Return the JSON response
             result = response.json()
             return json.dumps(result, indent=2)
-            
+
     except httpx.HTTPStatusError as e:
         return f"Error: HTTP {e.response.status_code} - {e.response.text}"
     except httpx.RequestError as e:
