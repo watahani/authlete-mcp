@@ -516,6 +516,176 @@ class AuthleteApiSearcher:
             logger.error(f"API detail retrieval error: {str(e)}")
             return None
 
+    def search_schemas(
+        self, query: str | None = None, schema_type: str | None = None, limit: int = 20
+    ) -> list[dict[str, Any]]:
+        """スキーマを検索する
+
+        Args:
+            query: 検索クエリ (schema名、title、descriptionを検索)
+            schema_type: スキーマタイプでフィルタリング (object, array, string, etc.)
+            limit: 結果の最大数
+
+        Returns:
+            マッチしたスキーマのリスト
+        """
+        try:
+            self._ensure_connection()
+            if not query and not schema_type:
+                # パラメータが無い場合は全スキーマを返す
+                result = self.conn.execute(
+                    """
+                    SELECT schema_name, schema_type, title, description, 0 as score
+                    FROM api_schemas
+                    ORDER BY schema_name ASC
+                    LIMIT ?
+                    """,
+                    [limit],
+                ).fetchall()
+            else:
+                where_conditions = []
+                params = []
+
+                # クエリ検索の追加
+                if query:
+                    try:
+                        # FTS検索を試行
+                        fts_result = self.conn.execute(
+                            """
+                            SELECT s.schema_name, s.schema_type, s.title, s.description, fts.score
+                            FROM api_schemas s
+                            JOIN (SELECT rowid, score FROM fts_main_api_schemas(?)) fts
+                            ON s.id = fts.rowid
+                            WHERE 1=1
+                            """
+                            + (" AND s.schema_type = ?" if schema_type else "")
+                            + """
+                            ORDER BY fts.score DESC
+                            LIMIT ?
+                            """,
+                            [query] + ([schema_type] if schema_type else []) + [limit],
+                        ).fetchall()
+
+                        if fts_result:
+                            result = fts_result
+                        else:
+                            # FTS検索で結果がない場合はLIKE検索
+                            words = query.lower().split()
+                            like_conditions = []
+                            for word in words:
+                                like_conditions.append("LOWER(search_content) LIKE ?")
+                                params.append(f"%{word}%")
+
+                            where_conditions.append(f"({' OR '.join(like_conditions)})")
+
+                    except Exception:
+                        # FTSが使えない場合はLIKE検索にフォールバック
+                        words = query.lower().split()
+                        like_conditions = []
+                        for word in words:
+                            like_conditions.append("LOWER(search_content) LIKE ?")
+                            params.append(f"%{word}%")
+
+                        where_conditions.append(f"({' OR '.join(like_conditions)})")
+
+                # スキーマタイプフィルタの追加
+                if schema_type:
+                    where_conditions.append("schema_type = ?")
+                    params.append(schema_type)
+
+                # FTSで結果がない場合のみ実行
+                if not ("result" in locals() and result):
+                    where_clause = " AND ".join(where_conditions) if where_conditions else "1=1"
+                    result = self.conn.execute(
+                        f"""
+                        SELECT schema_name, schema_type, title, description, 0 as score
+                        FROM api_schemas
+                        WHERE {where_clause}
+                        ORDER BY schema_name ASC
+                        LIMIT ?
+                        """,
+                        params + [limit],
+                    ).fetchall()
+
+            # 結果をdictのリストに変換
+            schemas = []
+            for row in result:
+                schema_name, schema_type, title, description, score = row
+                schemas.append(
+                    {
+                        "schema_name": schema_name,
+                        "schema_type": schema_type or "object",
+                        "title": title or "",
+                        "description": description or "",
+                        "score": score,
+                    }
+                )
+
+            return schemas
+
+        except Exception as e:
+            logger.error(f"Schema search error: {str(e)}")
+            return []
+
+    def get_schema_detail(self, schema_name: str) -> dict[str, Any] | None:
+        """特定のスキーマの詳細情報を取得する
+
+        Args:
+            schema_name: スキーマ名
+
+        Returns:
+            スキーマの詳細情報またはNone
+        """
+        try:
+            self._ensure_connection()
+            result = self.conn.execute(
+                """
+                SELECT schema_name, schema_type, title, description,
+                       properties, required_fields, example_value
+                FROM api_schemas
+                WHERE schema_name = ?
+                """,
+                [schema_name],
+            ).fetchone()
+
+            if not result:
+                return None
+
+            (
+                schema_name,
+                schema_type,
+                title,
+                description,
+                properties,
+                required_fields,
+                example_value,
+            ) = result
+
+            # JSON文字列をパース
+            try:
+                properties_dict = json.loads(properties) if properties else {}
+            except json.JSONDecodeError:
+                properties_dict = {}
+
+            try:
+                example_obj = json.loads(example_value) if example_value else None
+            except json.JSONDecodeError:
+                example_obj = example_value if example_value else None
+
+            return {
+                "schema_name": schema_name,
+                "schema_type": schema_type or "object",
+                "title": title or "",
+                "description": description or "",
+                "properties": properties_dict,
+                "required_fields": required_fields or [],
+                "example": example_obj,
+            }
+
+        except Exception as e:
+            logger.error(f"Schema detail retrieval error: {str(e)}")
+            return None
+
 
 # Initialize global searcher
 _searcher = None
@@ -1332,6 +1502,71 @@ async def get_sample_code(
         )
     except Exception as e:
         return f"Sample code retrieval error: {str(e)}"
+
+
+# Schema Search Tools
+@mcp.tool()
+async def list_schemas(
+    query: str = None,
+    schema_type: str = None,
+    limit: int = 20,
+    ctx: Context = None,
+) -> str:
+    """スキーマ一覧を取得または検索する
+
+    Args:
+        query: 検索クエリ (スキーマ名、title、descriptionで検索、省略時は全スキーマを返す)
+        schema_type: スキーマタイプでフィルタ (object, array, string, etc.)
+        limit: 結果の最大数 (デフォルト: 20, 最大: 100)
+    """
+    try:
+        # limitの範囲チェック
+        limit = max(1, min(limit, 100))
+
+        searcher = get_searcher()
+        schemas = searcher.search_schemas(query=query, schema_type=schema_type, limit=limit)
+
+        if not schemas:
+            return "指定された条件にマッチするスキーマが見つかりませんでした。"
+
+        return json.dumps(schemas, ensure_ascii=False, indent=2)
+
+    except FileNotFoundError as e:
+        return (
+            f"Search database not found: {str(e)}\nPlease run 'uv run python scripts/create_search_database.py' first"
+        )
+    except Exception as e:
+        return f"Schema search error: {str(e)}"
+
+
+@mcp.tool()
+async def get_schema_detail(
+    schema_name: str,
+    ctx: Context = None,
+) -> str:
+    """特定のスキーマの詳細情報を取得する
+
+    Args:
+        schema_name: スキーマ名 (例: 'AccessToken', 'Client', 'Service')
+    """
+    try:
+        if not schema_name:
+            return "schema_name parameter is required."
+
+        searcher = get_searcher()
+        schema_detail = searcher.get_schema_detail(schema_name)
+
+        if not schema_detail:
+            return f"Schema not found: {schema_name}"
+
+        return json.dumps(schema_detail, ensure_ascii=False, indent=2)
+
+    except FileNotFoundError as e:
+        return (
+            f"Search database not found: {str(e)}\nPlease run 'uv run python scripts/create_search_database.py' first"
+        )
+    except Exception as e:
+        return f"Schema detail retrieval error: {str(e)}"
 
 
 # Extended Client Operations
