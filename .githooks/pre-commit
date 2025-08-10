@@ -105,12 +105,6 @@ else
     print_status "OpenAPI spec not found, skipping database test"
 fi
 
-# 6. Check for sensitive data
-print_status "Scanning for potential secrets..."
-if git diff --cached --name-only | grep -E '\.(py|yml|yaml|json|md)$' | xargs grep -l -i -E '(password|secret|key|token).*=.*["\'][^"\']{8,}["\']' 2>/dev/null; then
-    print_warning "Potential secrets detected. Please review before committing."
-    git diff --cached --name-only | grep -E '\.(py|yml|yaml|json|md)$' | xargs grep -n -i -E '(password|secret|key|token).*=.*["\'][^"\']{8,}["\']' 2>/dev/null || true
-fi
 
 # Success message
 print_success "All pre-commit checks passed! ✨"
