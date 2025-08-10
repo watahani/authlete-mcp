@@ -26,10 +26,11 @@ async def test_search_apis_basic_functionality():
             # Should return some kind of result (JSON array, error message, or no results message)
             content = result.content[0].text
             assert content is not None and len(content) > 0
-            
+
             # If it returns JSON (database exists and works), verify basic structure
             try:
                 import json
+
                 results = json.loads(content)
                 if isinstance(results, list) and results:
                     # Verify structure of results
@@ -40,9 +41,9 @@ async def test_search_apis_basic_functionality():
             except json.JSONDecodeError:
                 # If not JSON, should be an error message or no results message
                 assert (
-                    "Search database not found" in content or 
-                    "No APIs found matching the search criteria." in content or
-                    "Search error:" in content
+                    "Search database not found" in content
+                    or "No APIs found matching the search criteria." in content
+                    or "Search error:" in content
                 )
 
 
@@ -268,6 +269,99 @@ async def test_get_sample_code_missing_language():
 
             content = result.content[0].text
             # FastMCP handles validation at framework level
-            assert ("language parameter is required" in content or 
-                   "validation error" in content or
-                   "Field required" in content)
+            assert (
+                "language parameter is required" in content
+                or "validation error" in content
+                or "Field required" in content
+            )
+
+
+@pytest.mark.integration
+async def test_search_apis_with_method_filter():
+    """Test search_apis with method filter"""
+    # Skip if search database doesn't exist
+    db_path = Path("resources/authlete_apis.duckdb")
+    if not db_path.exists():
+        pytest.skip("Search database not found. Run 'uv run python scripts/create_search_database.py' first")
+
+    server_params = StdioServerParameters(
+        command="python", args=["-m", "authlete_mcp_server"], env={"ORGANIZATION_ACCESS_TOKEN": "test-token"}
+    )
+
+    async with stdio_client(server_params) as (read, write):
+        async with ClientSession(read, write) as session:
+            await session.initialize()
+
+            # Search with method filter
+            result = await session.call_tool("search_apis", {"query": "api", "method_filter": "POST", "limit": 10})
+
+            content = result.content[0].text
+            assert content is not None
+
+            # If we get results, verify they're all POST methods
+            if content != "No APIs found matching the search criteria.":
+                try:
+                    results = json.loads(content)
+                    if isinstance(results, list) and results:
+                        for api_result in results:
+                            assert api_result.get("method") == "POST"
+                except json.JSONDecodeError:
+                    # Error message is acceptable
+                    pass
+
+
+@pytest.mark.integration
+async def test_search_apis_with_different_modes():
+    """Test search_apis with different search modes"""
+    # Skip if search database doesn't exist
+    db_path = Path("resources/authlete_apis.duckdb")
+    if not db_path.exists():
+        pytest.skip("Search database not found. Run 'uv run python scripts/create_search_database.py' first")
+
+    server_params = StdioServerParameters(
+        command="python", args=["-m", "authlete_mcp_server"], env={"ORGANIZATION_ACCESS_TOKEN": "test-token"}
+    )
+
+    async with stdio_client(server_params) as (read, write):
+        async with ClientSession(read, write) as session:
+            await session.initialize()
+
+            # Test different search modes (the 'mode' parameter may not be supported in current implementation)
+            search_modes = ["natural"]  # Only test supported mode
+
+            for mode in search_modes:
+                result = await session.call_tool("search_apis", {"query": "service", "mode": mode, "limit": 3})
+
+                content = result.content[0].text
+                assert content is not None
+                # Should not return a search error
+                assert not content.startswith("Search error:")
+
+
+@pytest.mark.unit
+async def test_search_apis_with_no_parameters():
+    """Test search_apis with no parameters"""
+    server_params = StdioServerParameters(
+        command="python", args=["-m", "authlete_mcp_server"], env={"ORGANIZATION_ACCESS_TOKEN": "test-token"}
+    )
+
+    async with stdio_client(server_params) as (read, write):
+        async with ClientSession(read, write) as session:
+            await session.initialize()
+
+            # Search with no parameters
+            result = await session.call_tool("search_apis", {})
+
+            content = result.content[0].text
+            # Should return either search results or "no results" message
+            try:
+                results = json.loads(content)
+                is_valid_json = isinstance(results, list)
+            except json.JSONDecodeError:
+                is_valid_json = False
+
+            assert (
+                "No APIs found matching the search criteria." in content
+                or "Search database not found" in content
+                or is_valid_json
+            )
