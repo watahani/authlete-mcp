@@ -1,17 +1,21 @@
 """Authlete MCP Server
 
-A Model Context Protocol server that provides tools for managing Authlete services and clients.
+A Model Context Protocol server that provides tools for managing Authlete services and clients,
+along with advanced API search functionality.
 """
 
 import json
+import logging
 import os
+from pathlib import Path
 from typing import Any
 
+import duckdb
 import httpx
 from mcp.server.fastmcp import Context, FastMCP
 from pydantic import BaseModel, Field
 
-mcp = FastMCP("Authlete Management Server")
+mcp = FastMCP("Authlete Management and API Search Server")
 
 # Configuration
 AUTHLETE_BASE_URL = os.getenv("AUTHLETE_BASE_URL", "https://jp.authlete.com")
@@ -19,6 +23,10 @@ AUTHLETE_IDP_URL = os.getenv("AUTHLETE_IDP_URL", "https://login.authlete.com")
 DEFAULT_API_SERVER_ID = os.getenv("AUTHLETE_API_SERVER_ID", "53285")
 DEFAULT_API_KEY = os.getenv("ORGANIZATION_ACCESS_TOKEN", "")
 DEFAULT_ORGANIZATION_ID = os.getenv("ORGANIZATION_ID", "")
+
+# Set up logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 
 class AuthleteConfig(BaseModel):
@@ -164,6 +172,365 @@ async def make_authlete_idp_request(
         if 200 <= response.status_code < 300:
             return {"success": True, "message": f"Operation completed with status {response.status_code}"}
         return {"error": "Empty response body", "status_code": response.status_code}
+
+
+class AuthleteApiSearcher:
+    """Enhanced API search engine (DuckDB-based)"""
+
+    def __init__(self, db_path: str = "resources/authlete_apis.duckdb"):
+        """Initialize the searcher
+
+        Args:
+            db_path: Path to the DuckDB database file
+        """
+        self.db_path = Path(db_path)
+        self.conn = None
+
+        if not self.db_path.exists():
+            raise FileNotFoundError(
+                f"Search database not found: {db_path}\n"
+                f"Please run 'uv run python scripts/create_search_database.py' first"
+            )
+
+        logger.info(f"Search database found: {db_path}")
+
+    def _ensure_connection(self):
+        """Ensure database connection is established"""
+        if self.conn is None:
+            self.conn = duckdb.connect(str(self.db_path))
+            logger.info(f"Search database connected: {self.db_path}")
+
+    async def search_apis(
+        self,
+        query: str | None = None,
+        path_query: str | None = None,
+        description_query: str | None = None,
+        tag_filter: str | None = None,
+        method_filter: str | None = None,
+        mode: str = "natural",
+        limit: int = 20,
+    ) -> list[dict[str, Any]]:
+        """
+        Search APIs
+
+        Args:
+            query: Natural language query
+            path_query: API path search
+            description_query: Description search
+            tag_filter: Tag filtering
+            method_filter: HTTP method filtering
+            mode: Search mode (kept for compatibility, actually uses natural language search)
+            limit: Maximum number of results
+
+        Returns:
+            List of search results
+        """
+        if not any([query, path_query, description_query]):
+            return []
+
+        try:
+            self._ensure_connection()
+
+            # Execute search
+            if query and len(query.strip()) > 0:
+                results = await self._natural_language_search(query, tag_filter, method_filter, limit)
+            elif path_query:
+                results = await self._path_search(path_query, method_filter, limit)
+            elif description_query:
+                results = await self._description_search(description_query, tag_filter, method_filter, limit)
+            else:
+                results = []
+
+            return results
+
+        except Exception as e:
+            logger.error(f"Search error: {str(e)}")
+            return []
+
+    async def _natural_language_search(
+        self, query: str, tag_filter: str | None, method_filter: str | None, limit: int
+    ) -> list[dict[str, Any]]:
+        """Natural language search"""
+
+        # Split query into words
+        query_words = query.lower().split()
+
+        # Build WHERE conditions
+        where_conditions = []
+        params = []
+
+        # OR search for each word (natural language matching)
+        word_conditions = []
+        for word in query_words:
+            word_conditions.append("LOWER(search_content) LIKE ?")
+            params.append(f"%{word}%")
+
+        if word_conditions:
+            where_conditions.append(f"({' OR '.join(word_conditions)})")
+
+        # Filter conditions
+        if method_filter:
+            where_conditions.append("method = ?")
+            params.append(method_filter.upper())
+
+        if tag_filter:
+            where_conditions.append("tags LIKE ?")
+            params.append(f"%{tag_filter}%")
+
+        where_clause = " AND ".join(where_conditions) if where_conditions else "1=1"
+
+        # Query with relevance score calculation (summary/path priority)
+        sql = f"""
+        SELECT
+            path, method, operation_id, summary, description, tags,
+            sample_languages, sample_codes,
+            (
+                CASE
+                    -- Complete phrase match (highest score)
+                    WHEN LOWER(search_content) LIKE ? THEN 150
+                    -- Summary partial match (very high score)
+                    WHEN LOWER(summary) LIKE ? THEN 120
+                    -- Path match (high score)
+                    WHEN LOWER(path) LIKE ? THEN 100
+                    -- Description partial match (medium score)
+                    WHEN LOWER(description) LIKE ? THEN 80
+                    ELSE 10
+                END +
+                -- Bonus points from individual word matches (high points for summary/path)
+                {self._build_enhanced_word_score_expression(query_words)}
+            ) as relevance_score
+        FROM api_endpoints
+        WHERE {where_clause}
+        ORDER BY relevance_score DESC, path ASC
+        LIMIT ?
+        """
+
+        # Build parameter list
+        score_params = [f"%{query.lower()}%"] * 4  # Complete phrase, description, summary, path
+        all_params = score_params + params + [limit]
+
+        result = self.conn.execute(sql, all_params).fetchall()
+
+        return self._format_search_results(result)
+
+    def _build_enhanced_word_score_expression(self, words: list[str]) -> str:
+        """Build enhanced word matching score expression (summary/path priority)"""
+        expressions = []
+        for word in words:
+            # Escape words to avoid SQL injection
+            escaped_word = word.replace("'", "''")
+            # Give high scores for summary/path matches
+            expressions.append(f"""
+                CASE
+                    WHEN LOWER(summary) LIKE '%{escaped_word}%' THEN 15
+                    WHEN LOWER(path) LIKE '%{escaped_word}%' THEN 12
+                    WHEN LOWER(description) LIKE '%{escaped_word}%' THEN 8
+                    WHEN LOWER(search_content) LIKE '%{escaped_word}%' THEN 5
+                    ELSE 0
+                END
+            """)
+        return " + ".join(expressions) if expressions else "0"
+
+    async def _path_search(self, path_query: str, method_filter: str | None, limit: int) -> list[dict[str, Any]]:
+        """Path-specific search"""
+
+        where_conditions = ["LOWER(path) LIKE ?"]
+        params = [f"%{path_query.lower()}%"]
+
+        if method_filter:
+            where_conditions.append("method = ?")
+            params.append(method_filter.upper())
+
+        where_clause = " AND ".join(where_conditions)
+
+        sql = f"""
+        SELECT
+            path, method, operation_id, summary, description, tags,
+            sample_languages, sample_codes,
+            CASE
+                WHEN path = ? THEN 100
+                WHEN LOWER(path) LIKE ? THEN 80
+                ELSE 50
+            END as relevance_score
+        FROM api_endpoints
+        WHERE {where_clause}
+        ORDER BY relevance_score DESC, path ASC
+        LIMIT ?
+        """
+
+        score_params = [path_query, f"%{path_query.lower()}%"]
+        all_params = score_params + params + [limit]
+
+        result = self.conn.execute(sql, all_params).fetchall()
+        return self._format_search_results(result)
+
+    async def _description_search(
+        self, desc_query: str, tag_filter: str | None, method_filter: str | None, limit: int
+    ) -> list[dict[str, Any]]:
+        """Description-specific search"""
+
+        where_conditions = ["(LOWER(summary) LIKE ? OR LOWER(description) LIKE ?)"]
+        params = [f"%{desc_query.lower()}%", f"%{desc_query.lower()}%"]
+
+        if method_filter:
+            where_conditions.append("method = ?")
+            params.append(method_filter.upper())
+
+        if tag_filter:
+            where_conditions.append("tags LIKE ?")
+            params.append(f"%{tag_filter}%")
+
+        where_clause = " AND ".join(where_conditions)
+
+        sql = f"""
+        SELECT
+            path, method, operation_id, summary, description, tags,
+            sample_languages, sample_codes,
+            CASE
+                WHEN LOWER(summary) LIKE ? THEN 100
+                WHEN LOWER(description) LIKE ? THEN 90
+                ELSE 30
+            END as relevance_score
+        FROM api_endpoints
+        WHERE {where_clause}
+        ORDER BY relevance_score DESC, path ASC
+        LIMIT ?
+        """
+
+        score_params = [f"%{desc_query.lower()}%", f"%{desc_query.lower()}%"]
+        all_params = score_params + params + [limit]
+
+        result = self.conn.execute(sql, all_params).fetchall()
+        return self._format_search_results(result)
+
+    def _format_search_results(self, results: list[tuple]) -> list[dict[str, Any]]:
+        """Format search results"""
+        formatted = []
+
+        for row in results:
+            path, method, operation_id, summary, description, tags, sample_languages, sample_codes, score = row
+
+            # Handle tags and sample_languages (already as lists from DuckDB)
+            tags_list = tags if tags else []
+            sample_languages_list = sample_languages if sample_languages else []
+
+            # Truncate description to first 100 characters for search results
+            truncated_description = (description or "")[:100]
+            if len(description or "") > 100:
+                truncated_description += "..."
+
+            formatted.append(
+                {
+                    "path": path,
+                    "method": method,
+                    "operation_id": operation_id,
+                    "summary": summary or "",
+                    "description": truncated_description,
+                    "tags": tags_list,
+                    "sample_languages": sample_languages_list,
+                    "score": float(score),
+                }
+            )
+
+        return formatted
+
+    async def get_api_detail(
+        self, path: str = None, method: str = None, operation_id: str = None, language: str | None = None
+    ) -> dict[str, Any] | None:
+        """Get detailed information for a specific API by path+method or operationId"""
+
+        try:
+            self._ensure_connection()
+
+            if operation_id:
+                # Search by operationId
+                result = self.conn.execute(
+                    """
+                    SELECT path, method, operation_id, summary, description, tags,
+                           parameters, request_body, responses, sample_codes
+                    FROM api_endpoints
+                    WHERE operation_id = ?
+                """,
+                    [operation_id],
+                ).fetchone()
+            elif path and method:
+                # Search by path and method
+                result = self.conn.execute(
+                    """
+                    SELECT path, method, operation_id, summary, description, tags,
+                           parameters, request_body, responses, sample_codes
+                    FROM api_endpoints
+                    WHERE path = ? AND method = ?
+                """,
+                    [path, method.upper()],
+                ).fetchone()
+            else:
+                return None
+
+            if not result:
+                return None
+
+            (
+                api_path,
+                api_method,
+                operation_id,
+                summary,
+                description,
+                tags,
+                parameters,
+                request_body,
+                responses,
+                sample_codes,
+            ) = result
+
+            # Parse JSON data (tags are already lists from DuckDB)
+            tags_list = tags if tags else []
+            try:
+                parameters_list = json.loads(parameters) if parameters else []
+                request_body_obj = json.loads(request_body) if request_body else None
+                responses_obj = json.loads(responses) if responses else {}
+                sample_codes_dict = json.loads(sample_codes) if sample_codes else {}
+            except json.JSONDecodeError:
+                parameters_list = []
+                request_body_obj = None
+                responses_obj = {}
+                sample_codes_dict = {}
+
+            # Get sample code
+            sample_code = sample_codes_dict.get(language) if language else None
+
+            return {
+                "path": api_path,
+                "method": api_method,
+                "operation_id": operation_id,
+                "summary": summary or "",
+                "description": description or "",
+                "tags": tags_list,
+                "parameters": parameters_list,
+                "request_body": request_body_obj,
+                "responses": responses_obj,
+                "sample_code": sample_code,
+            }
+
+        except Exception as e:
+            logger.error(f"API detail retrieval error: {str(e)}")
+            return None
+
+
+# Initialize global searcher
+_searcher = None
+
+
+def get_searcher() -> AuthleteApiSearcher:
+    """Get or create the global searcher instance"""
+    global _searcher
+    if _searcher is None:
+        try:
+            _searcher = AuthleteApiSearcher()
+        except FileNotFoundError as e:
+            logger.warning(f"Search functionality not available: {e}")
+            raise
+    return _searcher
 
 
 # Service Management Tools
@@ -487,6 +854,10 @@ async def update_service(service_data: str, service_api_key: str = "", ctx: Cont
         service_data: JSON string containing service data to update
         service_api_key: Service API key (if empty, uses the main token)
     """
+    # Validate required parameters
+    if not service_api_key:
+        return "Error: service_api_key parameter is required"
+
     if not DEFAULT_API_KEY:
         return "Error: ORGANIZATION_ACCESS_TOKEN environment variable not set"
 
@@ -539,6 +910,10 @@ async def create_client(client_data: str, service_api_key: str = "", ctx: Contex
         client_data: JSON string containing client data
         service_api_key: Service API key (if empty, uses the main token)
     """
+    # Validate required parameters
+    if not service_api_key:
+        return "Error: service_api_key parameter is required"
+
     if not DEFAULT_API_KEY:
         return "Error: ORGANIZATION_ACCESS_TOKEN environment variable not set"
 
@@ -563,6 +938,10 @@ async def get_client(client_id: str, service_api_key: str = "", ctx: Context = N
         client_id: Client ID to retrieve
         service_api_key: Service API key (if empty, uses the main token)
     """
+    # Validate required parameters
+    if not service_api_key:
+        return "Error: service_api_key parameter is required"
+
     if not DEFAULT_API_KEY:
         return "Error: ORGANIZATION_ACCESS_TOKEN environment variable not set"
 
@@ -583,6 +962,10 @@ async def list_clients(service_api_key: str = "", ctx: Context = None) -> str:
     Args:
         service_api_key: Service API key (if empty, uses the main token)
     """
+    # Validate required parameters
+    if not service_api_key:
+        return "Error: service_api_key parameter is required"
+
     if not DEFAULT_API_KEY:
         return "Error: ORGANIZATION_ACCESS_TOKEN environment variable not set"
 
@@ -605,6 +988,10 @@ async def update_client(client_id: str, client_data: str, service_api_key: str =
         client_data: JSON string containing client data to update
         service_api_key: Service API key (if empty, uses the main token)
     """
+    # Validate required parameters
+    if not service_api_key:
+        return "Error: service_api_key parameter is required"
+
     if not DEFAULT_API_KEY:
         return "Error: ORGANIZATION_ACCESS_TOKEN environment variable not set"
 
@@ -629,6 +1016,10 @@ async def delete_client(client_id: str, service_api_key: str = "", ctx: Context 
         client_id: Client ID to delete
         service_api_key: Service API key (if empty, uses the main token)
     """
+    # Validate required parameters
+    if not service_api_key:
+        return "Error: service_api_key parameter is required"
+
     if not DEFAULT_API_KEY:
         return "Error: ORGANIZATION_ACCESS_TOKEN environment variable not set"
 
@@ -651,6 +1042,10 @@ async def rotate_client_secret(client_id: str, service_api_key: str = "", ctx: C
         client_id: Client ID
         service_api_key: Service API key (if empty, uses the main token)
     """
+    # Validate required parameters
+    if not service_api_key:
+        return "Error: service_api_key parameter is required"
+
     if not DEFAULT_API_KEY:
         return "Error: ORGANIZATION_ACCESS_TOKEN environment variable not set"
 
@@ -673,6 +1068,10 @@ async def update_client_secret(client_id: str, secret_data: str, service_api_key
         secret_data: JSON string containing new secret data
         service_api_key: Service API key (if empty, uses the main token)
     """
+    # Validate required parameters
+    if not service_api_key:
+        return "Error: service_api_key parameter is required"
+
     if not DEFAULT_API_KEY:
         return "Error: ORGANIZATION_ACCESS_TOKEN environment variable not set"
 
@@ -698,6 +1097,10 @@ async def update_client_lock(client_id: str, lock_flag: bool, service_api_key: s
         lock_flag: True to lock, False to unlock
         service_api_key: Service API key (if empty, uses the main token)
     """
+    # Validate required parameters
+    if not service_api_key:
+        return "Error: service_api_key parameter is required"
+
     if not DEFAULT_API_KEY:
         return "Error: ORGANIZATION_ACCESS_TOKEN environment variable not set"
 
@@ -794,6 +1197,765 @@ async def generate_jwks(
         return f"Error: Invalid JSON response - {str(e)}"
     except Exception as e:
         return f"Error generating JWKS: {str(e)}"
+
+
+# API Search Tools
+@mcp.tool()
+async def search_apis(
+    query: str = None,
+    path_query: str = None,
+    description_query: str = None,
+    tag_filter: str = None,
+    method_filter: str = None,
+    mode: str = "natural",
+    limit: int = 20,
+    ctx: Context = None,
+) -> str:
+    """Natural language API search. Semantic matching like 'revoke token' → 'This API revokes access tokens'. Returns description truncated to ~100 chars. Use get_api_detail for full information.
+
+    Args:
+        query: Natural language search query (e.g., 'revoke token', 'create client', 'user authentication')
+        path_query: API path search (e.g., '/api/auth/token')
+        description_query: Description search (e.g., 'revokes access tokens')
+        tag_filter: Tag filter (e.g., 'Token Operations', 'Authorization')
+        method_filter: HTTP method filter (GET, POST, PUT, DELETE)
+        mode: Search mode (for compatibility, actually uses natural language search)
+        limit: Maximum number of results (default: 20, max: 100)
+    """
+
+    try:
+        searcher = get_searcher()
+
+        # Validate limit
+        if limit < 1 or limit > 100:
+            limit = 20
+
+        results = await searcher.search_apis(
+            query=query,
+            path_query=path_query,
+            description_query=description_query,
+            tag_filter=tag_filter,
+            method_filter=method_filter,
+            mode=mode,
+            limit=limit,
+        )
+
+        if not results:
+            return "No APIs found matching the search criteria."
+
+        return json.dumps(results, ensure_ascii=False, indent=2)
+
+    except FileNotFoundError as e:
+        return (
+            f"Search database not found: {str(e)}\nPlease run 'uv run python scripts/create_search_database.py' first"
+        )
+    except Exception as e:
+        return f"Search error: {str(e)}"
+
+
+@mcp.tool()
+async def get_api_detail(
+    path: str = None,
+    method: str = None,
+    operation_id: str = None,
+    language: str = None,
+    ctx: Context = None,
+) -> str:
+    """Get detailed information for specific API (parameters, request/response, sample code). Provide either operation_id OR both path and method.
+
+    Args:
+        path: API path (required if operation_id not provided)
+        method: HTTP method (required if operation_id not provided)
+        operation_id: Operation ID (alternative to path+method)
+        language: Sample code language (curl, javascript, python, java, etc.)
+    """
+
+    try:
+        searcher = get_searcher()
+
+        if not operation_id and (not path or not method):
+            return "Either 'operation_id' or both 'path' and 'method' parameters are required."
+
+        detail = await searcher.get_api_detail(path, method, operation_id, language)
+
+        if not detail:
+            identifier = operation_id or f"{method} {path}"
+            return f"API details not found: {identifier}"
+
+        return json.dumps(detail, ensure_ascii=False, indent=2)
+
+    except FileNotFoundError as e:
+        return (
+            f"Search database not found: {str(e)}\nPlease run 'uv run python scripts/create_search_database.py' first"
+        )
+    except Exception as e:
+        return f"Detail retrieval error: {str(e)}"
+
+
+@mcp.tool()
+async def get_sample_code(
+    language: str,
+    path: str = None,
+    method: str = None,
+    operation_id: str = None,
+    ctx: Context = None,
+) -> str:
+    """Get sample code for specific API in specified language. Provide language and either operation_id OR both path and method.
+
+    Args:
+        language: Programming language (curl, javascript, python, java, etc.)
+        path: API path (required if operation_id not provided)
+        method: HTTP method (required if operation_id not provided)
+        operation_id: Operation ID (alternative to path+method)
+    """
+
+    try:
+        searcher = get_searcher()
+
+        if not language:
+            return "language parameter is required."
+
+        if not operation_id and (not path or not method):
+            return "Either 'operation_id' or both 'path' and 'method' parameters are required."
+
+        detail = await searcher.get_api_detail(path, method, operation_id, language)
+
+        if not detail or not detail.get("sample_code"):
+            identifier = operation_id or f"{method} {path}"
+            return f"Sample code not found: {identifier} ({language})"
+
+        return detail["sample_code"]
+
+    except FileNotFoundError as e:
+        return (
+            f"Search database not found: {str(e)}\nPlease run 'uv run python scripts/create_search_database.py' first"
+        )
+    except Exception as e:
+        return f"Sample code retrieval error: {str(e)}"
+
+
+# Extended Client Operations
+@mcp.tool()
+async def get_authorized_applications(
+    subject: str = "",
+    service_api_key: str = "",
+    ctx: Context = None,
+) -> str:
+    """Get authorized applications for a subject.
+
+    Args:
+        subject: Subject to get applications for (required)
+        service_api_key: Service API key (required)
+    """
+
+    try:
+        # Validate required parameters
+        if not service_api_key:
+            return "Error: service_api_key parameter is required"
+
+        if not subject:
+            return "Error: subject parameter is required"
+
+        # Check if organization token is available for extended operations
+        if not DEFAULT_API_KEY:
+            return "Error: ORGANIZATION_ACCESS_TOKEN environment variable not set"
+
+        config = AuthleteConfig(api_key=service_api_key)
+
+        # Make request to Authlete API
+        result = await make_authlete_request("GET", f"auth/authorization/application/{subject}", config)
+
+        return json.dumps(result, indent=2)
+
+    except httpx.HTTPStatusError as e:
+        return f"Error: HTTP {e.response.status_code} - {e.response.text}"
+    except httpx.RequestError as e:
+        return f"Error: Request failed - {str(e)}"
+    except Exception as e:
+        return f"Error getting authorized applications: {str(e)}"
+
+
+@mcp.tool()
+async def update_client_tokens(
+    subject: str = "",
+    client_id: str = "",
+    token_data: str = "{}",
+    service_api_key: str = "",
+    ctx: Context = None,
+) -> str:
+    """Update client tokens for a subject.
+
+    Args:
+        subject: Subject (required)
+        client_id: Client ID (required)
+        token_data: JSON string with token update parameters
+        service_api_key: Service API key (required)
+    """
+
+    try:
+        # Validate required parameters
+        if not service_api_key:
+            return "Error: service_api_key parameter is required"
+
+        if not subject or not client_id:
+            return "Error: subject and client_id parameters are required"
+
+        # Parse token data
+        try:
+            token_params = json.loads(token_data)
+        except json.JSONDecodeError as e:
+            return f"Error parsing token data JSON: {str(e)}"
+
+        # Check if organization token is available for extended operations
+        if not DEFAULT_API_KEY:
+            return "Error: ORGANIZATION_ACCESS_TOKEN environment variable not set"
+
+        config = AuthleteConfig(api_key=service_api_key)
+
+        # Make request to Authlete API
+        result = await make_authlete_request(
+            "PUT", f"auth/authorization/application/{subject}/{client_id}", config, token_params
+        )
+
+        return json.dumps(result, indent=2)
+
+    except httpx.HTTPStatusError as e:
+        return f"Error: HTTP {e.response.status_code} - {e.response.text}"
+    except httpx.RequestError as e:
+        return f"Error: Request failed - {str(e)}"
+    except Exception as e:
+        return f"Error updating client tokens: {str(e)}"
+
+
+@mcp.tool()
+async def delete_client_tokens(
+    subject: str = "",
+    client_id: str = "",
+    service_api_key: str = "",
+    ctx: Context = None,
+) -> str:
+    """Delete client tokens for a subject.
+
+    Args:
+        subject: Subject (required)
+        client_id: Client ID (required)
+        service_api_key: Service API key (required)
+    """
+
+    try:
+        # Validate required parameters
+        if not service_api_key:
+            return "Error: service_api_key parameter is required"
+
+        if not subject:
+            return "Error: subject parameter is required"
+
+        if not client_id:
+            return "Error: client_id parameter is required"
+
+        config = AuthleteConfig(api_key=service_api_key)
+
+        # Make request to Authlete API
+        result = await make_authlete_request("DELETE", f"auth/authorization/application/{subject}/{client_id}", config)
+
+        return json.dumps(result, indent=2)
+
+    except httpx.HTTPStatusError as e:
+        return f"Error: HTTP {e.response.status_code} - {e.response.text}"
+    except httpx.RequestError as e:
+        return f"Error: Request failed - {str(e)}"
+    except Exception as e:
+        return f"Error deleting client tokens: {str(e)}"
+
+
+@mcp.tool()
+async def get_granted_scopes(
+    subject: str = "",
+    client_id: str = "",
+    service_api_key: str = "",
+    ctx: Context = None,
+) -> str:
+    """Get granted scopes for a client and subject.
+
+    Args:
+        subject: Subject (required)
+        client_id: Client ID (required)
+        service_api_key: Service API key (required)
+    """
+
+    try:
+        # Validate required parameters
+        if not service_api_key:
+            return "Error: service_api_key parameter is required"
+
+        if not subject:
+            return "Error: subject parameter is required"
+
+        if not client_id:
+            return "Error: client_id parameter is required"
+
+        config = AuthleteConfig(api_key=service_api_key)
+
+        # Make request to Authlete API
+        result = await make_authlete_request("GET", f"auth/authorization/grant/{subject}/{client_id}", config)
+
+        return json.dumps(result, indent=2)
+
+    except httpx.HTTPStatusError as e:
+        return f"Error: HTTP {e.response.status_code} - {e.response.text}"
+    except httpx.RequestError as e:
+        return f"Error: Request failed - {str(e)}"
+    except Exception as e:
+        return f"Error getting granted scopes: {str(e)}"
+
+
+@mcp.tool()
+async def delete_granted_scopes(
+    subject: str = "",
+    client_id: str = "",
+    service_api_key: str = "",
+    ctx: Context = None,
+) -> str:
+    """Delete granted scopes for a client and subject.
+
+    Args:
+        subject: Subject (required)
+        client_id: Client ID (required)
+        service_api_key: Service API key (required)
+    """
+
+    try:
+        # Validate required parameters
+        if not service_api_key:
+            return "Error: service_api_key parameter is required"
+
+        if not subject:
+            return "Error: subject parameter is required"
+
+        if not client_id:
+            return "Error: client_id parameter is required"
+
+        config = AuthleteConfig(api_key=service_api_key)
+
+        # Make request to Authlete API
+        result = await make_authlete_request("DELETE", f"auth/authorization/grant/{subject}/{client_id}", config)
+
+        return json.dumps(result, indent=2)
+
+    except httpx.HTTPStatusError as e:
+        return f"Error: HTTP {e.response.status_code} - {e.response.text}"
+    except httpx.RequestError as e:
+        return f"Error: Request failed - {str(e)}"
+    except Exception as e:
+        return f"Error deleting granted scopes: {str(e)}"
+
+
+@mcp.tool()
+async def get_requestable_scopes(
+    client_id: str = "",
+    service_api_key: str = "",
+    ctx: Context = None,
+) -> str:
+    """Get requestable scopes for a client.
+
+    Args:
+        client_id: Client ID (required)
+        service_api_key: Service API key (required)
+    """
+
+    try:
+        # Validate required parameters
+        if not service_api_key:
+            return "Error: service_api_key parameter is required"
+
+        if not client_id:
+            return "Error: client_id parameter is required"
+
+        config = AuthleteConfig(api_key=service_api_key)
+
+        # Make request to Authlete API
+        result = await make_authlete_request("GET", f"client/requestable_scopes/{client_id}", config)
+
+        return json.dumps(result, indent=2)
+
+    except httpx.HTTPStatusError as e:
+        return f"Error: HTTP {e.response.status_code} - {e.response.text}"
+    except httpx.RequestError as e:
+        return f"Error: Request failed - {str(e)}"
+    except Exception as e:
+        return f"Error getting requestable scopes: {str(e)}"
+
+
+@mcp.tool()
+async def update_requestable_scopes(
+    client_id: str = "",
+    scopes_data: str = "{}",
+    service_api_key: str = "",
+    ctx: Context = None,
+) -> str:
+    """Update requestable scopes for a client.
+
+    Args:
+        client_id: Client ID (required)
+        scopes_data: JSON string with scopes data
+        service_api_key: Service API key (required)
+    """
+
+    try:
+        # Validate required parameters
+        if not service_api_key:
+            return "Error: service_api_key parameter is required"
+
+        if not client_id:
+            return "Error: client_id parameter is required"
+
+        # Parse scopes data
+        try:
+            scopes_params = json.loads(scopes_data)
+        except json.JSONDecodeError as e:
+            return f"Error parsing scopes data JSON: {str(e)}"
+
+        config = AuthleteConfig(api_key=service_api_key)
+
+        # Make request to Authlete API
+        result = await make_authlete_request("PUT", f"client/requestable_scopes/{client_id}", config, scopes_params)
+
+        return json.dumps(result, indent=2)
+
+    except httpx.HTTPStatusError as e:
+        return f"Error: HTTP {e.response.status_code} - {e.response.text}"
+    except httpx.RequestError as e:
+        return f"Error: Request failed - {str(e)}"
+    except Exception as e:
+        return f"Error updating requestable scopes: {str(e)}"
+
+
+@mcp.tool()
+async def delete_requestable_scopes(
+    client_id: str = "",
+    service_api_key: str = "",
+    ctx: Context = None,
+) -> str:
+    """Delete requestable scopes for a client.
+
+    Args:
+        client_id: Client ID (required)
+        service_api_key: Service API key (required)
+    """
+
+    try:
+        # Validate required parameters
+        if not service_api_key:
+            return "Error: service_api_key parameter is required"
+
+        if not client_id:
+            return "Error: client_id parameter is required"
+
+        config = AuthleteConfig(api_key=service_api_key)
+
+        # Make request to Authlete API
+        result = await make_authlete_request("DELETE", f"client/requestable_scopes/{client_id}", config)
+
+        return json.dumps(result, indent=2)
+
+    except httpx.HTTPStatusError as e:
+        return f"Error: HTTP {e.response.status_code} - {e.response.text}"
+    except httpx.RequestError as e:
+        return f"Error: Request failed - {str(e)}"
+    except Exception as e:
+        return f"Error deleting requestable scopes: {str(e)}"
+
+
+# Token Operations
+@mcp.tool()
+async def list_issued_tokens(
+    subject: str = "",
+    client_identifier: str = "",
+    service_api_key: str = "",
+    ctx: Context = None,
+) -> str:
+    """List issued tokens for a service.
+
+    Args:
+        subject: Subject to filter by (optional)
+        client_identifier: Client identifier to filter by (optional)
+        service_api_key: Service API key (required)
+    """
+
+    try:
+        # Validate required parameters
+        if not service_api_key:
+            return "Error: service_api_key parameter is required"
+
+        # Check if organization token is available for token operations
+        if not DEFAULT_API_KEY:
+            return "Error: ORGANIZATION_ACCESS_TOKEN environment variable not set"
+
+        config = AuthleteConfig(api_key=service_api_key)
+
+        # Build query parameters
+        params = {}
+        if subject:
+            params["subject"] = subject
+        if client_identifier:
+            params["clientIdentifier"] = client_identifier
+
+        # Make request to Authlete API
+        endpoint = "auth/token/get/list"
+        if params:
+            from urllib.parse import urlencode
+
+            endpoint += f"?{urlencode(params)}"
+
+        result = await make_authlete_request("GET", endpoint, config)
+
+        return json.dumps(result, indent=2)
+
+    except httpx.HTTPStatusError as e:
+        return f"Error: HTTP {e.response.status_code} - {e.response.text}"
+    except httpx.RequestError as e:
+        return f"Error: Request failed - {str(e)}"
+    except Exception as e:
+        return f"Error listing issued tokens: {str(e)}"
+
+
+@mcp.tool()
+async def create_access_token(
+    token_data: str = "{}",
+    service_api_key: str = "",
+    ctx: Context = None,
+) -> str:
+    """Create an access token.
+
+    Args:
+        token_data: JSON string with token creation parameters
+        service_api_key: Service API key (required)
+    """
+
+    try:
+        # Validate required parameters
+        if not service_api_key:
+            return "Error: service_api_key parameter is required"
+
+        # Parse token data
+        try:
+            token_params = json.loads(token_data)
+        except json.JSONDecodeError as e:
+            return f"Error parsing token data JSON: {str(e)}"
+
+        config = AuthleteConfig(api_key=service_api_key)
+
+        # Make request to Authlete API
+        result = await make_authlete_request("POST", "auth/token/create", config, token_params)
+
+        return json.dumps(result, indent=2)
+
+    except httpx.HTTPStatusError as e:
+        return f"Error: HTTP {e.response.status_code} - {e.response.text}"
+    except httpx.RequestError as e:
+        return f"Error: Request failed - {str(e)}"
+    except Exception as e:
+        return f"Error creating access token: {str(e)}"
+
+
+@mcp.tool()
+async def update_access_token(
+    access_token: str = "",
+    token_data: str = "{}",
+    service_api_key: str = "",
+    ctx: Context = None,
+) -> str:
+    """Update an access token.
+
+    Args:
+        access_token: Access token to update (required)
+        token_data: JSON string with token update parameters
+        service_api_key: Service API key (required)
+    """
+
+    try:
+        # Validate required parameters
+        if not service_api_key:
+            return "Error: service_api_key parameter is required"
+
+        if not access_token:
+            return "Error: access_token parameter is required"
+
+        # Parse token data
+        try:
+            token_params = json.loads(token_data)
+        except json.JSONDecodeError as e:
+            return f"Error parsing token data JSON: {str(e)}"
+
+        config = AuthleteConfig(api_key=service_api_key)
+
+        # Make request to Authlete API
+        result = await make_authlete_request("PUT", f"auth/token/update/{access_token}", config, token_params)
+
+        return json.dumps(result, indent=2)
+
+    except httpx.HTTPStatusError as e:
+        return f"Error: HTTP {e.response.status_code} - {e.response.text}"
+    except httpx.RequestError as e:
+        return f"Error: Request failed - {str(e)}"
+    except Exception as e:
+        return f"Error updating access token: {str(e)}"
+
+
+@mcp.tool()
+async def revoke_access_token(
+    access_token: str = "",
+    service_api_key: str = "",
+    ctx: Context = None,
+) -> str:
+    """Revoke an access token.
+
+    Args:
+        access_token: Access token to revoke (required)
+        service_api_key: Service API key (required)
+    """
+
+    try:
+        # Validate required parameters
+        if not service_api_key:
+            return "Error: service_api_key parameter is required"
+
+        if not access_token:
+            return "Error: access_token parameter is required"
+
+        config = AuthleteConfig(api_key=service_api_key)
+
+        # Make request to Authlete API
+        result = await make_authlete_request("POST", f"auth/token/revoke/{access_token}", config)
+
+        return json.dumps(result, indent=2)
+
+    except httpx.HTTPStatusError as e:
+        return f"Error: HTTP {e.response.status_code} - {e.response.text}"
+    except httpx.RequestError as e:
+        return f"Error: Request failed - {str(e)}"
+    except Exception as e:
+        return f"Error revoking access token: {str(e)}"
+
+
+@mcp.tool()
+async def delete_access_token(
+    access_token: str = "",
+    service_api_key: str = "",
+    ctx: Context = None,
+) -> str:
+    """Delete an access token.
+
+    Args:
+        access_token: Access token to delete (required)
+        service_api_key: Service API key (required)
+    """
+
+    try:
+        # Validate required parameters
+        if not service_api_key:
+            return "Error: service_api_key parameter is required"
+
+        if not access_token:
+            return "Error: access_token parameter is required"
+
+        config = AuthleteConfig(api_key=service_api_key)
+
+        # Make request to Authlete API
+        result = await make_authlete_request("DELETE", f"auth/token/delete/{access_token}", config)
+
+        return json.dumps(result, indent=2)
+
+    except httpx.HTTPStatusError as e:
+        return f"Error: HTTP {e.response.status_code} - {e.response.text}"
+    except httpx.RequestError as e:
+        return f"Error: Request failed - {str(e)}"
+    except Exception as e:
+        return f"Error deleting access token: {str(e)}"
+
+
+# JOSE Operations
+@mcp.tool()
+async def generate_jose(
+    jose_data: str = "{}",
+    service_api_key: str = "",
+    ctx: Context = None,
+) -> str:
+    """Generate JOSE (JSON Web Signature/Encryption) object.
+
+    Args:
+        jose_data: JSON string with JOSE generation parameters
+        service_api_key: Service API key (required)
+    """
+
+    try:
+        # Validate required parameters
+        if not service_api_key:
+            return "Error: service_api_key parameter is required"
+
+        # Parse JOSE data
+        try:
+            jose_params = json.loads(jose_data)
+        except json.JSONDecodeError as e:
+            return f"Error parsing JOSE data JSON: {str(e)}"
+
+        # Check if organization token is available for JOSE operations
+        if not DEFAULT_API_KEY:
+            return "Error: ORGANIZATION_ACCESS_TOKEN environment variable not set"
+
+        config = AuthleteConfig(api_key=service_api_key)
+
+        # Make request to Authlete API
+        result = await make_authlete_request("POST", "jose/generate", config, jose_params)
+
+        return json.dumps(result, indent=2)
+
+    except httpx.HTTPStatusError as e:
+        return f"Error: HTTP {e.response.status_code} - {e.response.text}"
+    except httpx.RequestError as e:
+        return f"Error: Request failed - {str(e)}"
+    except Exception as e:
+        return f"Error generating JOSE: {str(e)}"
+
+
+@mcp.tool()
+async def verify_jose(
+    jose_token: str = "",
+    service_api_key: str = "",
+    ctx: Context = None,
+) -> str:
+    """Verify JOSE (JSON Web Signature/Encryption) object.
+
+    Args:
+        jose_token: JOSE token to verify (required)
+        service_api_key: Service API key (required)
+    """
+
+    try:
+        # Validate required parameters
+        if not service_api_key:
+            return "Error: service_api_key parameter is required"
+
+        if not jose_token:
+            return "Error: jose_token parameter is required"
+
+        # Check if organization token is available for JOSE operations
+        if not DEFAULT_API_KEY:
+            return "Error: ORGANIZATION_ACCESS_TOKEN environment variable not set"
+
+        config = AuthleteConfig(api_key=service_api_key)
+
+        # Make request to Authlete API
+        result = await make_authlete_request("POST", "jose/verify", config, {"jose": jose_token})
+
+        return json.dumps(result, indent=2)
+
+    except httpx.HTTPStatusError as e:
+        return f"Error: HTTP {e.response.status_code} - {e.response.text}"
+    except httpx.RequestError as e:
+        return f"Error: Request failed - {str(e)}"
+    except Exception as e:
+        return f"Error verifying JOSE: {str(e)}"
 
 
 if __name__ == "__main__":

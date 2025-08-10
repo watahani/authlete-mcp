@@ -4,16 +4,22 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is an Authlete MCP (Model Context Protocol) Server that provides tools for managing Authlete services and clients through a standardized interface. The server acts as a bridge between MCP clients (like Claude Desktop) and Authlete's OAuth/OpenID Connect services.
+This is a unified Authlete MCP (Model Context Protocol) Server that provides comprehensive tools for:
+1. **Managing Authlete services and clients** through a standardized interface
+2. **Advanced API search** with natural language query capabilities and DuckDB-powered full-text search
+
+The server acts as a bridge between MCP clients (like Claude Desktop) and Authlete's OAuth/OpenID Connect services, while also providing intelligent search capabilities for Authlete's API documentation.
 
 ## Architecture
 
-- **Single server file**: `authlete_mcp_server.py` contains all MCP tools and API integration logic
+- **Unified server file**: `authlete_mcp_server.py` contains all MCP tools, API integration logic, and search functionality
 - **FastMCP-based**: Uses FastMCP framework for simplified MCP server development
 - **Async/await pattern**: All API operations are asynchronous using `httpx` for HTTP requests
+- **DuckDB search engine**: `AuthleteApiSearcher` class provides fast, full-text search capabilities
 - **Two API endpoints**: 
   - Authlete API (`AUTHLETE_BASE_URL`) for service/client management
   - Authlete IdP API (`AUTHLETE_IDP_URL`) for service creation/deletion operations
+- **Search database**: `resources/authlete_apis.duckdb` contains indexed API documentation for fast search
 
 ## Development Commands
 
@@ -31,6 +37,9 @@ uv run pytest -m integration           # Run integration tests (requires AUTHLET
 uv run pytest tests/test_mcp_connection.py  # Run specific test file
 uv run pytest -v                       # Verbose output
 uv run pytest --tb=long                # Detailed traceback
+
+# Create/update search database
+uv run python scripts/create_search_database.py  # Create resources/authlete_apis.duckdb from OpenAPI spec
 
 # Update OpenAPI specification
 uv run python scripts/update_openapi_spec.py  # Update resources/openapi-spec.json from latest Authlete docs
@@ -67,6 +76,7 @@ For integration testing, the same environment variables from .env are used.
 ### Tool Categories
 - **Service Management**: Create, read, update, delete services via both direct API and IdP API
 - **Client Management**: Full CRUD operations for OAuth clients including secret rotation and locking
+- **API Search Tools**: Natural language search, API details retrieval, and sample code generation
 
 ### Error Handling Pattern
 - All tools return JSON strings, with errors prefixed as "Error: ..."
@@ -82,11 +92,13 @@ For integration testing, the same environment variables from .env are used.
 - `AuthleteConfig`: Base configuration with API credentials and endpoints
 - `ServiceDetail`: Comprehensive service configuration following Authlete schema
 - `Scope`: OAuth scope definition with name and default entry flag
+- `AuthleteApiSearcher`: DuckDB-based search engine with natural language processing capabilities
 
 ### Reference Resources
 When implementing new Authlete API tools, please refer to these resource files:
 - `resources/postman_collection.json`: Complete Postman collection with all available Authlete API endpoints, request formats, and expected responses
 - `resources/openapi-spec.json`: OpenAPI specification for Authlete API with detailed schema definitions and parameter descriptions
+- `resources/authlete_apis.duckdb`: Search database containing indexed API documentation for fast retrieval
 
 These resources provide authoritative examples of:
 - Correct API endpoint URLs and HTTP methods

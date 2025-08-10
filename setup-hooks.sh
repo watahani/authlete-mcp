@@ -39,7 +39,6 @@ if .git/hooks/pre-commit; then
     echo "   • Type checking (if mypy available)"
     echo "   • Unit tests"
     echo "   • Database creation test"
-    echo "   • Secret scanning"
     echo ""
     echo "💡 To bypass hooks temporarily, use: git commit --no-verify"
     echo "⚠️  Only use --no-verify in emergencies!"
