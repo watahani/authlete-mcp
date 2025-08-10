@@ -365,3 +365,232 @@ async def test_search_apis_with_no_parameters():
                 or "Search database not found" in content
                 or is_valid_json
             )
+
+
+# Schema Search Tests
+@pytest.mark.unit
+async def test_list_schemas_basic_functionality():
+    """Test list_schemas basic functionality"""
+    server_params = StdioServerParameters(
+        command="python", args=["-m", "authlete_mcp_server"], env={"ORGANIZATION_ACCESS_TOKEN": "test-token"}
+    )
+
+    async with stdio_client(server_params) as (read, write):
+        async with ClientSession(read, write) as session:
+            await session.initialize()
+
+            # Call list_schemas tool
+            result = await session.call_tool("list_schemas", {})
+
+            content = result.content[0].text
+            assert content is not None and len(content) > 0
+
+            # Should return either JSON results or database not found message
+            try:
+                schemas = json.loads(content)
+                if isinstance(schemas, list):
+                    # Verify structure if we got results
+                    for schema in schemas[:3]:  # Check first few schemas
+                        assert "schema_name" in schema
+                        assert "schema_type" in schema
+                        assert "title" in schema
+                        assert "description" in schema
+            except json.JSONDecodeError:
+                # If not JSON, should be an error or info message
+                assert (
+                    "Search database not found" in content
+                    or "指定された条件にマッチするスキーマが見つかりませんでした。" in content
+                    or "Schema search error:" in content
+                )
+
+
+@pytest.mark.integration
+async def test_list_schemas_with_database():
+    """Test list_schemas with actual database"""
+    # Skip if search database doesn't exist
+    db_path = Path("resources/authlete_apis.duckdb")
+    if not db_path.exists():
+        pytest.skip("Search database not found. Run 'uv run python scripts/create_search_database.py' first")
+
+    server_params = StdioServerParameters(
+        command="python", args=["-m", "authlete_mcp_server"], env={"ORGANIZATION_ACCESS_TOKEN": "test-token"}
+    )
+
+    async with stdio_client(server_params) as (read, write):
+        async with ClientSession(read, write) as session:
+            await session.initialize()
+
+            # Test without parameters (should return all schemas)
+            result = await session.call_tool("list_schemas", {})
+            content = result.content[0].text
+
+            # Should return JSON results
+            assert content != "指定された条件にマッチするスキーマが見つかりませんでした。"
+
+            schemas = json.loads(content)
+            assert isinstance(schemas, list)
+            assert len(schemas) > 0
+
+            # Check structure of first schema
+            first_schema = schemas[0]
+            required_fields = ["schema_name", "schema_type", "title", "description", "score"]
+            for field in required_fields:
+                assert field in first_schema
+
+
+@pytest.mark.integration
+async def test_list_schemas_with_query():
+    """Test list_schemas with query parameter"""
+    # Skip if search database doesn't exist
+    db_path = Path("resources/authlete_apis.duckdb")
+    if not db_path.exists():
+        pytest.skip("Search database not found. Run 'uv run python scripts/create_search_database.py' first")
+
+    server_params = StdioServerParameters(
+        command="python", args=["-m", "authlete_mcp_server"], env={"ORGANIZATION_ACCESS_TOKEN": "test-token"}
+    )
+
+    async with stdio_client(server_params) as (read, write):
+        async with ClientSession(read, write) as session:
+            await session.initialize()
+
+            # Search for token-related schemas
+            result = await session.call_tool("list_schemas", {"query": "token", "limit": 5})
+            content = result.content[0].text
+
+            if content != "指定された条件にマッチするスキーマが見つかりませんでした。":
+                schemas = json.loads(content)
+                assert isinstance(schemas, list)
+                assert len(schemas) <= 5
+
+                # Should contain token-related schemas
+                schema_names = [s["schema_name"] for s in schemas]
+                # Check if any schema name contains 'token' or related terms
+                has_relevant_schema = any("token" in name.lower() or "access" in name.lower() for name in schema_names)
+                # Allow empty results if no token schemas exist
+                assert has_relevant_schema or len(schemas) == 0
+
+
+@pytest.mark.integration
+async def test_list_schemas_with_type_filter():
+    """Test list_schemas with schema_type filter"""
+    # Skip if search database doesn't exist
+    db_path = Path("resources/authlete_apis.duckdb")
+    if not db_path.exists():
+        pytest.skip("Search database not found. Run 'uv run python scripts/create_search_database.py' first")
+
+    server_params = StdioServerParameters(
+        command="python", args=["-m", "authlete_mcp_server"], env={"ORGANIZATION_ACCESS_TOKEN": "test-token"}
+    )
+
+    async with stdio_client(server_params) as (read, write):
+        async with ClientSession(read, write) as session:
+            await session.initialize()
+
+            # Filter by object type
+            result = await session.call_tool("list_schemas", {"schema_type": "object", "limit": 10})
+            content = result.content[0].text
+
+            if content != "指定された条件にマッチするスキーマが見つかりませんでした。":
+                schemas = json.loads(content)
+                assert isinstance(schemas, list)
+                assert len(schemas) <= 10
+
+                # All results should be object type
+                for schema in schemas:
+                    assert schema["schema_type"] == "object"
+
+
+@pytest.mark.unit
+async def test_get_schema_detail_missing_param():
+    """Test get_schema_detail with missing schema_name parameter"""
+    server_params = StdioServerParameters(
+        command="python", args=["-m", "authlete_mcp_server"], env={"ORGANIZATION_ACCESS_TOKEN": "test-token"}
+    )
+
+    async with stdio_client(server_params) as (read, write):
+        async with ClientSession(read, write) as session:
+            await session.initialize()
+
+            # Call without schema_name parameter
+            result = await session.call_tool("get_schema_detail", {})
+
+            content = result.content[0].text
+            # FastMCP handles validation at framework level
+            assert (
+                "schema_name parameter is required" in content
+                or "validation error" in content
+                or "Field required" in content
+            )
+
+
+@pytest.mark.integration
+async def test_get_schema_detail_with_database():
+    """Test get_schema_detail with actual database"""
+    # Skip if search database doesn't exist
+    db_path = Path("resources/authlete_apis.duckdb")
+    if not db_path.exists():
+        pytest.skip("Search database not found. Run 'uv run python scripts/create_search_database.py' first")
+
+    server_params = StdioServerParameters(
+        command="python", args=["-m", "authlete_mcp_server"], env={"ORGANIZATION_ACCESS_TOKEN": "test-token"}
+    )
+
+    async with stdio_client(server_params) as (read, write):
+        async with ClientSession(read, write) as session:
+            await session.initialize()
+
+            # First get a list of available schemas
+            list_result = await session.call_tool("list_schemas", {"limit": 1})
+            list_content = list_result.content[0].text
+
+            if list_content != "指定された条件にマッチするスキーマが見つかりませんでした。":
+                schemas = json.loads(list_content)
+                if schemas:
+                    schema_name = schemas[0]["schema_name"]
+
+                    # Get detail for the first schema
+                    detail_result = await session.call_tool("get_schema_detail", {"schema_name": schema_name})
+                    detail_content = detail_result.content[0].text
+
+                    assert not detail_content.startswith("Schema not found")
+
+                    # Parse the detailed response
+                    schema_detail = json.loads(detail_content)
+                    required_fields = [
+                        "schema_name",
+                        "schema_type",
+                        "title",
+                        "description",
+                        "properties",
+                        "required_fields",
+                        "example",
+                    ]
+                    for field in required_fields:
+                        assert field in schema_detail
+
+                    # Verify schema name matches
+                    assert schema_detail["schema_name"] == schema_name
+
+
+@pytest.mark.integration
+async def test_get_schema_detail_nonexistent():
+    """Test get_schema_detail with non-existent schema"""
+    # Skip if search database doesn't exist
+    db_path = Path("resources/authlete_apis.duckdb")
+    if not db_path.exists():
+        pytest.skip("Search database not found. Run 'uv run python scripts/create_search_database.py' first")
+
+    server_params = StdioServerParameters(
+        command="python", args=["-m", "authlete_mcp_server"], env={"ORGANIZATION_ACCESS_TOKEN": "test-token"}
+    )
+
+    async with stdio_client(server_params) as (read, write):
+        async with ClientSession(read, write) as session:
+            await session.initialize()
+
+            # Try to get details for non-existent schema
+            result = await session.call_tool("get_schema_detail", {"schema_name": "NonExistentSchema"})
+            content = result.content[0].text
+
+            assert content.startswith("Schema not found: NonExistentSchema")
