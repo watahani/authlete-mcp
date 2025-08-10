@@ -1,4 +1,4 @@
-"""Service-related models for Authlete API."""
+"""Base data models for Authlete services."""
 
 from pydantic import BaseModel, Field
 
@@ -51,3 +51,12 @@ class ServiceDetail(BaseModel):
     directAuthorizationEndpointEnabled: bool | None = Field(None, description="Enable direct authorization endpoint")
     directTokenEndpointEnabled: bool | None = Field(None, description="Enable direct token endpoint")
     directUserInfoEndpointEnabled: bool | None = Field(None, description="Enable direct userinfo endpoint")
+
+
+class ClientCreateRequest(BaseModel):
+    """Request model for creating a client."""
+
+    name: str = Field(..., description="Client name")
+    description: str | None = Field(None, description="Client description")
+    client_type: str | None = Field(None, description="Client type")
+    redirect_uris: list[str] | None = Field(None, description="Redirect URIs")

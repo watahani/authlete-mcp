@@ -1,5 +1,6 @@
-"""Authlete API client for HTTP requests."""
+"""HTTP client for Authlete API."""
 
+import json
 from typing import Any
 
 import httpx
@@ -33,7 +34,7 @@ async def make_authlete_request(
             error_json = response.json()
             if "resultMessage" in error_json:
                 error_detail = f"Authlete API Error: {error_json['resultMessage']}"
-        except (ValueError, KeyError):
+        except json.JSONDecodeError:
             pass
         raise httpx.HTTPStatusError(error_detail, request=response.request, response=response)
 
@@ -66,7 +67,7 @@ async def make_authlete_idp_request(
             error_json = response.json()
             if "resultMessage" in error_json:
                 error_detail = f"Authlete IdP API Error: {error_json['resultMessage']}"
-        except (ValueError, KeyError):
+        except json.JSONDecodeError:
             pass
         raise httpx.HTTPStatusError(error_detail, request=response.request, response=response)
 
@@ -77,7 +78,7 @@ async def make_authlete_idp_request(
     # Handle empty response body
     try:
         return response.json()
-    except (ValueError, httpx.ResponseNotRead):
+    except json.JSONDecodeError:
         # If response body is empty but status is success, return success message
         if 200 <= response.status_code < 300:
             return {"success": True, "message": f"Operation completed with status {response.status_code}"}

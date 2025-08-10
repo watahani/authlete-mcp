@@ -135,12 +135,12 @@ async def create_service_detailed(
     name: str,
     organization_id: str = "",
     description: str = "",
-    issuer: str | None = None,
-    authorization_endpoint: str | None = None,
-    token_endpoint: str | None = None,
-    userinfo_endpoint: str | None = None,
-    revocation_endpoint: str | None = None,
-    jwks_uri: str | None = None,
+    issuer: str = None,
+    authorization_endpoint: str = None,
+    token_endpoint: str = None,
+    userinfo_endpoint: str = None,
+    revocation_endpoint: str = None,
+    jwks_uri: str = None,
     supported_scopes: str = "openid,profile,email",
     supported_response_types: str = "CODE",
     supported_grant_types: str = "AUTHORIZATION_CODE",
@@ -153,10 +153,35 @@ async def create_service_detailed(
     direct_authorization_endpoint_enabled: bool = True,
     direct_token_endpoint_enabled: bool = True,
     direct_userinfo_endpoint_enabled: bool = True,
-    jwks: str | None = None,
+    jwks: str = None,
     ctx: Context = None,
 ) -> str:
-    """Create a new Authlete service via IdP with detailed configuration."""
+    """Create a new Authlete service via IdP with detailed configuration.
+
+    Args:
+        name: Service name
+        organization_id: Organization ID (if empty, uses ORGANIZATION_ID env var)
+        description: Service description
+        issuer: Issuer identifier URL (https:// format)
+        authorization_endpoint: Authorization endpoint URL
+        token_endpoint: Token endpoint URL
+        userinfo_endpoint: UserInfo endpoint URL
+        revocation_endpoint: Token revocation endpoint URL
+        jwks_uri: JWK Set endpoint URL
+        supported_scopes: Comma-separated list of supported scopes (default: "openid,profile,email")
+        supported_response_types: Comma-separated response types (default: "CODE")
+        supported_grant_types: Comma-separated grant types (default: "AUTHORIZATION_CODE")
+        supported_token_auth_methods: Comma-separated auth methods (default: "CLIENT_SECRET_BASIC")
+        pkce_required: Whether PKCE is required
+        pkce_s256_required: Whether S256 is required for PKCE
+        access_token_duration: Access token duration in seconds (default: 86400)
+        refresh_token_duration: Refresh token duration in seconds (default: 864000)
+        id_token_duration: ID token duration in seconds (default: 86400)
+        direct_authorization_endpoint_enabled: Enable direct authorization endpoint
+        direct_token_endpoint_enabled: Enable direct token endpoint
+        direct_userinfo_endpoint_enabled: Enable direct userinfo endpoint
+        jwks: JWK Set document content (JSON string)
+    """
     if not DEFAULT_API_KEY:
         return "Error: ORGANIZATION_ACCESS_TOKEN environment variable not set"
 
@@ -218,7 +243,11 @@ async def create_service_detailed(
 
 
 async def get_service_schema_example(ctx: Context = None) -> str:
-    """Get an example of service configuration schema for create_service_detailed."""
+    """Get an example of service configuration schema for create_service_detailed.
+
+    This returns a comprehensive JSON example that can be used as a template
+    for the service_config parameter in create_service_detailed.
+    """
 
     example_config = {
         "serviceName": "My OIDC Service",
@@ -254,17 +283,19 @@ async def get_service_schema_example(ctx: Context = None) -> str:
 
 
 async def get_service(service_api_key: str = "", ctx: Context = None) -> str:
-    """Get an Authlete service by API key."""
+    """Get an Authlete service by API key.
+
+    Args:
+        service_api_key: Service API key to retrieve (if empty, uses the main token)
+    """
     if not DEFAULT_API_KEY:
         return "Error: ORGANIZATION_ACCESS_TOKEN environment variable not set"
 
-    if not service_api_key:
-        return "Error: service_api_key parameter is required"
-
     config = AuthleteConfig(api_key=DEFAULT_API_KEY)
+    key_to_use = service_api_key if service_api_key else DEFAULT_API_KEY
 
     try:
-        result = await make_authlete_request("GET", f"{service_api_key}/service/get/", config)
+        result = await make_authlete_request("GET", f"{key_to_use}/service/get/", config)
         return json.dumps(result, indent=2)
     except Exception as e:
         return f"Error getting service: {str(e)}"
@@ -285,18 +316,25 @@ async def list_services(ctx: Context = None) -> str:
 
 
 async def update_service(service_data: str, service_api_key: str = "", ctx: Context = None) -> str:
-    """Update an Authlete service."""
-    if not DEFAULT_API_KEY:
-        return "Error: ORGANIZATION_ACCESS_TOKEN environment variable not set"
+    """Update an Authlete service.
 
+    Args:
+        service_data: JSON string containing service data to update
+        service_api_key: Service API key (if empty, uses the main token)
+    """
+    # Validate required parameters
     if not service_api_key:
         return "Error: service_api_key parameter is required"
 
+    if not DEFAULT_API_KEY:
+        return "Error: ORGANIZATION_ACCESS_TOKEN environment variable not set"
+
     config = AuthleteConfig(api_key=DEFAULT_API_KEY)
+    key_to_use = service_api_key if service_api_key else DEFAULT_API_KEY
 
     try:
         data = json.loads(service_data)
-        result = await make_authlete_request("POST", f"{service_api_key}/service/update", config, data)
+        result = await make_authlete_request("POST", f"{key_to_use}/service/update", config, data)
         return json.dumps(result, indent=2)
     except json.JSONDecodeError as e:
         return f"Error parsing service data JSON: {str(e)}"
@@ -325,13 +363,6 @@ async def delete_service(service_id: str, organization_id: str = "", ctx: Contex
 
     try:
         result = await make_authlete_idp_request("POST", "service/remove", config, data)
-
-        # 204 No Content (成功) または success メッセージの場合、明確な削除完了メッセージを返す
-        if isinstance(result, dict) and (
-            result.get("success") or "Service deleted successfully" in result.get("message", "")
-        ):
-            return f"Service deleted successfully (ID: {service_id})"
-
         return json.dumps(result, indent=2)
     except Exception as e:
         return f"Error deleting service: {str(e)}"

@@ -11,7 +11,7 @@ from mcp.client.stdio import stdio_client
 async def test_jwks_generation_tool_exists():
     """Test that generate_jwks tool is available."""
     server_params = StdioServerParameters(
-        command="uv", args=["run", "python", "authlete_mcp_server.py"], env={"ORGANIZATION_ACCESS_TOKEN": "test-token"}
+        command="uv", args=["run", "python", "main.py"], env={"ORGANIZATION_ACCESS_TOKEN": "test-token"}
     )
 
     async with stdio_client(server_params) as (read_stream, write_stream):
@@ -34,7 +34,7 @@ async def test_jwks_generation_tool_exists():
 async def test_generate_jwks_default_rsa():
     """Test RSA key generation with default parameters."""
     server_params = StdioServerParameters(
-        command="uv", args=["run", "python", "authlete_mcp_server.py"], env={"ORGANIZATION_ACCESS_TOKEN": "test-token"}
+        command="uv", args=["run", "python", "main.py"], env={"ORGANIZATION_ACCESS_TOKEN": "test-token"}
     )
 
     async with stdio_client(server_params) as (read_stream, write_stream):
@@ -64,7 +64,7 @@ async def test_generate_jwks_default_rsa():
 async def test_generate_jwks_ec_with_curve():
     """Test EC key generation with curve parameter."""
     server_params = StdioServerParameters(
-        command="uv", args=["run", "python", "authlete_mcp_server.py"], env={"ORGANIZATION_ACCESS_TOKEN": "test-token"}
+        command="uv", args=["run", "python", "main.py"], env={"ORGANIZATION_ACCESS_TOKEN": "test-token"}
     )
 
     async with stdio_client(server_params) as (read_stream, write_stream):
@@ -95,7 +95,7 @@ async def test_generate_jwks_ec_with_curve():
 async def test_generate_jwks_ec_missing_curve():
     """Test EC key generation fails without curve parameter."""
     server_params = StdioServerParameters(
-        command="uv", args=["run", "python", "authlete_mcp_server.py"], env={"ORGANIZATION_ACCESS_TOKEN": "test-token"}
+        command="uv", args=["run", "python", "main.py"], env={"ORGANIZATION_ACCESS_TOKEN": "test-token"}
     )
 
     async with stdio_client(server_params) as (read_stream, write_stream):
@@ -114,7 +114,7 @@ async def test_generate_jwks_ec_missing_curve():
 async def test_generate_jwks_with_x509():
     """Test key generation with X.509 certificate."""
     server_params = StdioServerParameters(
-        command="uv", args=["run", "python", "authlete_mcp_server.py"], env={"ORGANIZATION_ACCESS_TOKEN": "test-token"}
+        command="uv", args=["run", "python", "main.py"], env={"ORGANIZATION_ACCESS_TOKEN": "test-token"}
     )
 
     async with stdio_client(server_params) as (read_stream, write_stream):
@@ -142,7 +142,7 @@ async def test_generate_jwks_with_x509():
 async def test_generate_jwks_okp_with_curve():
     """Test OKP key generation with Ed25519 curve."""
     server_params = StdioServerParameters(
-        command="uv", args=["run", "python", "authlete_mcp_server.py"], env={"ORGANIZATION_ACCESS_TOKEN": "test-token"}
+        command="uv", args=["run", "python", "main.py"], env={"ORGANIZATION_ACCESS_TOKEN": "test-token"}
     )
 
     async with stdio_client(server_params) as (read_stream, write_stream):
@@ -172,7 +172,7 @@ async def test_generate_jwks_okp_with_curve():
 async def test_generate_jwks_oct_with_size():
     """Test oct (symmetric) key generation with custom size."""
     server_params = StdioServerParameters(
-        command="uv", args=["run", "python", "authlete_mcp_server.py"], env={"ORGANIZATION_ACCESS_TOKEN": "test-token"}
+        command="uv", args=["run", "python", "main.py"], env={"ORGANIZATION_ACCESS_TOKEN": "test-token"}
     )
 
     async with stdio_client(server_params) as (read_stream, write_stream):
@@ -199,7 +199,7 @@ async def test_generate_jwks_oct_with_size():
 async def test_generate_jwks_with_kid_generation():
     """Test key generation with automatic key ID generation."""
     server_params = StdioServerParameters(
-        command="uv", args=["run", "python", "authlete_mcp_server.py"], env={"ORGANIZATION_ACCESS_TOKEN": "test-token"}
+        command="uv", args=["run", "python", "main.py"], env={"ORGANIZATION_ACCESS_TOKEN": "test-token"}
     )
 
     async with stdio_client(server_params) as (read_stream, write_stream):
@@ -225,7 +225,7 @@ async def test_generate_jwks_with_kid_generation():
 async def test_generate_jwks_real_api():
     """Integration test with actual mkjwk.org API."""
     server_params = StdioServerParameters(
-        command="uv", args=["run", "python", "authlete_mcp_server.py"], env={"ORGANIZATION_ACCESS_TOKEN": "test-token"}
+        command="uv", args=["run", "python", "main.py"], env={"ORGANIZATION_ACCESS_TOKEN": "test-token"}
     )
 
     async with stdio_client(server_params) as (read_stream, write_stream):

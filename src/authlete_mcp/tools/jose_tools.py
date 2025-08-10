@@ -1,63 +1,87 @@
-"""JOSE (JSON Object Signing and Encryption) tools for Authlete MCP Server."""
+"""JOSE (JSON Web Signature/Encryption) tools for Authlete MCP Server."""
 
 import json
 
-from mcp.server.fastmcp import Context
+import httpx
 
-from ..api.client import make_authlete_request
+from ..api import make_authlete_request
 from ..config import DEFAULT_API_KEY, AuthleteConfig
 
 
-async def generate_jose(service_api_key: str = "", jose_data: str = "{}", ctx: Context = None) -> str:
+async def generate_jose(
+    jose_data: str = "{}",
+    service_api_key: str = "",
+) -> str:
     """Generate JOSE (JSON Web Signature/Encryption) object.
 
     Args:
-        service_api_key: Service API key (required)
         jose_data: JSON string with JOSE generation parameters
+        service_api_key: Service API key (required)
     """
-    if not service_api_key:
-        return "Error: service_api_key parameter is required for JOSE operations"
 
     try:
-        data = json.loads(jose_data)
-    except json.JSONDecodeError as e:
-        return f"Error parsing JOSE data JSON: {str(e)}"
+        # Validate required parameters
+        if not service_api_key:
+            return "Error: service_api_key parameter is required"
 
-    if not DEFAULT_API_KEY:
-        return "Error: ORGANIZATION_ACCESS_TOKEN environment variable not set"
+        # Parse JOSE data
+        try:
+            jose_params = json.loads(jose_data)
+        except json.JSONDecodeError as e:
+            return f"Error parsing JOSE data JSON: {str(e)}"
 
-    config = AuthleteConfig(api_key=service_api_key)
+        # Check if organization token is available for JOSE operations
+        if not DEFAULT_API_KEY:
+            return "Error: ORGANIZATION_ACCESS_TOKEN environment variable not set"
 
-    try:
-        result = await make_authlete_request("POST", "jose/create", config, data)
+        config = AuthleteConfig(api_key=service_api_key)
+
+        # Make request to Authlete API
+        result = await make_authlete_request("POST", "jose/generate", config, jose_params)
+
         return json.dumps(result, indent=2)
+
+    except httpx.HTTPStatusError as e:
+        return f"Error: HTTP {e.response.status_code} - {e.response.text}"
+    except httpx.RequestError as e:
+        return f"Error: Request failed - {str(e)}"
     except Exception as e:
-        return f"Error generating JOSE object: {str(e)}"
+        return f"Error generating JOSE: {str(e)}"
 
 
-async def verify_jose(service_api_key: str = "", jose_token: str = "", ctx: Context = None) -> str:
+async def verify_jose(
+    jose_token: str = "",
+    service_api_key: str = "",
+) -> str:
     """Verify JOSE (JSON Web Signature/Encryption) object.
 
     Args:
-        service_api_key: Service API key (required)
         jose_token: JOSE token to verify (required)
+        service_api_key: Service API key (required)
     """
-    if not service_api_key:
-        return "Error: service_api_key parameter is required for JOSE operations"
-
-    if not jose_token:
-        return "Error: jose_token parameter is required"
-
-    if not DEFAULT_API_KEY:
-        return "Error: ORGANIZATION_ACCESS_TOKEN environment variable not set"
-
-    config = AuthleteConfig(api_key=service_api_key)
-
-    # Create verification request payload
-    data = {"token": jose_token}
 
     try:
-        result = await make_authlete_request("POST", "jose/verify", config, data)
+        # Validate required parameters
+        if not service_api_key:
+            return "Error: service_api_key parameter is required"
+
+        if not jose_token:
+            return "Error: jose_token parameter is required"
+
+        # Check if organization token is available for JOSE operations
+        if not DEFAULT_API_KEY:
+            return "Error: ORGANIZATION_ACCESS_TOKEN environment variable not set"
+
+        config = AuthleteConfig(api_key=service_api_key)
+
+        # Make request to Authlete API
+        result = await make_authlete_request("POST", "jose/verify", config, {"jose": jose_token})
+
         return json.dumps(result, indent=2)
+
+    except httpx.HTTPStatusError as e:
+        return f"Error: HTTP {e.response.status_code} - {e.response.text}"
+    except httpx.RequestError as e:
+        return f"Error: Request failed - {str(e)}"
     except Exception as e:
-        return f"Error verifying JOSE object: {str(e)}"
+        return f"Error verifying JOSE: {str(e)}"

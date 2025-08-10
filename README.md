@@ -4,6 +4,28 @@ A unified Model Context Protocol (MCP) server that provides comprehensive tools 
 1. **Authlete Service Management**: Managing Authlete services and clients through a standardized interface
 2. **Advanced API Search**: Natural language search capabilities for Authlete OpenAPI specifications with fuzzy matching and semantic search
 
+## Architecture
+
+The server follows a modular architecture with clear separation of concerns:
+
+```
+src/authlete_mcp/
+├── server.py              # Main MCP server with tool registration
+├── config.py              # Configuration and environment variables
+├── search.py              # AuthleteApiSearcher search engine
+├── models/
+│   └── base.py           # Data models (Scope, ServiceDetail, etc.)
+├── api/
+│   └── client.py         # HTTP client for Authlete APIs
+└── tools/                # MCP tools organized by functionality
+    ├── service_tools.py  # Service management (7 tools)
+    ├── client_tools.py   # Client management (16 tools)
+    ├── token_tools.py    # Token operations (5 tools)
+    ├── jose_tools.py     # JOSE operations (2 tools)
+    ├── search_tools.py   # API/schema search (5 tools)
+    └── utility_tools.py  # Utilities like JWKS generation (1 tool)
+```
+
 ### Reference Resources
 
 When implementing new Authlete API tools, please refer to these resource files:
@@ -38,10 +60,36 @@ These resources provide authoritative examples of:
 - `update_client_secret`: Update client secret manually
 - `update_client_lock`: Lock or unlock a client
 
+### Extended Client Operations
+- `get_authorized_applications`: Get authorized applications for a subject
+- `update_client_tokens`: Update client tokens for a subject
+- `delete_client_tokens`: Delete client tokens for a subject
+- `get_granted_scopes`: Get granted scopes for a client and subject
+- `delete_granted_scopes`: Delete granted scopes for a client and subject
+- `get_requestable_scopes`: Get requestable scopes for a client
+- `update_requestable_scopes`: Update requestable scopes for a client
+- `delete_requestable_scopes`: Delete requestable scopes for a client
+
+### Token Operations
+- `list_issued_tokens`: List issued tokens for a service
+- `create_access_token`: Create an access token
+- `update_access_token`: Update an access token
+- `revoke_access_token`: Revoke an access token
+- `delete_access_token`: Delete an access token
+
+### JOSE Operations
+- `generate_jose`: Generate JOSE (JSON Web Signature/Encryption) object
+- `verify_jose`: Verify JOSE (JSON Web Signature/Encryption) object
+
 ### Advanced API Search Tools 🆕
 - `search_apis`: Natural language API search with semantic matching and relevance scoring
 - `get_api_detail`: Detailed API information with parameters, request/response schemas, and sample code
 - `get_sample_code`: Language-specific code samples for API endpoints
+- `list_schemas`: List or search OpenAPI schemas
+- `get_schema_detail`: Get detailed information for a specific schema
+
+### Utility Tools
+- `generate_jwks`: Generate JSON Web Key Set (JWKS) using mkjwk.org API
 
 #### Search Features
 - **Natural Language Search**: Ask questions like "revoke token" or "create client" and get relevant APIs
@@ -94,7 +142,7 @@ Add the unified server to your Claude Desktop configuration:
 ### Direct Usage
 
 ```bash
-# Run unified Authlete MCP Server (service management + API search)
+# Run unified Authlete MCP Server (all tools: service, client, token, JOSE, search, utility)
 uv run python main.py
 
 # Using custom organization access token
