@@ -12,14 +12,33 @@ The server acts as a bridge between MCP clients (like Claude Desktop) and Authle
 
 ## Architecture
 
-- **Unified server file**: `authlete_mcp_server.py` contains all MCP tools, API integration logic, and search functionality
+- **Modular structure**: Code is organized in `src/authlete_mcp/` with clear separation of concerns
 - **FastMCP-based**: Uses FastMCP framework for simplified MCP server development
 - **Async/await pattern**: All API operations are asynchronous using `httpx` for HTTP requests
-- **DuckDB search engine**: `AuthleteApiSearcher` class provides fast, full-text search capabilities
+- **DuckDB search engine**: `AuthleteApiSearcher` class in `src/authlete_mcp/search.py` provides fast, full-text search capabilities
 - **Two API endpoints**: 
   - Authlete API (`AUTHLETE_BASE_URL`) for service/client management
   - Authlete IdP API (`AUTHLETE_IDP_URL`) for service creation/deletion operations
 - **Search database**: `resources/authlete_apis.duckdb` contains indexed API documentation for fast search
+
+### Module Structure
+```
+src/authlete_mcp/
+├── server.py              # Main MCP server with tool registration
+├── config.py              # Configuration and environment variables
+├── search.py              # AuthleteApiSearcher search engine
+├── models/
+│   └── base.py           # Data models (Scope, ServiceDetail, etc.)
+├── api/
+│   └── client.py         # HTTP client for Authlete APIs
+└── tools/                # MCP tools organized by functionality
+    ├── service_tools.py  # Service management (7 tools)
+    ├── client_tools.py   # Client management (16 tools)
+    ├── token_tools.py    # Token operations (5 tools)
+    ├── jose_tools.py     # JOSE operations (2 tools)
+    ├── search_tools.py   # API/schema search (5 tools)
+    └── utility_tools.py  # Utilities like JWKS generation (1 tool)
+```
 
 ## Development Commands
 
@@ -28,7 +47,7 @@ The server acts as a bridge between MCP clients (like Claude Desktop) and Authle
 uv sync
 
 # Run the MCP server
-uv run authlete_mcp_server.py
+uv run python main.py
 
 # Run tests
 uv run pytest                           # Run all tests
@@ -48,9 +67,9 @@ uv run python scripts/update_openapi_spec.py  # Update resources/openapi-spec.js
 uv run python scripts/cleanup_test_services.py  # Delete services with "pytest-" prefix
 
 # Lint and format code
-uv run ruff check authlete_mcp_server.py tests/ scripts/    # Check for linting errors
-uv run ruff format authlete_mcp_server.py tests/ scripts/   # Auto-format files
-uv run ruff check --fix authlete_mcp_server.py tests/      # Auto-fix fixable errors
+uv run ruff check src/ tests/ scripts/ main.py    # Check for linting errors
+uv run ruff format src/ tests/ scripts/ main.py   # Auto-format files
+uv run ruff check --fix src/ tests/ scripts/      # Auto-fix fixable errors
 
 # Lint YAML files
 uv run yamllint .github/                # Lint YAML files with yamllint
@@ -74,9 +93,12 @@ For integration testing, the same environment variables from .env are used.
 ## Key Implementation Details
 
 ### Tool Categories
-- **Service Management**: Create, read, update, delete services via both direct API and IdP API
-- **Client Management**: Full CRUD operations for OAuth clients including secret rotation and locking
-- **API Search Tools**: Natural language search, API details retrieval, and sample code generation
+- **Service Management** (`service_tools.py`): Create, read, update, delete services via both direct API and IdP API
+- **Client Management** (`client_tools.py`): Full CRUD operations for OAuth clients including secret rotation and locking
+- **Token Management** (`token_tools.py`): Access token lifecycle management
+- **JOSE Operations** (`jose_tools.py`): JWT/JWS/JWE generation and verification
+- **API Search Tools** (`search_tools.py`): Natural language search, API details retrieval, and sample code generation
+- **Utility Tools** (`utility_tools.py`): JWKS generation and other utilities
 
 ### Error Handling Pattern
 - All tools return JSON strings, with errors prefixed as "Error: ..."

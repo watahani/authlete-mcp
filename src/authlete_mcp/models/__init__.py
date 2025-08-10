@@ -1,6 +1,5 @@
-"""Authlete API models."""
+"""Data models for Authlete MCP Server."""
 
-from .client import ClientCreateRequest
-from .service import Scope, ServiceDetail
+from .base import ClientCreateRequest, Scope, ServiceDetail
 
 __all__ = ["Scope", "ServiceDetail", "ClientCreateRequest"]

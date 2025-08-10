@@ -12,7 +12,7 @@ from mcp.client.stdio import stdio_client
 async def test_search_apis_basic_functionality():
     """Test search_apis basic functionality"""
     server_params = StdioServerParameters(
-        command="python", args=["-m", "authlete_mcp_server"], env={"ORGANIZATION_ACCESS_TOKEN": "test-token"}
+        command="python", args=["main.py"], env={"ORGANIZATION_ACCESS_TOKEN": "test-token"}
     )
 
     async with stdio_client(server_params) as (read, write):
@@ -56,7 +56,7 @@ async def test_search_apis_with_database():
         pytest.skip("Search database not found. Run 'uv run python scripts/create_search_database.py' first")
 
     server_params = StdioServerParameters(
-        command="python", args=["-m", "authlete_mcp_server"], env={"ORGANIZATION_ACCESS_TOKEN": "test-token"}
+        command="python", args=["main.py"], env={"ORGANIZATION_ACCESS_TOKEN": "test-token"}
     )
 
     async with stdio_client(server_params) as (read, write):
@@ -91,7 +91,7 @@ async def test_search_apis_with_filters():
         pytest.skip("Search database not found. Run 'uv run python scripts/create_search_database.py' first")
 
     server_params = StdioServerParameters(
-        command="python", args=["-m", "authlete_mcp_server"], env={"ORGANIZATION_ACCESS_TOKEN": "test-token"}
+        command="python", args=["main.py"], env={"ORGANIZATION_ACCESS_TOKEN": "test-token"}
     )
 
     async with stdio_client(server_params) as (read, write):
@@ -120,7 +120,7 @@ async def test_get_api_detail_with_database():
         pytest.skip("Search database not found. Run 'uv run python scripts/create_search_database.py' first")
 
     server_params = StdioServerParameters(
-        command="python", args=["-m", "authlete_mcp_server"], env={"ORGANIZATION_ACCESS_TOKEN": "test-token"}
+        command="python", args=["main.py"], env={"ORGANIZATION_ACCESS_TOKEN": "test-token"}
     )
 
     async with stdio_client(server_params) as (read, write):
@@ -169,7 +169,7 @@ async def test_get_api_detail_by_operation_id():
         pytest.skip("Search database not found. Run 'uv run python scripts/create_search_database.py' first")
 
     server_params = StdioServerParameters(
-        command="python", args=["-m", "authlete_mcp_server"], env={"ORGANIZATION_ACCESS_TOKEN": "test-token"}
+        command="python", args=["main.py"], env={"ORGANIZATION_ACCESS_TOKEN": "test-token"}
     )
 
     async with stdio_client(server_params) as (read, write):
@@ -204,7 +204,7 @@ async def test_get_sample_code():
         pytest.skip("Search database not found. Run 'uv run python scripts/create_search_database.py' first")
 
     server_params = StdioServerParameters(
-        command="python", args=["-m", "authlete_mcp_server"], env={"ORGANIZATION_ACCESS_TOKEN": "test-token"}
+        command="python", args=["main.py"], env={"ORGANIZATION_ACCESS_TOKEN": "test-token"}
     )
 
     async with stdio_client(server_params) as (read, write):
@@ -239,7 +239,7 @@ async def test_get_sample_code():
 async def test_get_api_detail_missing_params():
     """Test get_api_detail with missing required parameters"""
     server_params = StdioServerParameters(
-        command="python", args=["-m", "authlete_mcp_server"], env={"ORGANIZATION_ACCESS_TOKEN": "test-token"}
+        command="python", args=["main.py"], env={"ORGANIZATION_ACCESS_TOKEN": "test-token"}
     )
 
     async with stdio_client(server_params) as (read, write):
@@ -257,7 +257,7 @@ async def test_get_api_detail_missing_params():
 async def test_get_sample_code_missing_language():
     """Test get_sample_code with missing language parameter"""
     server_params = StdioServerParameters(
-        command="python", args=["-m", "authlete_mcp_server"], env={"ORGANIZATION_ACCESS_TOKEN": "test-token"}
+        command="python", args=["main.py"], env={"ORGANIZATION_ACCESS_TOKEN": "test-token"}
     )
 
     async with stdio_client(server_params) as (read, write):
@@ -285,7 +285,7 @@ async def test_search_apis_with_method_filter():
         pytest.skip("Search database not found. Run 'uv run python scripts/create_search_database.py' first")
 
     server_params = StdioServerParameters(
-        command="python", args=["-m", "authlete_mcp_server"], env={"ORGANIZATION_ACCESS_TOKEN": "test-token"}
+        command="python", args=["main.py"], env={"ORGANIZATION_ACCESS_TOKEN": "test-token"}
     )
 
     async with stdio_client(server_params) as (read, write):
@@ -319,7 +319,7 @@ async def test_search_apis_with_different_modes():
         pytest.skip("Search database not found. Run 'uv run python scripts/create_search_database.py' first")
 
     server_params = StdioServerParameters(
-        command="python", args=["-m", "authlete_mcp_server"], env={"ORGANIZATION_ACCESS_TOKEN": "test-token"}
+        command="python", args=["main.py"], env={"ORGANIZATION_ACCESS_TOKEN": "test-token"}
     )
 
     async with stdio_client(server_params) as (read, write):
@@ -342,7 +342,7 @@ async def test_search_apis_with_different_modes():
 async def test_search_apis_with_no_parameters():
     """Test search_apis with no parameters"""
     server_params = StdioServerParameters(
-        command="python", args=["-m", "authlete_mcp_server"], env={"ORGANIZATION_ACCESS_TOKEN": "test-token"}
+        command="python", args=["main.py"], env={"ORGANIZATION_ACCESS_TOKEN": "test-token"}
     )
 
     async with stdio_client(server_params) as (read, write):
@@ -372,7 +372,7 @@ async def test_search_apis_with_no_parameters():
 async def test_list_schemas_basic_functionality():
     """Test list_schemas basic functionality"""
     server_params = StdioServerParameters(
-        command="python", args=["-m", "authlete_mcp_server"], env={"ORGANIZATION_ACCESS_TOKEN": "test-token"}
+        command="python", args=["main.py"], env={"ORGANIZATION_ACCESS_TOKEN": "test-token"}
     )
 
     async with stdio_client(server_params) as (read, write):
@@ -413,7 +413,7 @@ async def test_list_schemas_with_database():
         pytest.skip("Search database not found. Run 'uv run python scripts/create_search_database.py' first")
 
     server_params = StdioServerParameters(
-        command="python", args=["-m", "authlete_mcp_server"], env={"ORGANIZATION_ACCESS_TOKEN": "test-token"}
+        command="python", args=["main.py"], env={"ORGANIZATION_ACCESS_TOKEN": "test-token"}
     )
 
     async with stdio_client(server_params) as (read, write):
@@ -447,7 +447,7 @@ async def test_list_schemas_with_query():
         pytest.skip("Search database not found. Run 'uv run python scripts/create_search_database.py' first")
 
     server_params = StdioServerParameters(
-        command="python", args=["-m", "authlete_mcp_server"], env={"ORGANIZATION_ACCESS_TOKEN": "test-token"}
+        command="python", args=["main.py"], env={"ORGANIZATION_ACCESS_TOKEN": "test-token"}
     )
 
     async with stdio_client(server_params) as (read, write):
@@ -480,7 +480,7 @@ async def test_list_schemas_with_type_filter():
         pytest.skip("Search database not found. Run 'uv run python scripts/create_search_database.py' first")
 
     server_params = StdioServerParameters(
-        command="python", args=["-m", "authlete_mcp_server"], env={"ORGANIZATION_ACCESS_TOKEN": "test-token"}
+        command="python", args=["main.py"], env={"ORGANIZATION_ACCESS_TOKEN": "test-token"}
     )
 
     async with stdio_client(server_params) as (read, write):
@@ -505,7 +505,7 @@ async def test_list_schemas_with_type_filter():
 async def test_get_schema_detail_missing_param():
     """Test get_schema_detail with missing schema_name parameter"""
     server_params = StdioServerParameters(
-        command="python", args=["-m", "authlete_mcp_server"], env={"ORGANIZATION_ACCESS_TOKEN": "test-token"}
+        command="python", args=["main.py"], env={"ORGANIZATION_ACCESS_TOKEN": "test-token"}
     )
 
     async with stdio_client(server_params) as (read, write):
@@ -533,7 +533,7 @@ async def test_get_schema_detail_with_database():
         pytest.skip("Search database not found. Run 'uv run python scripts/create_search_database.py' first")
 
     server_params = StdioServerParameters(
-        command="python", args=["-m", "authlete_mcp_server"], env={"ORGANIZATION_ACCESS_TOKEN": "test-token"}
+        command="python", args=["main.py"], env={"ORGANIZATION_ACCESS_TOKEN": "test-token"}
     )
 
     async with stdio_client(server_params) as (read, write):
@@ -582,7 +582,7 @@ async def test_get_schema_detail_nonexistent():
         pytest.skip("Search database not found. Run 'uv run python scripts/create_search_database.py' first")
 
     server_params = StdioServerParameters(
-        command="python", args=["-m", "authlete_mcp_server"], env={"ORGANIZATION_ACCESS_TOKEN": "test-token"}
+        command="python", args=["main.py"], env={"ORGANIZATION_ACCESS_TOKEN": "test-token"}
     )
 
     async with stdio_client(server_params) as (read, write):
