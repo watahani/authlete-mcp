@@ -1,8 +1,8 @@
 # Authlete MCP Server
 
-AI generated Model Context Protocol (MCP) servers that provide comprehensive tools for:
+A unified Model Context Protocol (MCP) server that provides comprehensive tools for:
 1. **Authlete Service Management**: Managing Authlete services and clients through a standardized interface
-2. **API Documentation Search**: Advanced search capabilities for Authlete OpenAPI specifications
+2. **Advanced API Search**: Natural language search capabilities for Authlete OpenAPI specifications with fuzzy matching and semantic search
 
 ### Reference Resources
 
@@ -17,17 +17,9 @@ These resources provide authoritative examples of:
 - Expected response formats and status codes
 - Authentication requirements for each endpoint
 
-## Servers Overview
-
-### 1. Authlete MCP Server (`authlete_mcp_server.py`)
-Service and client management server for Authlete platform operations.
-
-### 2. Authlete API Search Server (`authlete_api_search_server.py`) 🆕
-Advanced OpenAPI documentation search server with natural language and fuzzy search capabilities.
-
 ## Features
 
-### Authlete MCP Server - Service Management
+### Service Management Tools
 - `create_service`: Create a new Authlete service with basic configuration
 - `create_service_detailed`: Create a new Authlete service with comprehensive configuration
 - `get_service_schema_example`: Get an example service configuration schema
@@ -46,17 +38,15 @@ Advanced OpenAPI documentation search server with natural language and fuzzy sea
 - `update_client_secret`: Update client secret manually
 - `update_client_lock`: Lock or unlock a client
 
-### Authlete API Search Server - Advanced Search Features
-- `search_apis`: Multi-mode API search (exact, partial, fuzzy, natural language)
-- `get_api_detail`: Detailed API information with parameters, request/response schemas
+### Advanced API Search Tools 🆕
+- `search_apis`: Natural language API search with semantic matching and relevance scoring
+- `get_api_detail`: Detailed API information with parameters, request/response schemas, and sample code
 - `get_sample_code`: Language-specific code samples for API endpoints
-- `suggest_apis`: Natural language API recommendations based on user questions
 
-#### Search Modes
-- **Exact**: Perfect string matching for precise searches
-- **Partial**: Substring matching for flexible searches  
-- **Fuzzy**: Typo-tolerant search using similarity algorithms
-- **Natural**: Semantic search for natural language queries
+#### Search Features
+- **Natural Language Search**: Ask questions like "revoke token" or "create client" and get relevant APIs
+- **Relevance Scoring**: Results are ranked by relevance with intelligent scoring algorithm
+- **DuckDB-Powered**: Fast, full-text search with optimized performance
 
 #### Search Filters
 - Path-based filtering (`path_query`)
@@ -71,19 +61,18 @@ Advanced OpenAPI documentation search server with natural language and fuzzy sea
 # Install dependencies
 uv sync
 
-# Run the Authlete MCP Server
-uv run python main.py
+# Create the search database (required for API search functionality)
+uv run python scripts/create_search_database.py
 
-# Run the API Search Server
-uv run python authlete_api_search_server.py
+# Run the unified Authlete MCP Server
+uv run python main.py
 ```
 
 ## Usage
 
 ### With Claude Desktop
 
-#### Both Servers Configuration
-Add both servers to your Claude Desktop configuration for comprehensive Authlete support:
+Add the unified server to your Claude Desktop configuration:
 
 ```json
 {
@@ -97,24 +86,6 @@ Add both servers to your Claude Desktop configuration for comprehensive Authlete
         "AUTHLETE_BASE_URL": "https://jp.authlete.com",
         "AUTHLETE_API_SERVER_ID": "53285"
       }
-    },
-    "authlete-api-search": {
-      "command": "uv",
-      "args": ["run", "python", "/path/to/authlete-mcp/authlete_api_search_server.py"]
-    }
-  }
-}
-```
-
-#### API Search Server Only
-For documentation search only (no service management):
-
-```json
-{
-  "mcpServers": {
-    "authlete-search": {
-      "command": "uv", 
-      "args": ["run", "python", "/path/to/authlete-mcp/authlete_api_search_server.py"]
     }
   }
 }
@@ -123,38 +94,39 @@ For documentation search only (no service management):
 ### Direct Usage
 
 ```bash
-# Run Authlete MCP Server (service management)
+# Run unified Authlete MCP Server (service management + API search)
 uv run python main.py
 
-# Run API Search Server (documentation search)
-uv run python authlete_api_search_server.py
-
-# Using custom organization access token for MCP server
+# Using custom organization access token
 ORGANIZATION_ACCESS_TOKEN=your-token uv run python main.py
+
+# Run with specific authlete server
+AUTHLETE_BASE_URL=https://eu.authlete.com uv run python main.py
 ```
 
 ## Configuration
 
-### Authlete MCP Server Configuration
-The service management server requires the following environment variables:
+The unified server supports the following environment variables:
 
-- `ORGANIZATION_ACCESS_TOKEN`: Your organization access token (required)
+### Required for Service Management
+- `ORGANIZATION_ACCESS_TOKEN`: Your organization access token (required for service management)
+
+### Optional Configuration
 - `ORGANIZATION_ID`: Your organization ID (optional, can be overridden by function parameters)
 - `AUTHLETE_BASE_URL`: Authlete API base URL (default: `https://jp.authlete.com`)
 - `AUTHLETE_IDP_URL`: Authlete IdP URL (default: `https://login.authlete.com`)
 - `AUTHLETE_API_SERVER_ID`: API Server ID (default: `53285` for JP)
 
-### API Search Server Configuration
-The documentation search server requires no environment variables and uses:
-- `resources/openapi-spec.json`: OpenAPI specification file (automatically located)
+### API Search Requirements
+- `resources/authlete_apis.duckdb`: Search database file (created by `scripts/create_search_database.py`)
+
+**Note**: API search functionality is automatically disabled if the search database is not found, but service management will still work.
 
 ## API Reference
 
-### Authlete MCP Server
-All tools automatically use the `ORGANIZATION_ACCESS_TOKEN` environment variable for authentication. No sensitive tokens are passed as parameters.
+All service management tools automatically use the `ORGANIZATION_ACCESS_TOKEN` environment variable for authentication. No sensitive tokens are passed as parameters.
 
-### API Search Server 
-The search server provides read-only access to OpenAPI documentation with advanced search capabilities.
+API search tools provide read-only access to OpenAPI documentation with advanced search capabilities.
 
 ### Service Operations
 
@@ -235,50 +207,43 @@ Retrieves client information.
 - `client_id` (string, required): Client ID
 - `service_api_key` (string, optional): Service API key
 
-## API Search Server Reference
+### API Search Operations
 
-### search_apis
-Multi-mode search for Authlete APIs with flexible filtering options.
+#### search_apis
+Natural language search for Authlete APIs with intelligent relevance scoring.
 
 **Parameters:**
-- `query` (string, optional): General search query across all fields
+- `query` (string, optional): Natural language search query (e.g., "revoke token", "create client")
 - `path_query` (string, optional): Specific API path search (e.g., "/api/auth/token")
 - `description_query` (string, optional): Search in API descriptions and summaries
 - `tag_filter` (string, optional): Filter by API tag (e.g., "Authorization", "Token")
 - `method_filter` (string, optional): Filter by HTTP method ("GET", "POST", "PUT", "DELETE")
-- `mode` (string, optional): Search mode - "exact", "partial", "fuzzy", "natural" (default: "partial")
+- `mode` (string, optional): Search mode (maintained for compatibility, uses natural language search)
 - `limit` (integer, optional): Maximum number of results (default: 20, max: 100)
 
 **Returns:** JSON array of search results with path, method, summary, description, tags, and relevance score.
 
-### get_api_detail
+#### get_api_detail
 Get comprehensive details for a specific API endpoint.
 
 **Parameters:**
-- `path` (string, required): Exact API path from search results
-- `method` (string, required): HTTP method from search results  
+- `path` (string, optional): Exact API path (required if operation_id not provided)
+- `method` (string, optional): HTTP method (required if operation_id not provided)
+- `operation_id` (string, optional): Operation ID (alternative to path+method)
 - `language` (string, optional): Programming language for sample code
 
 **Returns:** Detailed API information including parameters, request body, responses, and sample code.
 
-### get_sample_code
+#### get_sample_code
 Retrieve sample code for a specific API endpoint in the requested language.
 
 **Parameters:**
-- `path` (string, required): API path
-- `method` (string, required): HTTP method
 - `language` (string, required): Programming language ("curl", "javascript", "python", "java", etc.)
+- `path` (string, optional): API path (required if operation_id not provided)
+- `method` (string, optional): HTTP method (required if operation_id not provided)
+- `operation_id` (string, optional): Operation ID (alternative to path+method)
 
 **Returns:** Sample code string for the specified endpoint and language.
-
-### suggest_apis
-Get API recommendations based on natural language questions.
-
-**Parameters:**
-- `question` (string, required): Natural language question about desired functionality
-- `limit` (integer, optional): Maximum number of suggestions (default: 5)
-
-**Returns:** JSON object with question and array of recommended APIs with relevance scores.
 
 ## Working Configuration Examples
 
@@ -345,7 +310,7 @@ export AUTHLETE_API_SERVER_ID="53285"
 # Run the server
 uv run python main.py
 
-## API Search Server Usage Examples
+## Usage Examples
 
 ### Basic Search
 ```bash
@@ -359,13 +324,12 @@ search_apis(path_query="/api/auth/authorization")
 search_apis(query="service", method_filter="POST", limit=5)
 ```
 
-### Advanced Search Modes
+### Natural Language Search
 ```bash
-# Fuzzy search (typo tolerant)
-search_apis(query="authorizeation", mode="fuzzy")  # Will find "authorization"
-
-# Natural language search
-search_apis(query="I want to revoke a token", mode="natural")
+# Ask questions in natural language
+search_apis(query="how to revoke access token")
+search_apis(query="create new oauth client")
+search_apis(query="get user information")
 ```
 
 ### Get API Details
@@ -375,20 +339,27 @@ get_api_detail(path="/api/auth/token", method="POST")
 
 # Get details with sample code
 get_api_detail(path="/api/auth/token", method="POST", language="curl")
+
+# Use operation ID instead of path+method
+get_api_detail(operation_id="revokeToken", language="javascript")
 ```
 
 ### Get Sample Code
 ```bash
 # Get sample code in different languages
-get_sample_code(path="/api/auth/token", method="POST", language="javascript")
-get_sample_code(path="/api/auth/token", method="POST", language="python")
+get_sample_code(language="javascript", path="/api/auth/token", method="POST")
+get_sample_code(language="python", operation_id="revokeToken")
+get_sample_code(language="curl", path="/api/auth/authorization", method="POST")
 ```
 
-### API Suggestions
+### Combined Service Management and Search
 ```bash
-# Get API recommendations based on questions
-suggest_apis(question="How do I create a new OAuth client?")
-suggest_apis(question="トークンを無効化したい")  # Japanese also supported
+# Create a service then search for related APIs
+create_service(name="My OAuth Service", description="Test OAuth service")
+
+# Search for APIs to use with the new service
+search_apis(query="oauth client registration")
+search_apis(query="token endpoint")
 ```
 
 ## License

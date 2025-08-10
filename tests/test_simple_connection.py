@@ -18,7 +18,7 @@ async def test_basic_connection():
         async with ClientSession(read_stream, write_stream) as session:
             # Initialize session
             result = await session.initialize()
-            assert result.serverInfo.name == "Authlete Management Server"
+            assert result.serverInfo.name == "Authlete Management and API Search Server"
 
             # List tools
             tools = await session.list_tools()
