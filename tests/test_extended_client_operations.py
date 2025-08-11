@@ -17,7 +17,7 @@ async def test_get_authorized_applications():
 
     server_params = StdioServerParameters(
         command="uv",
-        args=["run", "python", "main.py"],
+        args=["run", "coverage", "run", "--parallel-mode", "main.py"],
         env={"ORGANIZATION_ACCESS_TOKEN": token, "ORGANIZATION_ID": os.getenv("ORGANIZATION_ID", "")},
     )
 
@@ -35,7 +35,9 @@ async def test_get_authorized_applications():
 @pytest.mark.unit
 async def test_get_authorized_applications_missing_subject():
     """Test getting authorized applications without subject."""
-    server_params = StdioServerParameters(command="uv", args=["run", "python", "main.py"], env={})
+    server_params = StdioServerParameters(
+        command="uv", args=["run", "coverage", "run", "--parallel-mode", "main.py"], env={}
+    )
 
     async with stdio_client(server_params) as (read_stream, write_stream):
         async with ClientSession(read_stream, write_stream) as session:
@@ -57,7 +59,7 @@ async def test_update_client_tokens():
 
     server_params = StdioServerParameters(
         command="uv",
-        args=["run", "python", "main.py"],
+        args=["run", "coverage", "run", "--parallel-mode", "main.py"],
         env={"ORGANIZATION_ACCESS_TOKEN": token, "ORGANIZATION_ID": os.getenv("ORGANIZATION_ID", "")},
     )
 
@@ -80,7 +82,9 @@ async def test_update_client_tokens():
 @pytest.mark.unit
 async def test_update_client_tokens_missing_params():
     """Test updating client tokens with missing parameters."""
-    server_params = StdioServerParameters(command="uv", args=["run", "python", "main.py"], env={})
+    server_params = StdioServerParameters(
+        command="uv", args=["run", "coverage", "run", "--parallel-mode", "main.py"], env={}
+    )
 
     async with stdio_client(server_params) as (read_stream, write_stream):
         async with ClientSession(read_stream, write_stream) as session:
@@ -109,7 +113,7 @@ async def test_delete_client_tokens():
 
     server_params = StdioServerParameters(
         command="uv",
-        args=["run", "python", "main.py"],
+        args=["run", "coverage", "run", "--parallel-mode", "main.py"],
         env={"ORGANIZATION_ACCESS_TOKEN": token, "ORGANIZATION_ID": os.getenv("ORGANIZATION_ID", "")},
     )
 
@@ -135,7 +139,7 @@ async def test_get_granted_scopes():
 
     server_params = StdioServerParameters(
         command="uv",
-        args=["run", "python", "main.py"],
+        args=["run", "coverage", "run", "--parallel-mode", "main.py"],
         env={"ORGANIZATION_ACCESS_TOKEN": token, "ORGANIZATION_ID": os.getenv("ORGANIZATION_ID", "")},
     )
 
@@ -161,7 +165,7 @@ async def test_delete_granted_scopes():
 
     server_params = StdioServerParameters(
         command="uv",
-        args=["run", "python", "main.py"],
+        args=["run", "coverage", "run", "--parallel-mode", "main.py"],
         env={"ORGANIZATION_ACCESS_TOKEN": token, "ORGANIZATION_ID": os.getenv("ORGANIZATION_ID", "")},
     )
 
@@ -187,7 +191,7 @@ async def test_get_requestable_scopes():
 
     server_params = StdioServerParameters(
         command="uv",
-        args=["run", "python", "main.py"],
+        args=["run", "coverage", "run", "--parallel-mode", "main.py"],
         env={"ORGANIZATION_ACCESS_TOKEN": token, "ORGANIZATION_ID": os.getenv("ORGANIZATION_ID", "")},
     )
 
@@ -205,7 +209,9 @@ async def test_get_requestable_scopes():
 @pytest.mark.unit
 async def test_get_requestable_scopes_missing_client_id():
     """Test getting requestable scopes without client_id."""
-    server_params = StdioServerParameters(command="uv", args=["run", "python", "main.py"], env={})
+    server_params = StdioServerParameters(
+        command="uv", args=["run", "coverage", "run", "--parallel-mode", "main.py"], env={}
+    )
 
     async with stdio_client(server_params) as (read_stream, write_stream):
         async with ClientSession(read_stream, write_stream) as session:
@@ -227,7 +233,7 @@ async def test_update_requestable_scopes():
 
     server_params = StdioServerParameters(
         command="uv",
-        args=["run", "python", "main.py"],
+        args=["run", "coverage", "run", "--parallel-mode", "main.py"],
         env={"ORGANIZATION_ACCESS_TOKEN": token, "ORGANIZATION_ID": os.getenv("ORGANIZATION_ID", "")},
     )
 
@@ -249,7 +255,9 @@ async def test_update_requestable_scopes():
 @pytest.mark.unit
 async def test_update_requestable_scopes_invalid_json():
     """Test updating requestable scopes with invalid JSON."""
-    server_params = StdioServerParameters(command="uv", args=["run", "python", "main.py"], env={})
+    server_params = StdioServerParameters(
+        command="uv", args=["run", "coverage", "run", "--parallel-mode", "main.py"], env={}
+    )
 
     async with stdio_client(server_params) as (read_stream, write_stream):
         async with ClientSession(read_stream, write_stream) as session:
@@ -274,7 +282,7 @@ async def test_delete_requestable_scopes():
 
     server_params = StdioServerParameters(
         command="uv",
-        args=["run", "python", "main.py"],
+        args=["run", "coverage", "run", "--parallel-mode", "main.py"],
         env={"ORGANIZATION_ACCESS_TOKEN": token, "ORGANIZATION_ID": os.getenv("ORGANIZATION_ID", "")},
     )
 

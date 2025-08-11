@@ -17,7 +17,7 @@ async def test_generate_jose():
 
     server_params = StdioServerParameters(
         command="uv",
-        args=["run", "python", "main.py"],
+        args=["run", "coverage", "run", "--parallel-mode", "main.py"],
         env={"ORGANIZATION_ACCESS_TOKEN": token, "ORGANIZATION_ID": os.getenv("ORGANIZATION_ID", "")},
     )
 
@@ -39,7 +39,7 @@ async def test_generate_jose_without_token():
     """Test generating JOSE without valid token."""
     server_params = StdioServerParameters(
         command="uv",
-        args=["run", "python", "main.py"],
+        args=["run", "coverage", "run", "--parallel-mode", "main.py"],
         env={},  # No token
     )
 
@@ -61,7 +61,9 @@ async def test_generate_jose_without_token():
 @pytest.mark.unit
 async def test_generate_jose_invalid_json():
     """Test generating JOSE with invalid JSON."""
-    server_params = StdioServerParameters(command="uv", args=["run", "python", "main.py"], env={})
+    server_params = StdioServerParameters(
+        command="uv", args=["run", "coverage", "run", "--parallel-mode", "main.py"], env={}
+    )
 
     async with stdio_client(server_params) as (read_stream, write_stream):
         async with ClientSession(read_stream, write_stream) as session:
@@ -85,7 +87,7 @@ async def test_verify_jose():
 
     server_params = StdioServerParameters(
         command="uv",
-        args=["run", "python", "main.py"],
+        args=["run", "coverage", "run", "--parallel-mode", "main.py"],
         env={"ORGANIZATION_ACCESS_TOKEN": token, "ORGANIZATION_ID": os.getenv("ORGANIZATION_ID", "")},
     )
 
@@ -108,7 +110,7 @@ async def test_verify_jose_without_token():
     """Test verifying JOSE without valid token."""
     server_params = StdioServerParameters(
         command="uv",
-        args=["run", "python", "main.py"],
+        args=["run", "coverage", "run", "--parallel-mode", "main.py"],
         env={},  # No token
     )
 
@@ -128,7 +130,9 @@ async def test_verify_jose_without_token():
 @pytest.mark.unit
 async def test_verify_jose_missing_token():
     """Test verifying JOSE without jose_token parameter."""
-    server_params = StdioServerParameters(command="uv", args=["run", "python", "main.py"], env={})
+    server_params = StdioServerParameters(
+        command="uv", args=["run", "coverage", "run", "--parallel-mode", "main.py"], env={}
+    )
 
     async with stdio_client(server_params) as (read_stream, write_stream):
         async with ClientSession(read_stream, write_stream) as session:

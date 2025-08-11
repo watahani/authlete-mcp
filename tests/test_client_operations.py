@@ -17,7 +17,7 @@ async def test_list_clients():
 
     server_params = StdioServerParameters(
         command="uv",
-        args=["run", "python", "main.py"],
+        args=["run", "coverage", "run", "--parallel-mode", "main.py"],
         env={"ORGANIZATION_ACCESS_TOKEN": token, "ORGANIZATION_ID": os.getenv("ORGANIZATION_ID", "")},
     )
 
@@ -46,7 +46,7 @@ async def test_create_client():
 
     server_params = StdioServerParameters(
         command="uv",
-        args=["run", "python", "main.py"],
+        args=["run", "coverage", "run", "--parallel-mode", "main.py"],
         env={"ORGANIZATION_ACCESS_TOKEN": token, "ORGANIZATION_ID": os.getenv("ORGANIZATION_ID", "")},
     )
 
@@ -76,7 +76,9 @@ async def test_create_client():
 async def test_create_client_invalid_json():
     """Test create_client with invalid JSON."""
     server_params = StdioServerParameters(
-        command="uv", args=["run", "python", "main.py"], env={"ORGANIZATION_ACCESS_TOKEN": "test-token"}
+        command="uv",
+        args=["run", "coverage", "run", "--parallel-mode", "main.py"],
+        env={"ORGANIZATION_ACCESS_TOKEN": "test-token"},
     )
 
     async with stdio_client(server_params) as (read_stream, write_stream):
@@ -95,7 +97,9 @@ async def test_create_client_invalid_json():
 async def test_client_operations_without_token():
     """Test client operations with mock token (should show error)."""
     server_params = StdioServerParameters(
-        command="uv", args=["run", "python", "main.py"], env={"ORGANIZATION_ACCESS_TOKEN": "test-token"}
+        command="uv",
+        args=["run", "coverage", "run", "--parallel-mode", "main.py"],
+        env={"ORGANIZATION_ACCESS_TOKEN": "test-token"},
     )
 
     operations = [
@@ -130,7 +134,7 @@ async def test_rotate_client_secret():
 
     server_params = StdioServerParameters(
         command="uv",
-        args=["run", "python", "main.py"],
+        args=["run", "coverage", "run", "--parallel-mode", "main.py"],
         env={"ORGANIZATION_ACCESS_TOKEN": token, "ORGANIZATION_ID": os.getenv("ORGANIZATION_ID", "")},
     )
 
@@ -167,7 +171,7 @@ async def test_update_client_secret():
 
     server_params = StdioServerParameters(
         command="uv",
-        args=["run", "python", "main.py"],
+        args=["run", "coverage", "run", "--parallel-mode", "main.py"],
         env={"ORGANIZATION_ACCESS_TOKEN": token, "ORGANIZATION_ID": os.getenv("ORGANIZATION_ID", "")},
     )
 
@@ -196,7 +200,7 @@ async def test_rotate_client_secret_without_token():
     """Test rotate_client_secret without valid token."""
     server_params = StdioServerParameters(
         command="uv",
-        args=["run", "python", "main.py"],
+        args=["run", "coverage", "run", "--parallel-mode", "main.py"],
         env={},  # No token
     )
 
@@ -218,7 +222,7 @@ async def test_update_client_secret_without_token():
     """Test update_client_secret without valid token."""
     server_params = StdioServerParameters(
         command="uv",
-        args=["run", "python", "main.py"],
+        args=["run", "coverage", "run", "--parallel-mode", "main.py"],
         env={},  # No token
     )
 
@@ -249,7 +253,9 @@ async def test_update_client_secret_without_token():
 async def test_update_client_secret_invalid_json():
     """Test update_client_secret with invalid JSON."""
     server_params = StdioServerParameters(
-        command="uv", args=["run", "python", "main.py"], env={"ORGANIZATION_ACCESS_TOKEN": "test-token"}
+        command="uv",
+        args=["run", "coverage", "run", "--parallel-mode", "main.py"],
+        env={"ORGANIZATION_ACCESS_TOKEN": "test-token"},
     )
 
     async with stdio_client(server_params) as (read_stream, write_stream):
@@ -280,7 +286,7 @@ async def test_client_secret_operations_with_service_api_key():
 
     server_params = StdioServerParameters(
         command="uv",
-        args=["run", "python", "main.py"],
+        args=["run", "coverage", "run", "--parallel-mode", "main.py"],
         env={"ORGANIZATION_ACCESS_TOKEN": token, "ORGANIZATION_ID": org_id},
     )
 
@@ -403,7 +409,7 @@ async def test_client_operations_require_service_api_key():
 
     server_params = StdioServerParameters(
         command="uv",
-        args=["run", "python", "main.py"],
+        args=["run", "coverage", "run", "--parallel-mode", "main.py"],
         env={"ORGANIZATION_ACCESS_TOKEN": token, "ORGANIZATION_ID": os.getenv("ORGANIZATION_ID", "")},
     )
 
@@ -444,7 +450,7 @@ async def test_client_deletion_with_service_api_key():
 
     server_params = StdioServerParameters(
         command="uv",
-        args=["run", "python", "main.py"],
+        args=["run", "coverage", "run", "--parallel-mode", "main.py"],
         env={"ORGANIZATION_ACCESS_TOKEN": token, "ORGANIZATION_ID": org_id},
     )
 

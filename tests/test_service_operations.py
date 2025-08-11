@@ -17,7 +17,7 @@ async def test_list_services():
 
     server_params = StdioServerParameters(
         command="uv",
-        args=["run", "python", "main.py"],
+        args=["run", "coverage", "run", "--parallel-mode", "main.py"],
         env={"ORGANIZATION_ACCESS_TOKEN": token, "ORGANIZATION_ID": os.getenv("ORGANIZATION_ID", "")},
     )
 
@@ -48,7 +48,7 @@ async def test_create_service():
 
     server_params = StdioServerParameters(
         command="uv",
-        args=["run", "python", "main.py"],
+        args=["run", "coverage", "run", "--parallel-mode", "main.py"],
         env={"ORGANIZATION_ACCESS_TOKEN": token, "ORGANIZATION_ID": os.getenv("ORGANIZATION_ID", "")},
     )
 
@@ -85,7 +85,7 @@ async def test_create_service_detailed():
 
     server_params = StdioServerParameters(
         command="uv",
-        args=["run", "python", "main.py"],
+        args=["run", "coverage", "run", "--parallel-mode", "main.py"],
         env={"ORGANIZATION_ACCESS_TOKEN": token, "ORGANIZATION_ID": os.getenv("ORGANIZATION_ID", "")},
     )
 
@@ -142,7 +142,9 @@ async def test_create_service_detailed():
 async def test_service_schema_example_structure():
     """Test that service schema example has correct structure."""
     server_params = StdioServerParameters(
-        command="uv", args=["run", "python", "main.py"], env={"ORGANIZATION_ACCESS_TOKEN": "test-token"}
+        command="uv",
+        args=["run", "coverage", "run", "--parallel-mode", "main.py"],
+        env={"ORGANIZATION_ACCESS_TOKEN": "test-token"},
     )
 
     async with stdio_client(server_params) as (read_stream, write_stream):
@@ -181,7 +183,9 @@ async def test_service_schema_example_structure():
 async def test_create_service_without_token():
     """Test create_service with mock token (should show error)."""
     server_params = StdioServerParameters(
-        command="uv", args=["run", "python", "main.py"], env={"ORGANIZATION_ACCESS_TOKEN": "test-token"}
+        command="uv",
+        args=["run", "coverage", "run", "--parallel-mode", "main.py"],
+        env={"ORGANIZATION_ACCESS_TOKEN": "test-token"},
     )
 
     async with stdio_client(server_params) as (read_stream, write_stream):

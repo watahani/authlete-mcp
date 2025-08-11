@@ -6,7 +6,7 @@ from urllib.parse import urlencode
 import httpx
 
 from ..api import make_authlete_request
-from ..config import DEFAULT_API_KEY, AuthleteConfig
+from ..config import ORGANIZATION_ACCESS_TOKEN, AuthleteConfig
 
 
 async def list_issued_tokens(
@@ -28,7 +28,7 @@ async def list_issued_tokens(
             return "Error: service_api_key parameter is required"
 
         # Check if organization token is available for token operations
-        if not DEFAULT_API_KEY:
+        if not ORGANIZATION_ACCESS_TOKEN:
             return "Error: ORGANIZATION_ACCESS_TOKEN environment variable not set"
 
         config = AuthleteConfig(api_key=service_api_key)

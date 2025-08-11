@@ -151,7 +151,7 @@ When implementing or modifying MCP tools, follow these established patterns:
 1. **Service API Key Validation**: Always check `service_api_key` parameter is provided for operations requiring it
 2. **Required Parameters**: Validate all required parameters (e.g., `client_id`, `access_token`, etc.)
 3. **JSON Parsing**: Parse JSON parameters using `json.loads()` with proper error handling
-4. **Environment Variables**: Check for `DEFAULT_API_KEY` (organization token) existence last
+4. **Environment Variables**: Check for `ORGANIZATION_ACCESS_TOKEN` (organization token) existence last
 
 ### Error Handling Patterns
 - All tools return JSON strings, with errors prefixed as "Error: ..."
@@ -162,7 +162,7 @@ When implementing or modifying MCP tools, follow these established patterns:
 
 ### Authentication Patterns
 - **Client Operations**: Always require `service_api_key` parameter (no fallback to organization token)
-- **Service Operations**: Use `service_api_key` if provided, otherwise fall back to `DEFAULT_API_KEY`
+- **Service Operations**: Use `service_api_key` if provided, otherwise fall back to `ORGANIZATION_ACCESS_TOKEN`
 - **Token/JOSE Operations**: Always require `service_api_key` parameter
 
 ### API Response Handling

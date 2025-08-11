@@ -8,7 +8,7 @@ from pydantic import BaseModel, Field
 AUTHLETE_BASE_URL = os.getenv("AUTHLETE_BASE_URL", "https://jp.authlete.com")
 AUTHLETE_IDP_URL = os.getenv("AUTHLETE_IDP_URL", "https://login.authlete.com")
 DEFAULT_API_SERVER_ID = os.getenv("AUTHLETE_API_SERVER_ID", "53285")
-DEFAULT_API_KEY = os.getenv("ORGANIZATION_ACCESS_TOKEN", "")
+ORGANIZATION_ACCESS_TOKEN = os.getenv("ORGANIZATION_ACCESS_TOKEN", "")
 DEFAULT_ORGANIZATION_ID = os.getenv("ORGANIZATION_ID", "")
 
 

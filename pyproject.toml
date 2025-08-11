@@ -80,6 +80,8 @@ line-ending = "auto"
 
 [tool.coverage.run]
 source = ["src"]
+concurrency = ["multiprocessing"]
+parallel = true
 omit = [
     "*/tests/*",
     "*/test_*",

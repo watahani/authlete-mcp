@@ -11,7 +11,9 @@ from mcp.client.stdio import stdio_client
 async def test_basic_connection():
     """Test basic MCP server connection."""
     server_params = StdioServerParameters(
-        command="uv", args=["run", "python", "main.py"], env={"ORGANIZATION_ACCESS_TOKEN": "test-token"}
+        command="uv",
+        args=["run", "coverage", "run", "--parallel-mode", "main.py"],
+        env={"ORGANIZATION_ACCESS_TOKEN": "test-token"},
     )
 
     async with stdio_client(server_params) as (read_stream, write_stream):
@@ -33,7 +35,9 @@ async def test_basic_connection():
 async def test_schema_example():
     """Test get_service_schema_example tool."""
     server_params = StdioServerParameters(
-        command="uv", args=["run", "python", "main.py"], env={"ORGANIZATION_ACCESS_TOKEN": "test-token"}
+        command="uv",
+        args=["run", "coverage", "run", "--parallel-mode", "main.py"],
+        env={"ORGANIZATION_ACCESS_TOKEN": "test-token"},
     )
 
     async with stdio_client(server_params) as (read_stream, write_stream):
@@ -57,7 +61,9 @@ async def test_schema_example():
 async def test_error_handling():
     """Test error handling with invalid parameters."""
     server_params = StdioServerParameters(
-        command="uv", args=["run", "python", "main.py"], env={"ORGANIZATION_ACCESS_TOKEN": "test-token"}
+        command="uv",
+        args=["run", "coverage", "run", "--parallel-mode", "main.py"],
+        env={"ORGANIZATION_ACCESS_TOKEN": "test-token"},
     )
 
     async with stdio_client(server_params) as (read_stream, write_stream):
