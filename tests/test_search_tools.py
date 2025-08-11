@@ -399,7 +399,7 @@ async def test_list_schemas_basic_functionality():
                 # If not JSON, should be an error or info message
                 assert (
                     "Search database not found" in content
-                    or "指定された条件にマッチするスキーマが見つかりませんでした。" in content
+                    or "No schemas found matching the specified criteria." in content
                     or "Schema search error:" in content
                 )
 
@@ -425,7 +425,7 @@ async def test_list_schemas_with_database():
             content = result.content[0].text
 
             # Should return JSON results
-            assert content != "指定された条件にマッチするスキーマが見つかりませんでした。"
+            assert content != "No schemas found matching the specified criteria."
 
             schemas = json.loads(content)
             assert isinstance(schemas, list)
@@ -458,7 +458,7 @@ async def test_list_schemas_with_query():
             result = await session.call_tool("list_schemas", {"query": "token", "limit": 5})
             content = result.content[0].text
 
-            if content != "指定された条件にマッチするスキーマが見つかりませんでした。":
+            if content != "No schemas found matching the specified criteria.":
                 schemas = json.loads(content)
                 assert isinstance(schemas, list)
                 assert len(schemas) <= 5
@@ -472,8 +472,8 @@ async def test_list_schemas_with_query():
 
 
 @pytest.mark.integration
-async def test_list_schemas_with_type_filter():
-    """Test list_schemas with schema_type filter"""
+async def test_list_schemas_with_limit():
+    """Test list_schemas with limit parameter"""
     # Skip if search database doesn't exist
     db_path = Path("resources/authlete_apis.duckdb")
     if not db_path.exists():
@@ -487,18 +487,14 @@ async def test_list_schemas_with_type_filter():
         async with ClientSession(read, write) as session:
             await session.initialize()
 
-            # Filter by object type
-            result = await session.call_tool("list_schemas", {"schema_type": "object", "limit": 10})
+            # Test with limit parameter
+            result = await session.call_tool("list_schemas", {"limit": 5})
             content = result.content[0].text
 
-            if content != "指定された条件にマッチするスキーマが見つかりませんでした。":
+            if content != "No schemas found matching the specified criteria.":
                 schemas = json.loads(content)
                 assert isinstance(schemas, list)
-                assert len(schemas) <= 10
-
-                # All results should be object type
-                for schema in schemas:
-                    assert schema["schema_type"] == "object"
+                assert len(schemas) <= 5
 
 
 @pytest.mark.unit
@@ -544,7 +540,7 @@ async def test_get_schema_detail_with_database():
             list_result = await session.call_tool("list_schemas", {"limit": 1})
             list_content = list_result.content[0].text
 
-            if list_content != "指定された条件にマッチするスキーマが見つかりませんでした。":
+            if list_content != "No schemas found matching the specified criteria.":
                 schemas = json.loads(list_content)
                 if schemas:
                     schema_name = schemas[0]["schema_name"]
@@ -594,3 +590,168 @@ async def test_get_schema_detail_nonexistent():
             content = result.content[0].text
 
             assert content.startswith("Schema not found: NonExistentSchema")
+
+
+@pytest.mark.unit
+async def test_list_schemas_with_empty_query():
+    """Test list_schemas with empty string query parameter"""
+    server_params = StdioServerParameters(
+        command="python", args=["main.py"], env={"ORGANIZATION_ACCESS_TOKEN": "test-token"}
+    )
+
+    async with stdio_client(server_params) as (read, write):
+        async with ClientSession(read, write) as session:
+            await session.initialize()
+
+            # Call list_schemas with query explicitly set to empty string
+            result = await session.call_tool("list_schemas", {"query": ""})
+
+            content = result.content[0].text
+            assert content is not None and len(content) > 0
+
+            # Should return either JSON results or database not found message
+            try:
+                schemas = json.loads(content)
+                if isinstance(schemas, list):
+                    # Verify structure if we got results
+                    for schema in schemas[:3]:  # Check first few schemas
+                        assert "schema_name" in schema
+                        assert "schema_type" in schema
+                        assert "title" in schema
+                        assert "description" in schema
+            except json.JSONDecodeError:
+                # If not JSON, should be an error or info message
+                assert (
+                    "Search database not found" in content
+                    or "No schemas found matching the specified criteria." in content
+                    or "Schema search error:" in content
+                )
+
+
+@pytest.mark.unit
+async def test_list_schemas_with_none_query():
+    """Test list_schemas with None query parameter should now cause validation error"""
+    server_params = StdioServerParameters(
+        command="python", args=["main.py"], env={"ORGANIZATION_ACCESS_TOKEN": "test-token"}
+    )
+
+    async with stdio_client(server_params) as (read, write):
+        async with ClientSession(read, write) as session:
+            await session.initialize()
+
+            # Call list_schemas with query explicitly set to None
+            result = await session.call_tool("list_schemas", {"query": None})
+
+            content = result.content[0].text
+            assert content is not None and len(content) > 0
+
+            # Should now return a Pydantic validation error since we changed type from str|None to str
+            assert (
+                "Error executing tool list_schemas:" in content
+                and "validation error" in content
+                and "Input should be a valid string" in content
+            )
+
+
+@pytest.mark.unit
+async def test_search_apis_with_empty_query():
+    """Test search_apis with empty string query parameter"""
+    server_params = StdioServerParameters(
+        command="python", args=["main.py"], env={"ORGANIZATION_ACCESS_TOKEN": "test-token"}
+    )
+
+    async with stdio_client(server_params) as (read, write):
+        async with ClientSession(read, write) as session:
+            await session.initialize()
+
+            # Call search_apis with query explicitly set to empty string
+            result = await session.call_tool("search_apis", {"query": ""})
+
+            content = result.content[0].text
+            assert content is not None and len(content) > 0
+
+            # Should return some kind of result (JSON array, error message, or no results message)
+            try:
+                results = json.loads(content)
+                if isinstance(results, list) and results:
+                    # Verify structure of results
+                    first_result = results[0]
+                    assert "path" in first_result
+                    assert "method" in first_result
+                    assert "summary" in first_result
+            except json.JSONDecodeError:
+                # If not JSON, should be an error message or no results message
+                assert (
+                    "Search database not found" in content
+                    or "No APIs found matching the search criteria." in content
+                    or "Search error:" in content
+                )
+
+
+@pytest.mark.unit
+async def test_search_apis_with_none_values():
+    """Test search_apis with None values should now cause validation error"""
+    server_params = StdioServerParameters(
+        command="python", args=["main.py"], env={"ORGANIZATION_ACCESS_TOKEN": "test-token"}
+    )
+
+    async with stdio_client(server_params) as (read, write):
+        async with ClientSession(read, write) as session:
+            await session.initialize()
+
+            # Call search_apis with None values (this should now cause validation error)
+            result = await session.call_tool(
+                "search_apis",
+                {
+                    "query": None,
+                    "path_query": None,
+                    "description_query": None,
+                    "tag_filter": None,
+                    "method_filter": None,
+                },
+            )
+
+            content = result.content[0].text
+            assert content is not None and len(content) > 0
+
+            # Should now return Pydantic validation errors since we changed types from str|None to str
+            assert (
+                "Error executing tool search_apis:" in content
+                and "validation error" in content
+                and "Input should be a valid string" in content
+            )
+
+
+@pytest.mark.unit
+async def test_search_apis_priority_order():
+    """Test search_apis priority order: query > path_query > description_query"""
+    server_params = StdioServerParameters(
+        command="python", args=["main.py"], env={"ORGANIZATION_ACCESS_TOKEN": "test-token"}
+    )
+
+    async with stdio_client(server_params) as (read, write):
+        async with ClientSession(read, write) as session:
+            await session.initialize()
+
+            # Test that query has highest priority (should ignore path_query and description_query)
+            result1 = await session.call_tool(
+                "search_apis",
+                {"query": "token", "path_query": "/auth/client", "description_query": "service management"},
+            )
+
+            # Test path_query priority when query is empty (should ignore description_query)
+            result2 = await session.call_tool(
+                "search_apis", {"query": "", "path_query": "/auth/client", "description_query": "service management"}
+            )
+
+            # Test description_query when both query and path_query are empty
+            result3 = await session.call_tool(
+                "search_apis", {"query": "", "path_query": "", "description_query": "service management"}
+            )
+
+            # All should return valid responses without errors
+            for result in [result1, result2, result3]:
+                content = result.content[0].text
+                assert content is not None and len(content) > 0
+                # Should not contain crash errors
+                assert "Search error:" not in content or "Search database not found" in content
