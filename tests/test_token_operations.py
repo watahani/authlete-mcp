@@ -17,7 +17,7 @@ async def test_list_issued_tokens():
 
     server_params = StdioServerParameters(
         command="uv",
-        args=["run", "python", "main.py"],
+        args=["run", "coverage", "run", "--parallel-mode", "main.py"],
         env={"ORGANIZATION_ACCESS_TOKEN": token, "ORGANIZATION_ID": os.getenv("ORGANIZATION_ID", "")},
     )
 
@@ -37,7 +37,7 @@ async def test_list_issued_tokens_without_token():
     """Test listing issued tokens without valid token."""
     server_params = StdioServerParameters(
         command="uv",
-        args=["run", "python", "main.py"],
+        args=["run", "coverage", "run", "--parallel-mode", "main.py"],
         env={},  # No token
     )
 
@@ -61,7 +61,7 @@ async def test_create_access_token():
 
     server_params = StdioServerParameters(
         command="uv",
-        args=["run", "python", "main.py"],
+        args=["run", "coverage", "run", "--parallel-mode", "main.py"],
         env={"ORGANIZATION_ACCESS_TOKEN": token, "ORGANIZATION_ID": os.getenv("ORGANIZATION_ID", "")},
     )
 
@@ -83,7 +83,7 @@ async def test_create_access_token_invalid_json():
     """Test creating access token with invalid JSON."""
     server_params = StdioServerParameters(
         command="uv",
-        args=["run", "python", "main.py"],
+        args=["run", "coverage", "run", "--parallel-mode", "main.py"],
         env={},  # No token
     )
 
@@ -109,7 +109,7 @@ async def test_update_access_token():
 
     server_params = StdioServerParameters(
         command="uv",
-        args=["run", "python", "main.py"],
+        args=["run", "coverage", "run", "--parallel-mode", "main.py"],
         env={"ORGANIZATION_ACCESS_TOKEN": token, "ORGANIZATION_ID": os.getenv("ORGANIZATION_ID", "")},
     )
 
@@ -127,7 +127,9 @@ async def test_update_access_token():
 @pytest.mark.unit
 async def test_update_access_token_missing_params():
     """Test updating access token with missing parameters."""
-    server_params = StdioServerParameters(command="uv", args=["run", "python", "main.py"], env={})
+    server_params = StdioServerParameters(
+        command="uv", args=["run", "coverage", "run", "--parallel-mode", "main.py"], env={}
+    )
 
     async with stdio_client(server_params) as (read_stream, write_stream):
         async with ClientSession(read_stream, write_stream) as session:
@@ -152,7 +154,7 @@ async def test_revoke_access_token():
 
     server_params = StdioServerParameters(
         command="uv",
-        args=["run", "python", "main.py"],
+        args=["run", "coverage", "run", "--parallel-mode", "main.py"],
         env={"ORGANIZATION_ACCESS_TOKEN": token, "ORGANIZATION_ID": os.getenv("ORGANIZATION_ID", "")},
     )
 
@@ -176,7 +178,7 @@ async def test_delete_access_token():
 
     server_params = StdioServerParameters(
         command="uv",
-        args=["run", "python", "main.py"],
+        args=["run", "coverage", "run", "--parallel-mode", "main.py"],
         env={"ORGANIZATION_ACCESS_TOKEN": token, "ORGANIZATION_ID": os.getenv("ORGANIZATION_ID", "")},
     )
 

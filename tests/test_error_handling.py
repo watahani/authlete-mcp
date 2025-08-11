@@ -9,7 +9,9 @@ from mcp.client.stdio import stdio_client
 async def test_missing_environment_token():
     """Test behavior when ORGANIZATION_ACCESS_TOKEN is not set."""
     server_params = StdioServerParameters(
-        command="uv", args=["run", "python", "main.py"], env={"ORGANIZATION_ACCESS_TOKEN": "test-token"}
+        command="uv",
+        args=["run", "coverage", "run", "--parallel-mode", "main.py"],
+        env={"ORGANIZATION_ACCESS_TOKEN": "test-token"},
     )
 
     async with stdio_client(server_params) as (read_stream, write_stream):
@@ -28,7 +30,9 @@ async def test_missing_environment_token():
 async def test_invalid_tool_parameters():
     """Test tools with invalid parameters."""
     server_params = StdioServerParameters(
-        command="uv", args=["run", "python", "main.py"], env={"ORGANIZATION_ACCESS_TOKEN": "test-token"}
+        command="uv",
+        args=["run", "coverage", "run", "--parallel-mode", "main.py"],
+        env={"ORGANIZATION_ACCESS_TOKEN": "test-token"},
     )
 
     async with stdio_client(server_params) as (read_stream, write_stream):
@@ -49,7 +53,9 @@ async def test_invalid_tool_parameters():
 async def test_json_parsing_errors():
     """Test tools that require JSON input with invalid JSON."""
     server_params = StdioServerParameters(
-        command="uv", args=["run", "python", "main.py"], env={"ORGANIZATION_ACCESS_TOKEN": "test-token"}
+        command="uv",
+        args=["run", "coverage", "run", "--parallel-mode", "main.py"],
+        env={"ORGANIZATION_ACCESS_TOKEN": "test-token"},
     )
 
     invalid_json_tests = [

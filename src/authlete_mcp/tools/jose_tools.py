@@ -5,7 +5,7 @@ import json
 import httpx
 
 from ..api import make_authlete_request
-from ..config import DEFAULT_API_KEY, AuthleteConfig
+from ..config import ORGANIZATION_ACCESS_TOKEN, AuthleteConfig
 
 
 async def generate_jose(
@@ -31,7 +31,7 @@ async def generate_jose(
             return f"Error parsing JOSE data JSON: {str(e)}"
 
         # Check if organization token is available for JOSE operations
-        if not DEFAULT_API_KEY:
+        if not ORGANIZATION_ACCESS_TOKEN:
             return "Error: ORGANIZATION_ACCESS_TOKEN environment variable not set"
 
         config = AuthleteConfig(api_key=service_api_key)
@@ -69,7 +69,7 @@ async def verify_jose(
             return "Error: jose_token parameter is required"
 
         # Check if organization token is available for JOSE operations
-        if not DEFAULT_API_KEY:
+        if not ORGANIZATION_ACCESS_TOKEN:
             return "Error: ORGANIZATION_ACCESS_TOKEN environment variable not set"
 
         config = AuthleteConfig(api_key=service_api_key)

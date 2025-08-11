@@ -17,7 +17,7 @@ async def test_delete_service_with_real_credentials():
 
     server_params = StdioServerParameters(
         command="uv",
-        args=["run", "python", "main.py"],
+        args=["run", "coverage", "run", "--parallel-mode", "main.py"],
         env={
             "ORGANIZATION_ACCESS_TOKEN": token,
             "ORGANIZATION_ID": os.getenv("ORGANIZATION_ID", ""),
@@ -68,7 +68,9 @@ async def test_delete_service_with_real_credentials():
 async def test_delete_service_missing_parameters():
     """Test delete_service with missing parameters."""
     server_params = StdioServerParameters(
-        command="uv", args=["run", "python", "main.py"], env={"ORGANIZATION_ACCESS_TOKEN": "test-token"}
+        command="uv",
+        args=["run", "coverage", "run", "--parallel-mode", "main.py"],
+        env={"ORGANIZATION_ACCESS_TOKEN": "test-token"},
     )
 
     async with stdio_client(server_params) as (read_stream, write_stream):
@@ -89,7 +91,7 @@ async def test_delete_service_without_token():
     """Test delete_service without valid token."""
     server_params = StdioServerParameters(
         command="uv",
-        args=["run", "python", "main.py"],
+        args=["run", "coverage", "run", "--parallel-mode", "main.py"],
         env={},  # No token
     )
 
@@ -109,7 +111,7 @@ async def test_delete_service_without_organization_id():
     """Test delete_service without organization ID."""
     server_params = StdioServerParameters(
         command="uv",
-        args=["run", "python", "main.py"],
+        args=["run", "coverage", "run", "--parallel-mode", "main.py"],
         env={"ORGANIZATION_ACCESS_TOKEN": "test-token"},  # Missing ORGANIZATION_ID
     )
 

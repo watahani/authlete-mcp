@@ -20,12 +20,12 @@ async def create_client(client_data: str, service_api_key: str = "") -> str:
         return "Error: service_api_key parameter is required"
 
     # Use organization token for authentication, service_api_key for URL path
-    from ..config import DEFAULT_API_KEY, AuthleteConfig
+    from ..config import ORGANIZATION_ACCESS_TOKEN, AuthleteConfig
 
-    if not DEFAULT_API_KEY:
+    if not ORGANIZATION_ACCESS_TOKEN:
         return "Error: ORGANIZATION_ACCESS_TOKEN environment variable not set"
 
-    config = AuthleteConfig(api_key=DEFAULT_API_KEY)
+    config = AuthleteConfig(api_key=ORGANIZATION_ACCESS_TOKEN)
 
     try:
         data = json.loads(client_data)
@@ -50,12 +50,12 @@ async def get_client(client_id: str, service_api_key: str = "") -> str:
         return "Error: service_api_key parameter is required"
 
     # Use organization token for authentication, service_api_key for URL path
-    from ..config import DEFAULT_API_KEY
+    from ..config import ORGANIZATION_ACCESS_TOKEN
 
-    if not DEFAULT_API_KEY:
+    if not ORGANIZATION_ACCESS_TOKEN:
         return "Error: ORGANIZATION_ACCESS_TOKEN environment variable not set"
 
-    config = AuthleteConfig(api_key=DEFAULT_API_KEY)
+    config = AuthleteConfig(api_key=ORGANIZATION_ACCESS_TOKEN)
 
     try:
         result = await make_authlete_request("GET", f"{service_api_key}/client/get/{client_id}", config)
@@ -75,12 +75,12 @@ async def list_clients(service_api_key: str = "") -> str:
         return "Error: service_api_key parameter is required"
 
     # Use organization token for authentication, service_api_key for URL path
-    from ..config import DEFAULT_API_KEY
+    from ..config import ORGANIZATION_ACCESS_TOKEN
 
-    if not DEFAULT_API_KEY:
+    if not ORGANIZATION_ACCESS_TOKEN:
         return "Error: ORGANIZATION_ACCESS_TOKEN environment variable not set"
 
-    config = AuthleteConfig(api_key=DEFAULT_API_KEY)
+    config = AuthleteConfig(api_key=ORGANIZATION_ACCESS_TOKEN)
 
     try:
         result = await make_authlete_request("GET", f"{service_api_key}/client/get/list", config)
@@ -102,12 +102,12 @@ async def update_client(client_id: str, client_data: str, service_api_key: str =
         return "Error: service_api_key parameter is required"
 
     # Use organization token for authentication, service_api_key for URL path
-    from ..config import DEFAULT_API_KEY
+    from ..config import ORGANIZATION_ACCESS_TOKEN
 
-    if not DEFAULT_API_KEY:
+    if not ORGANIZATION_ACCESS_TOKEN:
         return "Error: ORGANIZATION_ACCESS_TOKEN environment variable not set"
 
-    config = AuthleteConfig(api_key=DEFAULT_API_KEY)
+    config = AuthleteConfig(api_key=ORGANIZATION_ACCESS_TOKEN)
 
     try:
         data = json.loads(client_data)
@@ -131,12 +131,12 @@ async def delete_client(client_id: str, service_api_key: str = "") -> str:
         return "Error: service_api_key parameter is required"
 
     # Use organization token for authentication, service_api_key for URL path
-    from ..config import DEFAULT_API_KEY
+    from ..config import ORGANIZATION_ACCESS_TOKEN
 
-    if not DEFAULT_API_KEY:
+    if not ORGANIZATION_ACCESS_TOKEN:
         return "Error: ORGANIZATION_ACCESS_TOKEN environment variable not set"
 
-    config = AuthleteConfig(api_key=DEFAULT_API_KEY)
+    config = AuthleteConfig(api_key=ORGANIZATION_ACCESS_TOKEN)
 
     try:
         result = await make_authlete_request("DELETE", f"{service_api_key}/client/delete/{client_id}", config)
@@ -157,12 +157,12 @@ async def rotate_client_secret(client_id: str, service_api_key: str = "") -> str
         return "Error: service_api_key parameter is required"
 
     # Use organization token for authentication, service_api_key for URL path
-    from ..config import DEFAULT_API_KEY
+    from ..config import ORGANIZATION_ACCESS_TOKEN
 
-    if not DEFAULT_API_KEY:
+    if not ORGANIZATION_ACCESS_TOKEN:
         return "Error: ORGANIZATION_ACCESS_TOKEN environment variable not set"
 
-    config = AuthleteConfig(api_key=DEFAULT_API_KEY)
+    config = AuthleteConfig(api_key=ORGANIZATION_ACCESS_TOKEN)
 
     try:
         result = await make_authlete_request("GET", f"{service_api_key}/client/secret/refresh/{client_id}", config)
@@ -184,12 +184,12 @@ async def update_client_secret(client_id: str, secret_data: str, service_api_key
         return "Error: service_api_key parameter is required"
 
     # Use organization token for authentication, service_api_key for URL path
-    from ..config import DEFAULT_API_KEY
+    from ..config import ORGANIZATION_ACCESS_TOKEN
 
-    if not DEFAULT_API_KEY:
+    if not ORGANIZATION_ACCESS_TOKEN:
         return "Error: ORGANIZATION_ACCESS_TOKEN environment variable not set"
 
-    config = AuthleteConfig(api_key=DEFAULT_API_KEY)
+    config = AuthleteConfig(api_key=ORGANIZATION_ACCESS_TOKEN)
 
     try:
         data = json.loads(secret_data)
@@ -216,12 +216,12 @@ async def update_client_lock(client_id: str, lock_flag: bool, service_api_key: s
         return "Error: service_api_key parameter is required"
 
     # Use organization token for authentication, service_api_key for URL path
-    from ..config import DEFAULT_API_KEY
+    from ..config import ORGANIZATION_ACCESS_TOKEN
 
-    if not DEFAULT_API_KEY:
+    if not ORGANIZATION_ACCESS_TOKEN:
         return "Error: ORGANIZATION_ACCESS_TOKEN environment variable not set"
 
-    config = AuthleteConfig(api_key=DEFAULT_API_KEY)
+    config = AuthleteConfig(api_key=ORGANIZATION_ACCESS_TOKEN)
 
     data = {"locked": lock_flag}
 

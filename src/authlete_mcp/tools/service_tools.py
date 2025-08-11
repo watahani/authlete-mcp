@@ -5,7 +5,7 @@ import json
 from mcp.server.fastmcp import Context
 
 from ..api.client import make_authlete_idp_request, make_authlete_request
-from ..config import DEFAULT_API_KEY, DEFAULT_ORGANIZATION_ID, AuthleteConfig
+from ..config import DEFAULT_ORGANIZATION_ID, ORGANIZATION_ACCESS_TOKEN, AuthleteConfig
 
 
 async def create_service(name: str, description: str = "", ctx: Context = None) -> str:
@@ -15,13 +15,13 @@ async def create_service(name: str, description: str = "", ctx: Context = None) 
         name: Service name
         description: Service description
     """
-    if not DEFAULT_API_KEY:
+    if not ORGANIZATION_ACCESS_TOKEN:
         return "Error: ORGANIZATION_ACCESS_TOKEN environment variable not set"
 
     if not DEFAULT_ORGANIZATION_ID:
         return "Error: ORGANIZATION_ID environment variable must be set"
 
-    config = AuthleteConfig(api_key=DEFAULT_API_KEY)
+    config = AuthleteConfig(api_key=ORGANIZATION_ACCESS_TOKEN)
 
     # Create service configuration for IdP API (without number, serviceOwnerNumber, apiKey, cluster)
     service_data = {
@@ -142,13 +142,13 @@ async def create_service_detailed(
     Args:
         service_config: JSON string containing service configuration following Authlete API service schema
     """
-    if not DEFAULT_API_KEY:
+    if not ORGANIZATION_ACCESS_TOKEN:
         return "Error: ORGANIZATION_ACCESS_TOKEN environment variable not set"
 
     if not DEFAULT_ORGANIZATION_ID:
         return "Error: ORGANIZATION_ID environment variable must be set"
 
-    config = AuthleteConfig(api_key=DEFAULT_API_KEY)
+    config = AuthleteConfig(api_key=ORGANIZATION_ACCESS_TOKEN)
 
     try:
         # Parse service configuration JSON
@@ -218,11 +218,11 @@ async def get_service(service_api_key: str = "", ctx: Context = None) -> str:
     Args:
         service_api_key: Service API key to retrieve (if empty, uses the main token)
     """
-    if not DEFAULT_API_KEY:
+    if not ORGANIZATION_ACCESS_TOKEN:
         return "Error: ORGANIZATION_ACCESS_TOKEN environment variable not set"
 
-    config = AuthleteConfig(api_key=DEFAULT_API_KEY)
-    key_to_use = service_api_key if service_api_key else DEFAULT_API_KEY
+    config = AuthleteConfig(api_key=ORGANIZATION_ACCESS_TOKEN)
+    key_to_use = service_api_key if service_api_key else ORGANIZATION_ACCESS_TOKEN
 
     try:
         result = await make_authlete_request("GET", f"{key_to_use}/service/get/", config)
@@ -233,10 +233,10 @@ async def get_service(service_api_key: str = "", ctx: Context = None) -> str:
 
 async def list_services(ctx: Context = None) -> str:
     """List all Authlete services."""
-    if not DEFAULT_API_KEY:
+    if not ORGANIZATION_ACCESS_TOKEN:
         return "Error: ORGANIZATION_ACCESS_TOKEN environment variable not set"
 
-    config = AuthleteConfig(api_key=DEFAULT_API_KEY)
+    config = AuthleteConfig(api_key=ORGANIZATION_ACCESS_TOKEN)
 
     try:
         result = await make_authlete_request("GET", "service/get/list", config)
@@ -256,11 +256,11 @@ async def update_service(service_data: str, service_api_key: str = "", ctx: Cont
     if not service_api_key:
         return "Error: service_api_key parameter is required"
 
-    if not DEFAULT_API_KEY:
+    if not ORGANIZATION_ACCESS_TOKEN:
         return "Error: ORGANIZATION_ACCESS_TOKEN environment variable not set"
 
-    config = AuthleteConfig(api_key=DEFAULT_API_KEY)
-    key_to_use = service_api_key if service_api_key else DEFAULT_API_KEY
+    config = AuthleteConfig(api_key=ORGANIZATION_ACCESS_TOKEN)
+    key_to_use = service_api_key if service_api_key else ORGANIZATION_ACCESS_TOKEN
 
     try:
         data = json.loads(service_data)
@@ -278,13 +278,13 @@ async def delete_service(service_id: str, ctx: Context = None) -> str:
     Args:
         service_id: Service ID (apiKey) to delete
     """
-    if not DEFAULT_API_KEY:
+    if not ORGANIZATION_ACCESS_TOKEN:
         return "Error: ORGANIZATION_ACCESS_TOKEN environment variable not set"
 
     if not DEFAULT_ORGANIZATION_ID:
         return "Error: ORGANIZATION_ID environment variable must be set"
 
-    config = AuthleteConfig(api_key=DEFAULT_API_KEY)
+    config = AuthleteConfig(api_key=ORGANIZATION_ACCESS_TOKEN)
 
     # Try with environment variable values first
     data = {

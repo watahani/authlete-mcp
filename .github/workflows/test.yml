@@ -67,7 +67,10 @@ jobs:
               exit 1
             fi
             echo "🔑 Using configured secrets - running integration tests with coverage"
-            uv run pytest -m integration -v --tb=short --no-header --cov=authlete_mcp_server --cov-report=term-missing
+            uv run coverage erase
+            uv run pytest -m integration -v --tb=short --no-header
+            uv run coverage combine
+            uv run coverage report --show-missing
           fi
 
 
