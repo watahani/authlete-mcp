@@ -5,6 +5,7 @@ import logging
 
 from mcp.server.fastmcp import Context
 
+from ..models.base import filter_body_content, filter_description
 from ..search import get_searcher
 
 logger = logging.getLogger(__name__)
@@ -87,6 +88,11 @@ async def get_api_detail(
     method: str = "",
     operation_id: str = "",
     language: str = "",
+    description_style: str = "summary_and_headers",
+    line_start: int = 1,
+    line_end: int = 100,
+    request_body_style: str = "none",
+    response_body_style: str = "none",
     ctx: Context = None,
 ) -> str:
     """Get detailed information for specific API (parameters, request/response, sample code). Provide either operation_id OR both path and method.
@@ -96,6 +102,11 @@ async def get_api_detail(
         method: HTTP method (required if operation_id not provided)
         operation_id: Operation ID (alternative to path+method)
         language: Sample code language (curl, javascript, python, java, etc.)
+        description_style: Description filtering style (summary_and_headers, full, none, line_range)
+        line_start: Start line for line_range style (1-indexed)
+        line_end: End line for line_range style (1-indexed)
+        request_body_style: Request body filtering style (none, full, schema_only)
+        response_body_style: Response body filtering style (none, full, schema_only)
     """
 
     try:
@@ -116,6 +127,53 @@ async def get_api_detail(
         if not detail:
             identifier = op_id or f"{api_method} {api_path}"
             return f"API details not found: {identifier}"
+
+        # Apply description filtering
+        if "description" in detail and detail["description"]:
+            line_range = (line_start, line_end) if description_style == "line_range" else None
+            filtered_description = filter_description(detail["description"], description_style, line_range)
+            detail["description"] = filtered_description
+
+        # Apply request body filtering
+        if "request_body" in detail and detail["request_body"]:
+            filtered_request_body = filter_body_content(detail["request_body"], request_body_style)
+            detail["request_body"] = filtered_request_body
+
+        # Apply response body filtering
+        if "responses" in detail and detail["responses"]:
+            if isinstance(detail["responses"], dict):
+                filtered_responses = {}
+                for status_code, response_data in detail["responses"].items():
+                    if isinstance(response_data, dict):
+                        filtered_responses[status_code] = filter_body_content(response_data, response_body_style)
+                    else:
+                        # For string responses, apply filtering
+                        if response_body_style == "none":
+                            filtered_responses[status_code] = None
+                        elif response_body_style == "schema_only":
+                            # Try to parse string as JSON and simplify if possible
+                            try:
+                                parsed_response = (
+                                    json.loads(response_data) if isinstance(response_data, str) else response_data
+                                )
+                                if isinstance(parsed_response, dict):
+                                    filtered_responses[status_code] = filter_body_content(
+                                        parsed_response, response_body_style
+                                    )
+                                else:
+                                    # If not a dict, show simplified info
+                                    filtered_responses[status_code] = {"type": "string", "content": "simplified"}
+                            except (json.JSONDecodeError, TypeError):
+                                # If parsing fails, show as string type
+                                filtered_responses[status_code] = {"type": "string", "content": "simplified"}
+                        else:
+                            # For "full", keep as is
+                            filtered_responses[status_code] = response_data
+                detail["responses"] = filtered_responses
+            else:
+                # Handle case where responses is not a dict
+                if response_body_style == "none":
+                    detail["responses"] = None
 
         return json.dumps(detail, ensure_ascii=False, indent=2)
 

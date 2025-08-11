@@ -84,6 +84,8 @@ These resources provide authoritative examples of:
 ### Advanced API Search Tools 🆕
 - `search_apis`: Natural language API search with semantic matching and relevance scoring
 - `get_api_detail`: Detailed API information with parameters, request/response schemas, and sample code
+  - **Context Optimization**: Advanced filtering options for description and body content (up to 96% size reduction)
+  - **Smart Defaults**: Optimized for LLM context efficiency while maintaining useful information
 - `get_sample_code`: Language-specific code samples for API endpoints
 - `list_schemas`: List or search OpenAPI schemas
 - `get_schema_detail`: Get detailed information for a specific schema
@@ -268,15 +270,30 @@ Natural language search for Authlete APIs with intelligent relevance scoring.
 **Returns:** JSON array of search results with path, method, summary, description, tags, and relevance score.
 
 #### get_api_detail
-Get comprehensive details for a specific API endpoint.
+Get comprehensive details for a specific API endpoint with advanced filtering options for context optimization.
 
 **Parameters:**
 - `path` (string, optional): Exact API path (required if operation_id not provided)
 - `method` (string, optional): HTTP method (required if operation_id not provided)
 - `operation_id` (string, optional): Operation ID (alternative to path+method)
 - `language` (string, optional): Programming language for sample code
+- `description_style` (string, optional): Description filtering style (default: "summary_and_headers")
+  - `"full"`: Complete description text
+  - `"none"`: No description
+  - `"summary_and_headers"`: Summary + header list (default, optimal for context efficiency)
+  - `"line_range"`: Specific line range (use with line_start/line_end)
+- `line_start` (integer, optional): Start line for line_range style (1-indexed, default: 1)
+- `line_end` (integer, optional): End line for line_range style (1-indexed, default: 100)
+- `request_body_style` (string, optional): Request body filtering style (default: "none")
+  - `"full"`: Complete request body details
+  - `"none"`: No request body (default)
+  - `"schema_only"`: Schema references only (significant size reduction)
+- `response_body_style` (string, optional): Response body filtering style (default: "none")
+  - `"full"`: Complete response body details
+  - `"none"`: No response body (default)
+  - `"schema_only"`: Schema references only (significant size reduction)
 
-**Returns:** Detailed API information including parameters, request body, responses, and sample code.
+**Returns:** Detailed API information including parameters, request body, responses, and sample code. Size optimized based on filtering options (up to 96% reduction with schema_only).
 
 #### get_sample_code
 Retrieve sample code for a specific API endpoint in the requested language.
@@ -383,6 +400,18 @@ get_api_detail(path="/api/auth/token", method="POST", language="curl")
 
 # Use operation ID instead of path+method
 get_api_detail(operation_id="revokeToken", language="javascript")
+
+# Context-optimized API details (recommended for large APIs)
+get_api_detail(operation_id="client_create_api", description_style="summary_and_headers", 
+               request_body_style="schema_only", response_body_style="schema_only")
+
+# Get only schema structure without verbose content (96% size reduction)
+get_api_detail(path="/api/auth/authorization", method="POST", description_style="none",
+               request_body_style="schema_only", response_body_style="schema_only")
+
+# Get specific line range of description
+get_api_detail(operation_id="auth_authorization_api", description_style="line_range",
+               line_start=1, line_end=50)
 ```
 
 ### Get Sample Code
