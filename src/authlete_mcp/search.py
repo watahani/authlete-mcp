@@ -58,7 +58,6 @@ class AuthleteApiSearcher:
         description_query: str | None = None,
         tag_filter: str | None = None,
         method_filter: str | None = None,
-        mode: str = "natural",
         limit: int = 20,
     ) -> list[dict[str, Any]]:
         """
@@ -70,7 +69,6 @@ class AuthleteApiSearcher:
             description_query: Description search
             tag_filter: Tag filtering
             method_filter: HTTP method filtering
-            mode: Search mode (kept for compatibility, actually uses natural language search)
             limit: Maximum number of results
 
         Returns:

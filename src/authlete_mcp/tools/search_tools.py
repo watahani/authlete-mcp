@@ -1,40 +1,62 @@
 """Search and schema tools for Authlete MCP Server."""
 
 import json
+import logging
 
 from mcp.server.fastmcp import Context
 
 from ..search import get_searcher
 
+logger = logging.getLogger(__name__)
+
 
 async def search_apis(
-    query: str = None,
-    path_query: str = None,
-    description_query: str = None,
-    tag_filter: str = None,
-    method_filter: str = None,
-    mode: str = "natural",
+    query: str = "",
+    path_query: str = "",
+    description_query: str = "",
+    tag_filter: str = "",
+    method_filter: str = "",
     limit: int = 20,
     ctx: Context = None,
 ) -> str:
     """Natural language API search. Semantic matching like 'revoke token' → 'This API revokes access tokens'. Returns description truncated to ~100 chars. Use get_api_detail for full information.
 
+    Search types are mutually exclusive and executed in priority order:
+    1. query (natural language search) - highest priority
+    2. path_query (path-based search) - medium priority
+    3. description_query (description search) - lowest priority
+    Only the highest priority non-empty parameter will be used for searching.
+
     Args:
         query: Natural language search query (e.g., 'revoke token', 'create client', 'user authentication')
         path_query: API path search (e.g., '/api/auth/token')
         description_query: Description search (e.g., 'revokes access tokens')
-        tag_filter: Tag filter (e.g., 'Token Operations', 'Authorization')
-        method_filter: HTTP method filter (GET, POST, PUT, DELETE)
-        mode: Search mode (for compatibility, actually uses natural language search)
+        tag_filter: Tag filter (e.g., 'Token Operations', 'Authorization') - applies to query and description_query
+        method_filter: HTTP method filter (GET, POST, PUT, DELETE) - applies to all search types
         limit: Maximum number of results (default: 20, max: 100)
     """
 
     try:
+        logger.info(
+            f"🔍 search_apis called: query={repr(query)}, path_query={repr(path_query)}, description_query={repr(description_query)}"
+        )
+
         searcher = get_searcher()
 
         # Validate limit
         if limit < 1 or limit > 100:
             limit = 20
+
+        # Check which search will be executed
+        if query and query.strip():
+            logger.info("  - Executing natural language search")
+        elif path_query and path_query.strip():
+            logger.info("  - Executing path search")
+        elif description_query and description_query.strip():
+            logger.info("  - Executing description search")
+        else:
+            logger.info("  - No search (all parameters empty)")
+            return "No APIs found matching the search criteria."
 
         results = await searcher.search_apis(
             query=query,
@@ -42,9 +64,10 @@ async def search_apis(
             description_query=description_query,
             tag_filter=tag_filter,
             method_filter=method_filter,
-            mode=mode,
             limit=limit,
         )
+
+        logger.info(f"  - Search completed: {len(results) if results else 0} results found")
 
         if not results:
             return "No APIs found matching the search criteria."
@@ -60,10 +83,10 @@ async def search_apis(
 
 
 async def get_api_detail(
-    path: str = None,
-    method: str = None,
-    operation_id: str = None,
-    language: str = None,
+    path: str = "",
+    method: str = "",
+    operation_id: str = "",
+    language: str = "",
     ctx: Context = None,
 ) -> str:
     """Get detailed information for specific API (parameters, request/response, sample code). Provide either operation_id OR both path and method.
@@ -78,13 +101,20 @@ async def get_api_detail(
     try:
         searcher = get_searcher()
 
-        if not operation_id and (not path or not method):
+        # Parameters already come as strings, no conversion needed
+        op_id = operation_id
+        api_path = path
+        api_method = method
+        search_language = language
+
+        # Check for empty values after conversion
+        if not op_id.strip() and (not api_path.strip() or not api_method.strip()):
             return "Either 'operation_id' or both 'path' and 'method' parameters are required."
 
-        detail = await searcher.get_api_detail(path, method, operation_id, language)
+        detail = await searcher.get_api_detail(api_path, api_method, op_id, search_language)
 
         if not detail:
-            identifier = operation_id or f"{method} {path}"
+            identifier = op_id or f"{api_method} {api_path}"
             return f"API details not found: {identifier}"
 
         return json.dumps(detail, ensure_ascii=False, indent=2)
@@ -99,9 +129,9 @@ async def get_api_detail(
 
 async def get_sample_code(
     language: str,
-    path: str = None,
-    method: str = None,
-    operation_id: str = None,
+    path: str = "",
+    method: str = "",
+    operation_id: str = "",
     ctx: Context = None,
 ) -> str:
     """Get sample code for specific API in specified language. Provide language and either operation_id OR both path and method.
@@ -116,16 +146,22 @@ async def get_sample_code(
     try:
         searcher = get_searcher()
 
-        if not language:
+        if not language or not language.strip():
             return "language parameter is required."
 
-        if not operation_id and (not path or not method):
+        # Parameters already come as strings, no conversion needed
+        op_id = operation_id
+        api_path = path
+        api_method = method
+
+        # Check for empty values after conversion
+        if not op_id.strip() and (not api_path.strip() or not api_method.strip()):
             return "Either 'operation_id' or both 'path' and 'method' parameters are required."
 
-        detail = await searcher.get_api_detail(path, method, operation_id, language)
+        detail = await searcher.get_api_detail(api_path, api_method, op_id, language)
 
         if not detail or not detail.get("sample_code"):
-            identifier = operation_id or f"{method} {path}"
+            identifier = op_id or f"{api_method} {api_path}"
             return f"Sample code not found: {identifier} ({language})"
 
         return detail["sample_code"]
@@ -139,27 +175,26 @@ async def get_sample_code(
 
 
 async def list_schemas(
-    query: str = None,
-    schema_type: str = None,
+    query: str = "",
     limit: int = 20,
     ctx: Context = None,
 ) -> str:
-    """スキーマ一覧を取得または検索する
+    """List or search schemas from the API specification.
 
     Args:
-        query: 検索クエリ (スキーマ名、title、descriptionで検索、省略時は全スキーマを返す)
-        schema_type: スキーマタイプでフィルタ (object, array, string, etc.)
-        limit: 結果の最大数 (デフォルト: 20, 最大: 100)
+        query: Search query (searches schema name, title, description; returns all schemas if omitted)
+        limit: Maximum number of results (default: 20, max: 100)
     """
     try:
-        # limitの範囲チェック
+        # Validate limit range
         limit = max(1, min(limit, 100))
 
         searcher = get_searcher()
-        schemas = searcher.search_schemas(query=query, schema_type=schema_type, limit=limit)
+        # Parameter already comes as string, no conversion needed
+        schemas = searcher.search_schemas(query=query, schema_type=None, limit=limit)
 
         if not schemas:
-            return "指定された条件にマッチするスキーマが見つかりませんでした。"
+            return "No schemas found matching the specified criteria."
 
         return json.dumps(schemas, ensure_ascii=False, indent=2)
 
@@ -175,10 +210,10 @@ async def get_schema_detail(
     schema_name: str,
     ctx: Context = None,
 ) -> str:
-    """特定のスキーマの詳細情報を取得する
+    """Get detailed information for a specific schema.
 
     Args:
-        schema_name: スキーマ名 (例: 'AccessToken', 'Client', 'Service')
+        schema_name: Schema name (e.g., 'AccessToken', 'Client', 'Service')
     """
     try:
         if not schema_name:
