@@ -132,55 +132,15 @@ async def create_service(name: str, organization_id: str = "", description: str 
 
 
 async def create_service_detailed(
-    name: str,
+    service_config: str,
     organization_id: str = "",
-    description: str = "",
-    issuer: str = None,
-    authorization_endpoint: str = None,
-    token_endpoint: str = None,
-    userinfo_endpoint: str = None,
-    revocation_endpoint: str = None,
-    jwks_uri: str = None,
-    supported_scopes: str = "openid,profile,email",
-    supported_response_types: str = "CODE",
-    supported_grant_types: str = "AUTHORIZATION_CODE",
-    supported_token_auth_methods: str = "CLIENT_SECRET_BASIC",
-    pkce_required: bool = False,
-    pkce_s256_required: bool = False,
-    access_token_duration: int = 86400,
-    refresh_token_duration: int = 864000,
-    id_token_duration: int = 86400,
-    direct_authorization_endpoint_enabled: bool = True,
-    direct_token_endpoint_enabled: bool = True,
-    direct_userinfo_endpoint_enabled: bool = True,
-    jwks: str = None,
     ctx: Context = None,
 ) -> str:
     """Create a new Authlete service via IdP with detailed configuration.
 
     Args:
-        name: Service name
+        service_config: JSON string containing service configuration following Authlete API service schema
         organization_id: Organization ID (if empty, uses ORGANIZATION_ID env var)
-        description: Service description
-        issuer: Issuer identifier URL (https:// format)
-        authorization_endpoint: Authorization endpoint URL
-        token_endpoint: Token endpoint URL
-        userinfo_endpoint: UserInfo endpoint URL
-        revocation_endpoint: Token revocation endpoint URL
-        jwks_uri: JWK Set endpoint URL
-        supported_scopes: Comma-separated list of supported scopes (default: "openid,profile,email")
-        supported_response_types: Comma-separated response types (default: "CODE")
-        supported_grant_types: Comma-separated grant types (default: "AUTHORIZATION_CODE")
-        supported_token_auth_methods: Comma-separated auth methods (default: "CLIENT_SECRET_BASIC")
-        pkce_required: Whether PKCE is required
-        pkce_s256_required: Whether S256 is required for PKCE
-        access_token_duration: Access token duration in seconds (default: 86400)
-        refresh_token_duration: Refresh token duration in seconds (default: 864000)
-        id_token_duration: ID token duration in seconds (default: 86400)
-        direct_authorization_endpoint_enabled: Enable direct authorization endpoint
-        direct_token_endpoint_enabled: Enable direct token endpoint
-        direct_userinfo_endpoint_enabled: Enable direct userinfo endpoint
-        jwks: JWK Set document content (JSON string)
     """
     if not DEFAULT_API_KEY:
         return "Error: ORGANIZATION_ACCESS_TOKEN environment variable not set"
@@ -192,49 +152,16 @@ async def create_service_detailed(
     config = AuthleteConfig(api_key=DEFAULT_API_KEY)
 
     try:
-        # Parse supported scopes
-        scope_list = []
-        for scope_name in supported_scopes.split(","):
-            scope_name = scope_name.strip()
-            if scope_name:
-                scope_list.append({"name": scope_name, "defaultEntry": scope_name == "openid"})
+        # Parse service configuration JSON
+        service_dict = json.loads(service_config)
+    except json.JSONDecodeError as e:
+        return f"Error parsing service configuration JSON: {str(e)}"
 
-        # Build service configuration
-        service_dict = {
-            "serviceName": name,
-            "description": description,
-            "supportedScopes": scope_list,
-            "supportedResponseTypes": [t.strip() for t in supported_response_types.split(",") if t.strip()],
-            "supportedGrantTypes": [t.strip() for t in supported_grant_types.split(",") if t.strip()],
-            "supportedTokenAuthMethods": [t.strip() for t in supported_token_auth_methods.split(",") if t.strip()],
-            "pkceRequired": pkce_required,
-            "pkceS256Required": pkce_s256_required,
-            "accessTokenDuration": access_token_duration,
-            "refreshTokenDuration": refresh_token_duration,
-            "idTokenDuration": id_token_duration,
-            "directAuthorizationEndpointEnabled": direct_authorization_endpoint_enabled,
-            "directTokenEndpointEnabled": direct_token_endpoint_enabled,
-            "directUserInfoEndpointEnabled": direct_userinfo_endpoint_enabled,
-        }
-
-        # Add optional fields if provided
-        if issuer:
-            service_dict["issuer"] = issuer
-        if authorization_endpoint:
-            service_dict["authorizationEndpoint"] = authorization_endpoint
-        if token_endpoint:
-            service_dict["tokenEndpoint"] = token_endpoint
-        if userinfo_endpoint:
-            service_dict["userInfoEndpoint"] = userinfo_endpoint
-        if revocation_endpoint:
-            service_dict["revocationEndpoint"] = revocation_endpoint
-        if jwks_uri:
-            service_dict["jwksUri"] = jwks_uri
-        if jwks:
-            service_dict["jwks"] = jwks
-
+    try:
+        # Create the IdP API request payload
         data = {"apiServerId": int(config.api_server_id), "organizationId": int(org_id), "service": service_dict}
 
+        # Send request to Authlete IdP API
         result = await make_authlete_idp_request("POST", "service", config, data)
         return json.dumps(result, indent=2)
 
