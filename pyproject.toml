@@ -82,10 +82,17 @@ line-ending = "auto"
 source = ["src"]
 concurrency = ["multiprocessing"]
 parallel = true
+data_file = "./coverage/.coverage"
 omit = [
     "*/tests/*",
     "*/test_*",
     "*/conftest.py",
+]
+
+[tool.coverage.paths]
+source = [
+    "src/",
+    "*/site-packages/",
 ]
 
 [tool.coverage.report]
@@ -96,3 +103,6 @@ exclude_lines = [
     "raise NotImplementedError",
     "if __name__ == .__main__.:",
 ]
+
+[tool.coverage.html]
+directory = "coverage/htmlcov"
