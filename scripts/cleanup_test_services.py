@@ -17,12 +17,31 @@ from authlete_mcp.config import AuthleteConfig
 
 
 async def list_all_services(config: AuthleteConfig) -> list[dict]:
-    """List all services in the organization."""
+    """List all services in the organization with pagination."""
+    all_services = []
+    start = 0
+    page_size = 8  # Small page size for testing pagination
+
     try:
-        response = await make_authlete_request("GET", "service/get/list", config)
-        services = response.get("services", [])
-        print(f"Found {len(services)} total services")
-        return services
+        while True:
+            end = start + page_size
+            endpoint = f"service/get/list?limited=true&start={start}&end={end}"
+            response = await make_authlete_request("GET", endpoint, config)
+
+            services = response.get("services", [])
+            total_count = response.get("totalCount", 0)
+
+            all_services.extend(services)
+
+            # Check if we've reached the end - when start >= total_count or no services returned
+            if start >= total_count or len(services) == 0:
+                break
+
+            start = end  # Next start is end (inclusive range)
+
+        print(f"Found {len(all_services)} total services (totalCount: {total_count})")
+        return all_services
+
     except Exception as e:
         print(f"Error listing services: {e}")
         return []
@@ -31,40 +50,22 @@ async def list_all_services(config: AuthleteConfig) -> list[dict]:
 async def delete_service_by_api_key(config: AuthleteConfig, service_api_key: str, service_name: str) -> bool:
     """Delete a service using IdP API by its API key."""
     try:
-        # First get service details to find the service ID
-        service_config = AuthleteConfig(
-            api_key=service_api_key,
-            base_url=config.base_url,
-            idp_url=config.idp_url,
-            api_server_id=config.api_server_id,
-        )
-
-        service_details = await make_authlete_request("GET", "service", service_config)
-        service_id = service_details.get("apiKey")  # API key is used as service ID for deletion
-
-        if not service_id:
-            print(f"❌ Could not find service ID for {service_name}")
-            return False
-
-        # Delete using IdP API
+        # Delete using IdP API with organization token
         delete_data = {
-            "organizationId": config.organization_id or os.getenv("ORGANIZATION_ID", ""),
-            "serviceId": service_id,
+            "organizationId": os.getenv("ORGANIZATION_ID", ""),
+            "serviceId": service_api_key,  # Use the API key directly as service ID
+            "apiServerId": config.api_server_id,
         }
 
-        org_config = AuthleteConfig(
-            api_key=config.api_key,  # Use organization token for IdP operations
-            base_url=config.base_url,
-            idp_url=config.idp_url,
-            api_server_id=config.api_server_id,
-        )
-
-        await make_authlete_idp_request("POST", "service/remove", org_config, delete_data)
-        print(f"✅ Deleted service: {service_name} (ID: {service_id})")
+        await make_authlete_idp_request("POST", "service/remove", config, delete_data)
+        print(f"✅ Deleted service: {service_name} (ID: {service_api_key})")
         return True
 
     except Exception as e:
-        print(f"❌ Error deleting service {service_name}: {e}")
+        print(f"❌ Error deleting service {service_name}: {type(e).__name__}: {str(e)}")
+        import traceback
+
+        print(f"   Full traceback: {traceback.format_exc()}")
         return False
 
 
@@ -83,7 +84,7 @@ async def cleanup_test_services():
         print("⚠️ ORGANIZATION_ID not set, using empty string")
 
     # Create config
-    config = AuthleteConfig(api_key=org_token, organization_id=organization_id)
+    config = AuthleteConfig(api_key=org_token)
 
     # List all services
     services = await list_all_services(config)
@@ -112,7 +113,7 @@ async def cleanup_test_services():
             failed_count += 1
             continue
 
-        success = await delete_service_by_api_key(config, service_api_key, service_name)
+        success = await delete_service_by_api_key(config, str(service_api_key), service_name)
         if success:
             deleted_count += 1
         else:
