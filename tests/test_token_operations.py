@@ -45,11 +45,11 @@ async def test_list_issued_tokens_without_token():
         async with ClientSession(read_stream, write_stream) as session:
             await session.initialize()
 
-            result = await session.call_tool("list_issued_tokens", {"service_api_key": "test_service_key"})
+            result = await session.call_tool("list_issued_tokens", {"service_api_key": ""})
 
             assert result.content
             response_text = result.content[0].text
-            assert "Error: ORGANIZATION_ACCESS_TOKEN environment variable not set" in response_text
+            assert "Error: service_api_key parameter is required" in response_text
 
 
 @pytest.mark.integration

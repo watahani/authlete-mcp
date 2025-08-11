@@ -5,7 +5,7 @@ import json
 import httpx
 
 from ..api import make_authlete_request
-from ..config import DEFAULT_API_KEY, AuthleteConfig
+from ..config import AuthleteConfig
 
 
 async def create_client(client_data: str, service_api_key: str = "") -> str:
@@ -13,21 +13,24 @@ async def create_client(client_data: str, service_api_key: str = "") -> str:
 
     Args:
         client_data: JSON string containing client data
-        service_api_key: Service API key (if empty, uses the main token)
+        service_api_key: Service API key (required for URL path)
     """
     # Validate required parameters
     if not service_api_key:
         return "Error: service_api_key parameter is required"
 
+    # Use organization token for authentication, service_api_key for URL path
+    from ..config import DEFAULT_API_KEY, AuthleteConfig
+
     if not DEFAULT_API_KEY:
         return "Error: ORGANIZATION_ACCESS_TOKEN environment variable not set"
 
     config = AuthleteConfig(api_key=DEFAULT_API_KEY)
-    key_to_use = service_api_key if service_api_key else DEFAULT_API_KEY
 
     try:
         data = json.loads(client_data)
-        result = await make_authlete_request("POST", f"{key_to_use}/client/create", config, data)
+        # Use the correct endpoint format: {service_api_key}/client/create
+        result = await make_authlete_request("POST", f"{service_api_key}/client/create", config, data)
         return json.dumps(result, indent=2)
     except json.JSONDecodeError as e:
         return f"Error parsing client data JSON: {str(e)}"
@@ -40,20 +43,22 @@ async def get_client(client_id: str, service_api_key: str = "") -> str:
 
     Args:
         client_id: Client ID to retrieve
-        service_api_key: Service API key (if empty, uses the main token)
+        service_api_key: Service API key (required for URL path)
     """
     # Validate required parameters
     if not service_api_key:
         return "Error: service_api_key parameter is required"
 
+    # Use organization token for authentication, service_api_key for URL path
+    from ..config import DEFAULT_API_KEY
+
     if not DEFAULT_API_KEY:
         return "Error: ORGANIZATION_ACCESS_TOKEN environment variable not set"
 
     config = AuthleteConfig(api_key=DEFAULT_API_KEY)
-    key_to_use = service_api_key if service_api_key else DEFAULT_API_KEY
 
     try:
-        result = await make_authlete_request("GET", f"{key_to_use}/client/get/{client_id}", config)
+        result = await make_authlete_request("GET", f"{service_api_key}/client/get/{client_id}", config)
         return json.dumps(result, indent=2)
     except Exception as e:
         return f"Error getting client: {str(e)}"
@@ -63,20 +68,22 @@ async def list_clients(service_api_key: str = "") -> str:
     """List all Authlete clients.
 
     Args:
-        service_api_key: Service API key (if empty, uses the main token)
+        service_api_key: Service API key (required for URL path)
     """
     # Validate required parameters
     if not service_api_key:
         return "Error: service_api_key parameter is required"
 
+    # Use organization token for authentication, service_api_key for URL path
+    from ..config import DEFAULT_API_KEY
+
     if not DEFAULT_API_KEY:
         return "Error: ORGANIZATION_ACCESS_TOKEN environment variable not set"
 
     config = AuthleteConfig(api_key=DEFAULT_API_KEY)
-    key_to_use = service_api_key if service_api_key else DEFAULT_API_KEY
 
     try:
-        result = await make_authlete_request("GET", f"{key_to_use}/client/get/list", config)
+        result = await make_authlete_request("GET", f"{service_api_key}/client/get/list", config)
         return json.dumps(result, indent=2)
     except Exception as e:
         return f"Error listing clients: {str(e)}"
@@ -88,21 +95,23 @@ async def update_client(client_id: str, client_data: str, service_api_key: str =
     Args:
         client_id: Client ID to update
         client_data: JSON string containing client data to update
-        service_api_key: Service API key (if empty, uses the main token)
+        service_api_key: Service API key (required for URL path)
     """
     # Validate required parameters
     if not service_api_key:
         return "Error: service_api_key parameter is required"
 
+    # Use organization token for authentication, service_api_key for URL path
+    from ..config import DEFAULT_API_KEY
+
     if not DEFAULT_API_KEY:
         return "Error: ORGANIZATION_ACCESS_TOKEN environment variable not set"
 
     config = AuthleteConfig(api_key=DEFAULT_API_KEY)
-    key_to_use = service_api_key if service_api_key else DEFAULT_API_KEY
 
     try:
         data = json.loads(client_data)
-        result = await make_authlete_request("POST", f"{key_to_use}/client/update/{client_id}", config, data)
+        result = await make_authlete_request("POST", f"{service_api_key}/client/update/{client_id}", config, data)
         return json.dumps(result, indent=2)
     except json.JSONDecodeError as e:
         return f"Error parsing client data JSON: {str(e)}"
@@ -115,20 +124,22 @@ async def delete_client(client_id: str, service_api_key: str = "") -> str:
 
     Args:
         client_id: Client ID to delete
-        service_api_key: Service API key (if empty, uses the main token)
+        service_api_key: Service API key (required for URL path)
     """
     # Validate required parameters
     if not service_api_key:
         return "Error: service_api_key parameter is required"
 
+    # Use organization token for authentication, service_api_key for URL path
+    from ..config import DEFAULT_API_KEY
+
     if not DEFAULT_API_KEY:
         return "Error: ORGANIZATION_ACCESS_TOKEN environment variable not set"
 
     config = AuthleteConfig(api_key=DEFAULT_API_KEY)
-    key_to_use = service_api_key if service_api_key else DEFAULT_API_KEY
 
     try:
-        result = await make_authlete_request("DELETE", f"{key_to_use}/client/delete/{client_id}", config)
+        result = await make_authlete_request("DELETE", f"{service_api_key}/client/delete/{client_id}", config)
         return json.dumps(result, indent=2)
     except Exception as e:
         return f"Error deleting client: {str(e)}"
@@ -139,20 +150,22 @@ async def rotate_client_secret(client_id: str, service_api_key: str = "") -> str
 
     Args:
         client_id: Client ID
-        service_api_key: Service API key (if empty, uses the main token)
+        service_api_key: Service API key (required for URL path)
     """
     # Validate required parameters
     if not service_api_key:
         return "Error: service_api_key parameter is required"
 
+    # Use organization token for authentication, service_api_key for URL path
+    from ..config import DEFAULT_API_KEY
+
     if not DEFAULT_API_KEY:
         return "Error: ORGANIZATION_ACCESS_TOKEN environment variable not set"
 
     config = AuthleteConfig(api_key=DEFAULT_API_KEY)
-    key_to_use = service_api_key if service_api_key else DEFAULT_API_KEY
 
     try:
-        result = await make_authlete_request("GET", f"{key_to_use}/client/secret/refresh/{client_id}", config)
+        result = await make_authlete_request("GET", f"{service_api_key}/client/secret/refresh/{client_id}", config)
         return json.dumps(result, indent=2)
     except Exception as e:
         return f"Error rotating client secret: {str(e)}"
@@ -164,21 +177,25 @@ async def update_client_secret(client_id: str, secret_data: str, service_api_key
     Args:
         client_id: Client ID
         secret_data: JSON string containing new secret data
-        service_api_key: Service API key (if empty, uses the main token)
+        service_api_key: Service API key (required for URL path)
     """
     # Validate required parameters
     if not service_api_key:
         return "Error: service_api_key parameter is required"
 
+    # Use organization token for authentication, service_api_key for URL path
+    from ..config import DEFAULT_API_KEY
+
     if not DEFAULT_API_KEY:
         return "Error: ORGANIZATION_ACCESS_TOKEN environment variable not set"
 
     config = AuthleteConfig(api_key=DEFAULT_API_KEY)
-    key_to_use = service_api_key if service_api_key else DEFAULT_API_KEY
 
     try:
         data = json.loads(secret_data)
-        result = await make_authlete_request("POST", f"{key_to_use}/client/secret/update/{client_id}", config, data)
+        result = await make_authlete_request(
+            "POST", f"{service_api_key}/client/secret/update/{client_id}", config, data
+        )
         return json.dumps(result, indent=2)
     except json.JSONDecodeError as e:
         return f"Error parsing secret data JSON: {str(e)}"
@@ -192,22 +209,26 @@ async def update_client_lock(client_id: str, lock_flag: bool, service_api_key: s
     Args:
         client_id: Client ID
         lock_flag: True to lock, False to unlock
-        service_api_key: Service API key (if empty, uses the main token)
+        service_api_key: Service API key (required for URL path)
     """
     # Validate required parameters
     if not service_api_key:
         return "Error: service_api_key parameter is required"
 
+    # Use organization token for authentication, service_api_key for URL path
+    from ..config import DEFAULT_API_KEY
+
     if not DEFAULT_API_KEY:
         return "Error: ORGANIZATION_ACCESS_TOKEN environment variable not set"
 
     config = AuthleteConfig(api_key=DEFAULT_API_KEY)
-    key_to_use = service_api_key if service_api_key else DEFAULT_API_KEY
 
     data = {"locked": lock_flag}
 
     try:
-        result = await make_authlete_request("POST", f"{key_to_use}/client/lock_flag/update/{client_id}", config, data)
+        result = await make_authlete_request(
+            "POST", f"{service_api_key}/client/lock_flag/update/{client_id}", config, data
+        )
         return json.dumps(result, indent=2)
     except Exception as e:
         return f"Error updating client lock: {str(e)}"
@@ -221,7 +242,7 @@ async def get_authorized_applications(
 
     Args:
         subject: Subject to get applications for (required)
-        service_api_key: Service API key (required)
+        service_api_key: Service API key (required for URL path)
     """
 
     try:
@@ -231,10 +252,6 @@ async def get_authorized_applications(
 
         if not subject:
             return "Error: subject parameter is required"
-
-        # Check if organization token is available for extended operations
-        if not DEFAULT_API_KEY:
-            return "Error: ORGANIZATION_ACCESS_TOKEN environment variable not set"
 
         config = AuthleteConfig(api_key=service_api_key)
 
@@ -263,7 +280,7 @@ async def update_client_tokens(
         subject: Subject (required)
         client_id: Client ID (required)
         token_data: JSON string with token update parameters
-        service_api_key: Service API key (required)
+        service_api_key: Service API key (required for URL path)
     """
 
     try:
@@ -279,10 +296,6 @@ async def update_client_tokens(
             token_params = json.loads(token_data)
         except json.JSONDecodeError as e:
             return f"Error parsing token data JSON: {str(e)}"
-
-        # Check if organization token is available for extended operations
-        if not DEFAULT_API_KEY:
-            return "Error: ORGANIZATION_ACCESS_TOKEN environment variable not set"
 
         config = AuthleteConfig(api_key=service_api_key)
 
@@ -311,7 +324,7 @@ async def delete_client_tokens(
     Args:
         subject: Subject (required)
         client_id: Client ID (required)
-        service_api_key: Service API key (required)
+        service_api_key: Service API key (required for URL path)
     """
 
     try:
@@ -350,7 +363,7 @@ async def get_granted_scopes(
     Args:
         subject: Subject (required)
         client_id: Client ID (required)
-        service_api_key: Service API key (required)
+        service_api_key: Service API key (required for URL path)
     """
 
     try:
@@ -389,7 +402,7 @@ async def delete_granted_scopes(
     Args:
         subject: Subject (required)
         client_id: Client ID (required)
-        service_api_key: Service API key (required)
+        service_api_key: Service API key (required for URL path)
     """
 
     try:
@@ -426,7 +439,7 @@ async def get_requestable_scopes(
 
     Args:
         client_id: Client ID (required)
-        service_api_key: Service API key (required)
+        service_api_key: Service API key (required for URL path)
     """
 
     try:
@@ -462,7 +475,7 @@ async def update_requestable_scopes(
     Args:
         client_id: Client ID (required)
         scopes_data: JSON string with scopes data
-        service_api_key: Service API key (required)
+        service_api_key: Service API key (required for URL path)
     """
 
     try:
@@ -502,7 +515,7 @@ async def delete_requestable_scopes(
 
     Args:
         client_id: Client ID (required)
-        service_api_key: Service API key (required)
+        service_api_key: Service API key (required for URL path)
     """
 
     try:

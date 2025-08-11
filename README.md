@@ -156,11 +156,11 @@ AUTHLETE_BASE_URL=https://eu.authlete.com uv run python main.py
 
 The unified server supports the following environment variables:
 
-### Required for Service Management
-- `ORGANIZATION_ACCESS_TOKEN`: Your organization access token (required for service management)
+### Required Environment Variables
+- `ORGANIZATION_ACCESS_TOKEN`: Your organization access token (required for all Authlete API operations)
+- `ORGANIZATION_ID`: Your organization ID (required for service creation and deletion operations)
 
 ### Optional Configuration
-- `ORGANIZATION_ID`: Your organization ID (optional, can be overridden by function parameters)
 - `AUTHLETE_BASE_URL`: Authlete API base URL (default: `https://jp.authlete.com`)
 - `AUTHLETE_IDP_URL`: Authlete IdP URL (default: `https://login.authlete.com`)
 - `AUTHLETE_API_SERVER_ID`: API Server ID (default: `53285` for JP)
@@ -183,16 +183,13 @@ Creates a new Authlete service.
 
 **Parameters:**
 - `name` (string, required): Service name
-- `organization_id` (string, optional): Organization ID (if empty, uses ORGANIZATION_ID env var)
 - `description` (string, optional): Service description
 
 #### create_service_detailed
 Creates a new Authlete service with comprehensive configuration using individual parameters.
 
 **Parameters:**
-- `name` (string, required): Service name
-- `organization_id` (string, optional): Organization ID (if empty, uses ORGANIZATION_ID env var)
-- `description` (string, optional): Service description
+- `service_config` (string, required): JSON string containing service configuration following Authlete API service schema
 - `issuer` (string, optional): Issuer identifier URL (https:// format)
 - `authorization_endpoint` (string, optional): Authorization endpoint URL
 - `token_endpoint` (string, optional): Token endpoint URL
@@ -237,7 +234,6 @@ Deletes a service via IdP.
 
 **Parameters:**
 - `service_id` (string, required): Service ID to delete
-- `organization_id` (string, optional): Organization ID (if empty, uses ORGANIZATION_ID env var)
 
 ### Client Operations
 
@@ -314,14 +310,11 @@ Retrieve sample code for a specific API endpoint in the requested language.
 }
 ```
 
-With this configuration, you can create services without specifying `organization_id` parameter:
+With this configuration, you can create services using the ORGANIZATION_ID from environment variables:
 
 ```bash
 # Creates a service using ORGANIZATION_ID from environment variables
 create_service(name="My Test Service", description="Test service")
-
-# Still works with explicit organization_id (overrides env var)
-create_service(name="Another Service", organization_id="123456789", description="Different org service")
 ```
 
 ### Example 2: Configuration for Different Regions

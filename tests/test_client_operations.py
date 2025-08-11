@@ -205,12 +205,12 @@ async def test_rotate_client_secret_without_token():
             await session.initialize()
 
             result = await session.call_tool(
-                "rotate_client_secret", {"client_id": "test_client_id", "service_api_key": "test_service_key"}
+                "rotate_client_secret", {"client_id": "test_client_id", "service_api_key": ""}
             )
 
             assert result.content
             response_text = result.content[0].text
-            assert "Error: ORGANIZATION_ACCESS_TOKEN environment variable not set" in response_text
+            assert "Error: service_api_key parameter is required" in response_text
 
 
 @pytest.mark.unit
@@ -233,13 +233,13 @@ async def test_update_client_secret_without_token():
                 {
                     "client_id": "test_client_id",
                     "secret_data": json.dumps(secret_data),
-                    "service_api_key": "test_service_key",
+                    "service_api_key": "",
                 },
             )
 
             assert result.content
             response_text = result.content[0].text
-            assert "Error: ORGANIZATION_ACCESS_TOKEN environment variable not set" in response_text
+            assert "Error: service_api_key parameter is required" in response_text
 
             # シークレット値が指定した値と一致していることを確認
             assert "new_test_secret" in json.dumps(secret_data)
@@ -391,4 +391,158 @@ async def test_client_secret_operations_with_service_api_key():
                     # delete_service ツールが明確な削除完了メッセージを返すことを確認
                     assert "Service deleted successfully" in delete_response, (
                         f"Expected deletion success message, got: {delete_response}"
+                    )
+
+
+@pytest.mark.integration
+async def test_client_operations_require_service_api_key():
+    """Test that all client operations require service_api_key parameter."""
+    token = os.getenv("ORGANIZATION_ACCESS_TOKEN")
+    if not token or token == "dummy_token_for_ci":
+        pytest.skip("ORGANIZATION_ACCESS_TOKEN not set - skipping integration test")
+
+    server_params = StdioServerParameters(
+        command="uv",
+        args=["run", "python", "main.py"],
+        env={"ORGANIZATION_ACCESS_TOKEN": token, "ORGANIZATION_ID": os.getenv("ORGANIZATION_ID", "")},
+    )
+
+    client_operations = [
+        ("create_client", {"client_data": json.dumps({"clientName": "test"})}),
+        ("get_client", {"client_id": "test_client"}),
+        ("update_client", {"client_id": "test_client", "client_data": "{}"}),
+        ("delete_client", {"client_id": "test_client"}),
+        ("rotate_client_secret", {"client_id": "test_client"}),
+        ("update_client_secret", {"client_id": "test_client", "secret_data": "{}"}),
+        ("update_client_lock", {"client_id": "test_client", "lock_flag": True}),
+    ]
+
+    async with stdio_client(server_params) as (read_stream, write_stream):
+        async with ClientSession(read_stream, write_stream) as session:
+            await session.initialize()
+
+            for operation_name, params in client_operations:
+                result = await session.call_tool(operation_name, params)
+
+                assert result.content
+                response_text = result.content[0].text
+                assert "service_api_key parameter is required" in response_text, (
+                    f"Operation {operation_name} should require service_api_key, got: {response_text[:100]}"
+                )
+
+
+@pytest.mark.integration
+async def test_client_deletion_with_service_api_key():
+    """Test client creation and deletion with valid service_api_key."""
+    token = os.getenv("ORGANIZATION_ACCESS_TOKEN")
+    if not token or token == "dummy_token_for_ci":
+        pytest.skip("Real ORGANIZATION_ACCESS_TOKEN not set - skipping integration test")
+
+    org_id = os.getenv("ORGANIZATION_ID")
+    if not org_id or org_id == "12345":
+        pytest.skip("Real ORGANIZATION_ID not set - skipping integration test")
+
+    server_params = StdioServerParameters(
+        command="uv",
+        args=["run", "python", "main.py"],
+        env={"ORGANIZATION_ACCESS_TOKEN": token, "ORGANIZATION_ID": org_id},
+    )
+
+    service_api_key = None
+    client_id = None
+
+    async with stdio_client(server_params) as (read_stream, write_stream):
+        async with ClientSession(read_stream, write_stream) as session:
+            await session.initialize()
+
+            try:
+                # 1. テスト用サービスを作成
+                service_result = await session.call_tool(
+                    "create_service",
+                    {"name": "pytest-delete-test-service", "description": "Test service for client deletion"},
+                )
+
+                assert service_result.content
+                service_response = service_result.content[0].text
+                assert "Error" not in service_response, f"Service creation failed: {service_response}"
+
+                service_data = json.loads(service_response)
+                service_api_key = str(service_data.get("apiKey"))
+
+                assert service_api_key and service_api_key != "None", (
+                    f"Service API key not found in response: {service_response}"
+                )
+
+                # 2. テスト用クライアントを作成
+                client_data = {
+                    "clientName": "pytest-delete-test-client",
+                    "description": "Test client for deletion",
+                    "applicationType": "WEB",
+                    "redirectUris": ["https://test.example.com/callback"],
+                }
+
+                client_result = await session.call_tool(
+                    "create_client", {"client_data": json.dumps(client_data), "service_api_key": service_api_key}
+                )
+
+                assert client_result.content
+                client_response = client_result.content[0].text
+                assert "Error" not in client_response, f"Client creation failed: {client_response}"
+
+                client_response_data = json.loads(client_response)
+                client_id = str(client_response_data.get("clientId"))
+
+                assert client_id, f"Client ID not found in response: {client_response}"
+
+                # 3. 作成されたクライアントを取得して存在を確認
+                get_result = await session.call_tool(
+                    "get_client", {"client_id": client_id, "service_api_key": service_api_key}
+                )
+
+                assert get_result.content
+                get_response = get_result.content[0].text
+                assert "Error" not in get_response, f"Failed to retrieve client: {get_response}"
+                assert client_id in get_response, "Client ID not found in get response"
+
+                # 4. クライアントを削除
+                delete_result = await session.call_tool(
+                    "delete_client", {"client_id": client_id, "service_api_key": service_api_key}
+                )
+
+                assert delete_result.content
+                delete_response = delete_result.content[0].text
+                assert "Error" not in delete_response, f"Client deletion failed: {delete_response}"
+
+                # 5. 削除後にクライアントが存在しないことを確認
+                get_after_delete_result = await session.call_tool(
+                    "get_client", {"client_id": client_id, "service_api_key": service_api_key}
+                )
+
+                assert get_after_delete_result.content
+                get_after_delete_response = get_after_delete_result.content[0].text
+                # 削除されたクライアントの取得はエラーになるべき
+                assert "Error" in get_after_delete_response, (
+                    f"Expected error when getting deleted client, got: {get_after_delete_response}"
+                )
+
+                # クライアントが削除されたことを記録
+                client_id = None
+
+            finally:
+                # 6. クリーンアップ: サービスを削除
+                if service_api_key:
+                    delete_service_result = await session.call_tool(
+                        "delete_service",
+                        {
+                            "service_id": service_api_key,
+                            "organization_id": org_id,
+                        },
+                    )
+
+                    # 削除が成功したことを確認
+                    assert delete_service_result.content, "Delete service response is empty"
+                    delete_service_response = delete_service_result.content[0].text
+
+                    assert "Service deleted successfully" in delete_service_response, (
+                        f"Expected service deletion success message, got: {delete_service_response}"
                     )

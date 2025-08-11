@@ -50,12 +50,12 @@ async def test_generate_jose_without_token():
             await session.initialize()
 
             result = await session.call_tool(
-                "generate_jose", {"service_api_key": "test_service_key", "jose_data": json.dumps(jose_data)}
+                "generate_jose", {"service_api_key": "", "jose_data": json.dumps(jose_data)}
             )
 
             assert result.content
             response_text = result.content[0].text
-            assert "Error: ORGANIZATION_ACCESS_TOKEN environment variable not set" in response_text
+            assert "Error: service_api_key parameter is required" in response_text
 
 
 @pytest.mark.unit
@@ -118,13 +118,11 @@ async def test_verify_jose_without_token():
         async with ClientSession(read_stream, write_stream) as session:
             await session.initialize()
 
-            result = await session.call_tool(
-                "verify_jose", {"service_api_key": "test_service_key", "jose_token": test_token}
-            )
+            result = await session.call_tool("verify_jose", {"service_api_key": "", "jose_token": test_token})
 
             assert result.content
             response_text = result.content[0].text
-            assert "Error: ORGANIZATION_ACCESS_TOKEN environment variable not set" in response_text
+            assert "Error: service_api_key parameter is required" in response_text
 
 
 @pytest.mark.unit

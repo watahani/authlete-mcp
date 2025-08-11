@@ -8,20 +8,18 @@ from ..api.client import make_authlete_idp_request, make_authlete_request
 from ..config import DEFAULT_API_KEY, DEFAULT_ORGANIZATION_ID, AuthleteConfig
 
 
-async def create_service(name: str, organization_id: str = "", description: str = "", ctx: Context = None) -> str:
+async def create_service(name: str, description: str = "", ctx: Context = None) -> str:
     """Create a new Authlete service via IdP with basic configuration.
 
     Args:
         name: Service name
-        organization_id: Organization ID (if empty, uses ORGANIZATION_ID env var)
         description: Service description
     """
     if not DEFAULT_API_KEY:
         return "Error: ORGANIZATION_ACCESS_TOKEN environment variable not set"
 
-    org_id = organization_id if organization_id else DEFAULT_ORGANIZATION_ID
-    if not org_id:
-        return "Error: organization_id parameter or ORGANIZATION_ID environment variable must be set"
+    if not DEFAULT_ORGANIZATION_ID:
+        return "Error: ORGANIZATION_ID environment variable must be set"
 
     config = AuthleteConfig(api_key=DEFAULT_API_KEY)
 
@@ -117,7 +115,11 @@ async def create_service(name: str, organization_id: str = "", description: str 
         "nativeSsoSupported": False,
     }
 
-    data = {"apiServerId": int(config.api_server_id), "organizationId": int(org_id), "service": service_data}
+    data = {
+        "apiServerId": int(config.api_server_id),
+        "organizationId": int(DEFAULT_ORGANIZATION_ID),
+        "service": service_data,
+    }
 
     try:
         print(f"DEBUG: Sending request to IdP API with data: {json.dumps(data, indent=2)}")
@@ -133,21 +135,18 @@ async def create_service(name: str, organization_id: str = "", description: str 
 
 async def create_service_detailed(
     service_config: str,
-    organization_id: str = "",
     ctx: Context = None,
 ) -> str:
     """Create a new Authlete service via IdP with detailed configuration.
 
     Args:
         service_config: JSON string containing service configuration following Authlete API service schema
-        organization_id: Organization ID (if empty, uses ORGANIZATION_ID env var)
     """
     if not DEFAULT_API_KEY:
         return "Error: ORGANIZATION_ACCESS_TOKEN environment variable not set"
 
-    org_id = organization_id if organization_id else DEFAULT_ORGANIZATION_ID
-    if not org_id:
-        return "Error: organization_id parameter or ORGANIZATION_ID environment variable must be set"
+    if not DEFAULT_ORGANIZATION_ID:
+        return "Error: ORGANIZATION_ID environment variable must be set"
 
     config = AuthleteConfig(api_key=DEFAULT_API_KEY)
 
@@ -159,7 +158,11 @@ async def create_service_detailed(
 
     try:
         # Create the IdP API request payload
-        data = {"apiServerId": int(config.api_server_id), "organizationId": int(org_id), "service": service_dict}
+        data = {
+            "apiServerId": int(config.api_server_id),
+            "organizationId": int(DEFAULT_ORGANIZATION_ID),
+            "service": service_dict,
+        }
 
         # Send request to Authlete IdP API
         result = await make_authlete_idp_request("POST", "service", config, data)
@@ -269,24 +272,26 @@ async def update_service(service_data: str, service_api_key: str = "", ctx: Cont
         return f"Error updating service: {str(e)}"
 
 
-async def delete_service(service_id: str, organization_id: str = "", ctx: Context = None) -> str:
+async def delete_service(service_id: str, ctx: Context = None) -> str:
     """Delete an Authlete service via IdP.
 
     Args:
         service_id: Service ID (apiKey) to delete
-        organization_id: Organization ID (if empty, uses ORGANIZATION_ID env var)
     """
     if not DEFAULT_API_KEY:
         return "Error: ORGANIZATION_ACCESS_TOKEN environment variable not set"
 
-    org_id = organization_id if organization_id else DEFAULT_ORGANIZATION_ID
-    if not org_id:
-        return "Error: organization_id parameter or ORGANIZATION_ID environment variable must be set"
+    if not DEFAULT_ORGANIZATION_ID:
+        return "Error: ORGANIZATION_ID environment variable must be set"
 
     config = AuthleteConfig(api_key=DEFAULT_API_KEY)
 
     # Try with environment variable values first
-    data = {"serviceId": int(service_id), "apiServerId": int(config.api_server_id), "organizationId": int(org_id)}
+    data = {
+        "serviceId": int(service_id),
+        "apiServerId": int(config.api_server_id),
+        "organizationId": int(DEFAULT_ORGANIZATION_ID),
+    }
 
     try:
         result = await make_authlete_idp_request("POST", "service/remove", config, data)
