@@ -37,7 +37,7 @@ if .git/hooks/pre-commit; then
     echo "   • Code formatting (ruff)"
     echo "   • YAML validation"
     echo "   • Type checking (if mypy available)"
-    echo "   • Unit tests"
+    echo "   • Unit tests only (integration tests excluded to reduce server load)"
     echo "   • Database creation test"
     echo ""
     echo "💡 To bypass hooks temporarily, use: git commit --no-verify"

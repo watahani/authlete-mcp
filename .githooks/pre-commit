@@ -85,10 +85,10 @@ fi
 
 # 4. Unit Tests
 print_status "Running unit tests..."
-if uv run pytest tests/ -x -q; then
-    print_success "All tests passed"
+if uv run pytest tests/ -x -q -m unit; then
+    print_success "All unit tests passed"
 else
-    print_error "Tests failed. Fix failing tests before committing."
+    print_error "Unit tests failed. Fix failing tests before committing."
     exit 1
 fi
 
