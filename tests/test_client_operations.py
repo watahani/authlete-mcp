@@ -205,12 +205,12 @@ async def test_rotate_client_secret_without_token():
             await session.initialize()
 
             result = await session.call_tool(
-                "rotate_client_secret", {"client_id": "test_client_id", "service_api_key": "test_service_key"}
+                "rotate_client_secret", {"client_id": "test_client_id", "service_api_key": ""}
             )
 
             assert result.content
             response_text = result.content[0].text
-            assert "Error: ORGANIZATION_ACCESS_TOKEN environment variable not set" in response_text
+            assert "Error: service_api_key parameter is required" in response_text
 
 
 @pytest.mark.unit
@@ -233,13 +233,13 @@ async def test_update_client_secret_without_token():
                 {
                     "client_id": "test_client_id",
                     "secret_data": json.dumps(secret_data),
-                    "service_api_key": "test_service_key",
+                    "service_api_key": "",
                 },
             )
 
             assert result.content
             response_text = result.content[0].text
-            assert "Error: ORGANIZATION_ACCESS_TOKEN environment variable not set" in response_text
+            assert "Error: service_api_key parameter is required" in response_text
 
             # シークレット値が指定した値と一致していることを確認
             assert "new_test_secret" in json.dumps(secret_data)

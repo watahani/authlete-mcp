@@ -121,4 +121,4 @@ async def test_delete_service_without_organization_id():
 
             assert result.content
             response = result.content[0].text
-            assert "Error: organization_id parameter or ORGANIZATION_ID environment variable must be set" in response
+            assert "Error: ORGANIZATION_ID environment variable must be set" in response
