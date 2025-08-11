@@ -93,15 +93,32 @@ async def test_create_service_detailed():
         async with ClientSession(read_stream, write_stream) as session:
             await session.initialize()
 
+            # Create service configuration as JSON object
+            service_config = {
+                "serviceName": "pytest-detailed-service",
+                "description": "Detailed test service created by pytest",
+                "issuer": "https://test.example.com",
+                "supportedScopes": [
+                    {"name": "openid", "defaultEntry": True},
+                    {"name": "profile", "defaultEntry": False},
+                    {"name": "email", "defaultEntry": False},
+                ],
+                "supportedResponseTypes": ["CODE"],
+                "supportedGrantTypes": ["AUTHORIZATION_CODE"],
+                "supportedTokenAuthMethods": ["CLIENT_SECRET_BASIC"],
+                "pkceRequired": True,
+                "accessTokenDuration": 3600,
+                "refreshTokenDuration": 86400,
+                "idTokenDuration": 3600,
+                "directAuthorizationEndpointEnabled": True,
+                "directTokenEndpointEnabled": True,
+                "directUserInfoEndpointEnabled": True,
+            }
+
             result = await session.call_tool(
                 "create_service_detailed",
                 {
-                    "name": "pytest-detailed-service",
-                    "description": "Detailed test service created by pytest",
-                    "issuer": "https://test.example.com",
-                    "supported_scopes": "openid,profile,email",
-                    "pkce_required": True,
-                    "access_token_duration": 3600,
+                    "service_config": json.dumps(service_config),
                 },
             )
 
