@@ -186,12 +186,15 @@ jobs:
 
       - name: Cleanup test services
         env:
-          ORGANIZATION_ACCESS_TOKEN: ${{ secrets.AUTHLETE_INTEGRATION_TOKEN || 'dummy_token_for_ci' }}
-          ORGANIZATION_ID: ${{ secrets.ORGANIZATION_ID || '12345' }}
+          ORGANIZATION_ACCESS_TOKEN: ${{ secrets.ORGANIZATION_ACCESS_TOKEN }}
+          ORGANIZATION_ID: ${{ secrets.ORGANIZATION_ID }}
+          AUTHLETE_BASE_URL: "https://jp.authlete.com"
+          AUTHLETE_IDP_URL: "https://login.authlete.com"
+          AUTHLETE_API_SERVER_ID: "53285"
         run: |
           echo "🧹 Cleaning up pytest services..."
-          if [ "$ORGANIZATION_ACCESS_TOKEN" = "dummy_token_for_ci" ]; then
-            echo "⚠️ Using dummy token - cleanup will be skipped in CI"
+          if [ -z "$ORGANIZATION_ACCESS_TOKEN" ]; then
+            echo "⚠️ ORGANIZATION_ACCESS_TOKEN not configured - cleanup will be skipped in CI"
             echo "Real cleanup only runs with actual Authlete credentials"
           else
             echo "🔑 Using real credentials - performing cleanup"
