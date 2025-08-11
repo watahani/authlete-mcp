@@ -107,6 +107,8 @@ These resources provide authoritative examples of:
 
 ## Installation
 
+### Local Development
+
 ```bash
 # Install dependencies
 uv sync
@@ -118,9 +120,59 @@ uv run python scripts/create_search_database.py
 uv run python main.py
 ```
 
+### Docker
+
+The server is also available as a Docker image published to GitHub Container Registry.
+
+#### Pull from GitHub Container Registry
+
+```bash
+# Pull the latest image
+docker pull ghcr.io/watahani/authlete-mcp:latest
+
+# Run with environment variables
+docker run -it --rm \
+  -e ORGANIZATION_ACCESS_TOKEN=$YOUR_TOKEN \
+  -e ORGANIZATION_ID=$YOUR_ORG_ID \
+  ghcr.io/watahani/authlete-mcp:latest
+```
+
+#### Build Locally
+
+```bash
+# Build the Docker image
+docker build -t authlete-mcp .
+
+# Run the container
+docker run -it --rm \
+  -e ORGANIZATION_ACCESS_TOKEN=$YOUR_TOKEN \
+  -e ORGANIZATION_ID=$YOUR_ORG_ID \
+  authlete-mcp
+```
+
+#### Using Docker Compose
+
+```bash
+# Create .env file with your credentials
+cat > .env << EOF
+ORGANIZATION_ACCESS_TOKEN=your-organization-token
+ORGANIZATION_ID=your-organization-id
+AUTHLETE_BASE_URL=https://jp.authlete.com
+AUTHLETE_API_SERVER_ID=53285
+EOF
+
+# Run with Docker Compose
+docker compose up authlete-mcp
+
+# For development with live code reloading
+docker compose --profile dev up authlete-mcp-dev
+```
+
 ## Usage
 
 ### With Claude Desktop
+
+#### Local Installation
 
 Add the unified server to your Claude Desktop configuration:
 
@@ -136,6 +188,28 @@ Add the unified server to your Claude Desktop configuration:
         "AUTHLETE_BASE_URL": "https://jp.authlete.com",
         "AUTHLETE_API_SERVER_ID": "53285"
       }
+    }
+  }
+}
+```
+
+#### Docker Installation
+
+You can also run the server using Docker:
+
+```json
+{
+  "mcpServers": {
+    "authlete": {
+      "command": "docker",
+      "args": [
+        "run", "--rm", "-i",
+        "-e", "ORGANIZATION_ACCESS_TOKEN=your-organization-access-token",
+        "-e", "ORGANIZATION_ID=your-organization-id",
+        "-e", "AUTHLETE_BASE_URL=https://jp.authlete.com",
+        "-e", "AUTHLETE_API_SERVER_ID=53285",
+        "ghcr.io/watahani/authlete-mcp:latest"
+      ]
     }
   }
 }

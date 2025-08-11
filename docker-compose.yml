@@ -1,0 +1,57 @@
+services:
+  authlete-mcp:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: authlete-mcp-server
+    environment:
+      - ORGANIZATION_ACCESS_TOKEN=${ORGANIZATION_ACCESS_TOKEN}
+      - ORGANIZATION_ID=${ORGANIZATION_ID:-}
+      - AUTHLETE_BASE_URL=${AUTHLETE_BASE_URL:-https://jp.authlete.com}
+      - AUTHLETE_IDP_URL=${AUTHLETE_IDP_URL:-https://login.authlete.com}
+      - AUTHLETE_API_SERVER_ID=${AUTHLETE_API_SERVER_ID:-53285}
+      - PYTHONUNBUFFERED=1
+    volumes:
+      # Mount a volume for logs
+      - ./logs:/tmp
+      # Optional: Mount resources directory if you want to update the database
+      - ./resources:/app/resources:ro
+    stdin_open: true
+    tty: true
+    restart: unless-stopped
+    
+    # Network mode for MCP communication - typically host mode for local development
+    # network_mode: "host"
+    
+    # For production deployment, you might want to expose specific ports
+    # ports:
+    #   - "8000:8000"
+
+  # Optional: Add a development service with volume mounts for live development
+  authlete-mcp-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: authlete-mcp-server-dev
+    environment:
+      - ORGANIZATION_ACCESS_TOKEN=${ORGANIZATION_ACCESS_TOKEN}
+      - ORGANIZATION_ID=${ORGANIZATION_ID:-}
+      - AUTHLETE_BASE_URL=${AUTHLETE_BASE_URL:-https://jp.authlete.com}
+      - AUTHLETE_IDP_URL=${AUTHLETE_IDP_URL:-https://login.authlete.com}
+      - AUTHLETE_API_SERVER_ID=${AUTHLETE_API_SERVER_ID:-53285}
+      - PYTHONUNBUFFERED=1
+    volumes:
+      # Mount source code for development
+      - ./src:/app/src
+      - ./main.py:/app/main.py
+      - ./resources:/app/resources
+      - ./logs:/tmp
+    stdin_open: true
+    tty: true
+    profiles:
+      - dev
+    command: ["uv", "run", "python", "main.py"]
+
+volumes:
+  logs:
+    driver: local
