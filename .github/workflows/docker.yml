@@ -54,25 +54,56 @@ jobs:
           # Build the image locally
           docker build -t authlete-mcp:test .
 
-          # Test that the container starts without errors (short timeout)
-          timeout 30s docker run --rm \
-            -e ORGANIZATION_ACCESS_TOKEN="dummy_token" \
-            -e PYTHONUNBUFFERED=1 \
-            authlete-mcp:test python -c "
+          # Test Python environment and module imports
+          echo "Testing Python environment..."
+          docker run --rm --entrypoint="" authlete-mcp:test /usr/bin/python3.11 -c "
           import sys
-          import importlib
+          print('✅ Python version:', sys.version)
 
+          # Test essential package imports
+          packages = ['duckdb', 'pydantic', 'httpx', 'mcp']
+          for pkg in packages:
+              try:
+                  __import__(pkg)
+                  print(f'✅ {pkg}: OK')
+              except ImportError as e:
+                  print(f'❌ {pkg}: {e}')
+                  sys.exit(1)
+
+          # Test application modules
           try:
-              # Test basic imports
               import src.authlete_mcp.server
               import src.authlete_mcp.tools.service_tools
               import src.authlete_mcp.tools.client_tools
-              print('✅ All modules imported successfully')
-              sys.exit(0)
+              print('✅ All application modules imported successfully')
           except Exception as e:
-              print(f'❌ Import error: {e}')
+              print(f'❌ Module import error: {e}')
               sys.exit(1)
-          " || echo "Container test completed"
+          "
+
+          # Test actual container startup (with timeout)
+          echo "Testing container startup with MCP server..."
+          timeout 10s docker run --rm \
+            -e ORGANIZATION_ACCESS_TOKEN="dummy_token" \
+            -e ORGANIZATION_ID="test_org" \
+            authlete-mcp:test 2>&1 | tee startup_log.txt &
+
+          # Wait for the process to start and check logs
+          sleep 3
+
+          if grep -q "Starting Authlete MCP Server" startup_log.txt; then
+            echo "✅ Container starts successfully and shows expected log message"
+          elif grep -q "INFO:" startup_log.txt; then
+            echo "✅ Container starts successfully with INFO logs"
+          else
+            echo "⚠️ Container startup check completed (may need valid credentials for full startup)"
+          fi
+
+      - name: Check image size
+        run: |
+          echo "Checking Docker image size..."
+          IMAGE_SIZE=$(docker images authlete-mcp:test --format "table {{.Size}}" | tail -n 1)
+          echo "📏 Docker image size: $IMAGE_SIZE"
 
       - name: Test Docker Compose
         run: |
