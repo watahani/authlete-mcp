@@ -7,7 +7,7 @@ services:
     environment:
       - ORGANIZATION_ACCESS_TOKEN=${ORGANIZATION_ACCESS_TOKEN}
       - ORGANIZATION_ID=${ORGANIZATION_ID:-}
-      - AUTHLETE_BASE_URL=${AUTHLETE_BASE_URL:-https://jp.authlete.com}
+      - AUTHLETE_API_URL=${AUTHLETE_API_URL:-https://jp.authlete.com}
       - AUTHLETE_IDP_URL=${AUTHLETE_IDP_URL:-https://login.authlete.com}
       - AUTHLETE_API_SERVER_ID=${AUTHLETE_API_SERVER_ID:-53285}
       - PYTHONUNBUFFERED=1
@@ -36,7 +36,7 @@ services:
     environment:
       - ORGANIZATION_ACCESS_TOKEN=${ORGANIZATION_ACCESS_TOKEN}
       - ORGANIZATION_ID=${ORGANIZATION_ID:-}
-      - AUTHLETE_BASE_URL=${AUTHLETE_BASE_URL:-https://jp.authlete.com}
+      - AUTHLETE_API_URL=${AUTHLETE_API_URL:-https://jp.authlete.com}
       - AUTHLETE_IDP_URL=${AUTHLETE_IDP_URL:-https://login.authlete.com}
       - AUTHLETE_API_SERVER_ID=${AUTHLETE_API_SERVER_ID:-53285}
       - PYTHONUNBUFFERED=1

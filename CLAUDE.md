@@ -17,7 +17,7 @@ The server acts as a bridge between MCP clients (like Claude Desktop) and Authle
 - **Async/await pattern**: All API operations are asynchronous using `httpx` for HTTP requests
 - **DuckDB search engine**: `AuthleteApiSearcher` class in `src/authlete_mcp/search.py` provides fast, full-text search capabilities
 - **Two API endpoints**: 
-  - Authlete API (`AUTHLETE_BASE_URL`) for service/client management
+  - Authlete API (`AUTHLETE_API_URL`) for service/client management
   - Authlete IdP API (`AUTHLETE_IDP_URL`) for service creation/deletion operations
 - **Search database**: `resources/authlete_apis.duckdb` contains indexed API documentation for fast search
 
@@ -85,7 +85,7 @@ uv run yamllint .github/                # Lint YAML files with yamllint
 Required environment variables:
 - `ORGANIZATION_ACCESS_TOKEN`: Organization access token (required for all operations)
 - `ORGANIZATION_ID`: Default organization ID (optional, can be overridden per function)
-- `AUTHLETE_BASE_URL`: API base URL (defaults to "https://jp.authlete.com")
+- `AUTHLETE_API_URL`: API URL (defaults to "https://jp.authlete.com")
 - `AUTHLETE_IDP_URL`: IdP URL (defaults to "https://login.authlete.com") 
 - `AUTHLETE_API_SERVER_ID`: API Server ID (defaults to "53285")
 - `LOG_LEVEL`: Logging level (defaults to "INFO") - Set to "DEBUG" for detailed HTTP request/response logging with PII masking
@@ -179,7 +179,7 @@ When implementing or modifying MCP tools, follow these established patterns:
 2. **Success Responses**: Return formatted JSON using `json.dumps(result, indent=2)`
 3. **Deletion Success Messages**: Return clear success messages like `"Service deleted successfully (ID: {id})"`
 4. **API Endpoints**: 
-   - Use Authlete API (`AUTHLETE_BASE_URL`) for most operations
+   - Use Authlete API (`AUTHLETE_API_URL`) for most operations
    - Use Authlete IdP API (`AUTHLETE_IDP_URL`) for service creation/deletion operations
 
 ### Tool Categories and Patterns

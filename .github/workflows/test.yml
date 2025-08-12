@@ -52,7 +52,7 @@ jobs:
         env:
           ORGANIZATION_ACCESS_TOKEN: ${{ secrets.ORGANIZATION_ACCESS_TOKEN }}
           ORGANIZATION_ID: ${{ secrets.ORGANIZATION_ID }}
-          AUTHLETE_BASE_URL: "https://jp.authlete.com"
+          AUTHLETE_API_URL: "https://jp.authlete.com"
           AUTHLETE_IDP_URL: "https://login.authlete.com"
           AUTHLETE_API_SERVER_ID: "53285"
         run: |
@@ -191,7 +191,7 @@ jobs:
         env:
           ORGANIZATION_ACCESS_TOKEN: ${{ secrets.ORGANIZATION_ACCESS_TOKEN }}
           ORGANIZATION_ID: ${{ secrets.ORGANIZATION_ID }}
-          AUTHLETE_BASE_URL: "https://jp.authlete.com"
+          AUTHLETE_API_URL: "https://jp.authlete.com"
           AUTHLETE_IDP_URL: "https://login.authlete.com"
           AUTHLETE_API_SERVER_ID: "53285"
         run: |
