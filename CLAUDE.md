@@ -88,6 +88,7 @@ Required environment variables:
 - `AUTHLETE_BASE_URL`: API base URL (defaults to "https://jp.authlete.com")
 - `AUTHLETE_IDP_URL`: IdP URL (defaults to "https://login.authlete.com") 
 - `AUTHLETE_API_SERVER_ID`: API Server ID (defaults to "53285")
+- `LOG_LEVEL`: Logging level (defaults to "INFO") - Set to "DEBUG" for detailed HTTP request/response logging with PII masking
 
 For integration testing, the same environment variables from .env are used.
 
