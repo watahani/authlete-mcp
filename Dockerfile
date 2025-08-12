@@ -32,9 +32,13 @@ COPY resources/authlete_apis.duckdb ./resources/
 # Set environment variables to use copied packages
 ENV PYTHONPATH=/app:/app/site-packages
 ENV PYTHONUNBUFFERED=1
+ENV PYTHONIOENCODING=utf-8
+ENV LC_ALL=C.UTF-8
+ENV LANG=C.UTF-8
 
 # Expose port for health checks (optional)
 EXPOSE 8000
 
-# Run the MCP server using Distroless Python directly
-CMD ["/usr/bin/python3.11", "main.py"]
+# Set explicit entrypoint and command
+ENTRYPOINT ["/usr/bin/python3.11"]
+CMD ["main.py"]
