@@ -1,8 +1,8 @@
-# Use Python 3.11 as base image for better performance and feature support
-FROM python:3.11-slim
+# Build stage with full Python environment
+FROM python:3.11-slim AS builder
 
 # Set working directory
-WORKDIR /app
+WORKDIR /build
 
 # Install uv for faster dependency management
 RUN pip install uv
@@ -13,15 +13,21 @@ COPY pyproject.toml uv.lock README.md ./
 # Install dependencies
 RUN uv sync --no-dev --frozen
 
+# Production stage with Distroless
+FROM gcr.io/distroless/python3-debian12:latest AS production
+
+# Set working directory
+WORKDIR /app
+
+# Copy virtual environment from builder
+COPY --from=builder /build/.venv /app/.venv
+
 # Copy the application source code
 COPY src/ ./src/
 COPY main.py ./
-COPY resources/ ./resources/
 
-# Create non-root user for security
-RUN useradd --create-home --shell /bin/bash app && \
-    chown -R app:app /app
-USER app
+# Only copy the necessary DuckDB file from resources
+COPY resources/authlete_apis.duckdb ./resources/
 
 # Set environment variables
 ENV PYTHONPATH=/app
@@ -30,9 +36,5 @@ ENV PYTHONUNBUFFERED=1
 # Expose port for health checks (optional)
 EXPOSE 8000
 
-# Health check script
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD python -c "import sys; sys.exit(0)"
-
 # Run the MCP server using the installed virtual environment
-CMD [".venv/bin/python", "main.py"]
+CMD ["/app/.venv/bin/python", "main.py"]
