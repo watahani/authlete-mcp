@@ -29,6 +29,43 @@ class OpenAPISearchDatabase:
         self.db_path = Path(db_path)
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
         self.conn = duckdb.connect(str(self.db_path))
+        self.filter_config = self._load_filter_config()
+
+    def _load_filter_config(self) -> dict:
+        """API フィルタ設定を読み込む"""
+        config_path = Path("resources/api_filter_config.json")
+        try:
+            with open(config_path, encoding="utf-8") as f:
+                return json.load(f)
+        except FileNotFoundError:
+            logger.warning(f"フィルタ設定ファイルが見つかりません: {config_path}")
+            return {}
+        except json.JSONDecodeError as e:
+            logger.error(f"フィルタ設定ファイルのJSON解析エラー: {e}")
+            return {}
+
+    def _should_exclude_endpoint(self, path: str, method: str, api_type: str = "api") -> bool:
+        """エンドポイントが除外対象かどうかを判定"""
+        if api_type == "api":
+            excluded_paths = self.filter_config.get("authlete_api", {}).get("excluded_paths", [])
+            for excluded in excluded_paths:
+                if excluded.get("path") == path and excluded.get("method", "").upper() == method.upper():
+                    logger.info(f"除外対象: {method} {path} - {excluded.get('reason', '')}")
+                    return True
+        return False
+
+    def _should_include_idp_endpoint(self, path: str, method: str, operation_id: str = None) -> bool:
+        """IdP エンドポイントが取り込み対象かどうかを判定"""
+        included_paths = self.filter_config.get("idp_api", {}).get("included_paths", [])
+        for included in included_paths:
+            if included.get("path") == path and included.get("method", "").upper() == method.upper():
+                # operation_id によるフィルタリング（指定されている場合）
+                operation_ids = included.get("operation_ids", [])
+                if operation_ids and operation_id and operation_id not in operation_ids:
+                    continue
+                logger.info(f"取り込み対象: {method} {path} - {included.get('reason', '')}")
+                return True
+        return False
 
     def setup_database_schema(self) -> None:
         """データベーススキーマとFTSインデックスを作成"""
@@ -53,6 +90,7 @@ class OpenAPISearchDatabase:
                 responses TEXT, -- JSON as text
                 sample_languages VARCHAR[], -- Available sample code languages
                 sample_codes TEXT, -- JSON object with language -> code mapping
+                api_type VARCHAR NOT NULL DEFAULT 'api', -- 'api' or 'idp'
                 search_content TEXT NOT NULL, -- Combined searchable text
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
@@ -106,11 +144,12 @@ class OpenAPISearchDatabase:
 
         logger.info("データベーススキーマ作成完了")
 
-    def extract_api_data(self, openapi_spec_path: str) -> list[dict[str, Any]]:
+    def extract_api_data(self, openapi_spec_path: str, api_type: str = "api") -> list[dict[str, Any]]:
         """OpenAPI仕様書からAPI情報を抽出
 
         Args:
             openapi_spec_path: OpenAPI仕様書のパス
+            api_type: API種別 ('api' または 'idp')
 
         Returns:
             API情報のリスト
@@ -140,6 +179,18 @@ class OpenAPISearchDatabase:
                 summary = operation.get("summary", "")
                 description = operation.get("description", "")
                 tags = operation.get("tags", [])
+
+                # フィルタリング処理
+                if api_type == "api":
+                    # 除外対象のチェック
+                    if self._should_exclude_endpoint(path, method):
+                        logger.debug(f"除外: {method.upper()} {path}")
+                        continue
+                elif api_type == "idp":
+                    # 取り込み対象のチェック
+                    if not self._should_include_idp_endpoint(path, method, operation_id):
+                        logger.debug(f"対象外: {method.upper()} {path}")
+                        continue
 
                 # パラメータ情報の統合
                 parameters = []
@@ -177,6 +228,8 @@ class OpenAPISearchDatabase:
                     # 中程度：メソッドとタグ
                     method.upper(),
                     " ".join(tags),
+                    # API種別も検索対象に含める
+                    f"api_type:{api_type}",
                 ]
 
                 # パラメータ名のみ含める（説明は除外してノイズを減らす）
@@ -202,6 +255,7 @@ class OpenAPISearchDatabase:
                         "responses": json.dumps(responses, default=str),
                         "sample_languages": json.dumps(sample_languages),
                         "sample_codes": json.dumps(sample_codes),
+                        "api_type": api_type,
                         "search_content": search_content,
                     }
                 )
@@ -220,13 +274,13 @@ class OpenAPISearchDatabase:
         logger.info("APIデータをデータベースに挿入中...")
 
         # バッチ挿入のためのプレースホルダー
-        placeholders = ", ".join(["?" for _ in range(13)])  # 13個のカラム
+        placeholders = ", ".join(["?" for _ in range(14)])  # 14個のカラム
 
         insert_sql = f"""
             INSERT INTO api_endpoints (
                 id, path, method, operation_id, summary, description, tags,
                 parameters, request_body, responses, sample_languages,
-                sample_codes, search_content
+                sample_codes, api_type, search_content
             ) VALUES ({placeholders})
         """
 
@@ -247,6 +301,7 @@ class OpenAPISearchDatabase:
                     item["responses"],
                     item["sample_languages"],
                     item["sample_codes"],
+                    item["api_type"],
                     item["search_content"],
                 )
             )
@@ -284,7 +339,7 @@ class OpenAPISearchDatabase:
                 # まずFTSクエリを試行
                 result = self.conn.execute(
                     """
-                    SELECT path, method, summary, description, score
+                    SELECT path, method, summary, description, api_type, score
                     FROM (
                         SELECT a.*, fts.score
                         FROM api_endpoints a
@@ -312,7 +367,7 @@ class OpenAPISearchDatabase:
 
                     result = self.conn.execute(
                         f"""
-                        SELECT path, method, summary, description, 0 as score
+                        SELECT path, method, summary, description, api_type, 0 as score
                         FROM api_endpoints
                         WHERE {where_clause}
                         LIMIT 3
@@ -336,7 +391,7 @@ class OpenAPISearchDatabase:
                 try:
                     result = self.conn.execute(
                         f"""
-                        SELECT path, method, summary, description, 0 as score
+                        SELECT path, method, summary, description, api_type, 0 as score
                         FROM api_endpoints
                         WHERE {where_clause}
                         LIMIT 3
@@ -349,11 +404,14 @@ class OpenAPISearchDatabase:
 
             if result:
                 for row in result:
-                    if len(row) == 5:  # スコア付き
+                    if len(row) == 6:  # api_type + スコア付き
+                        path, method, summary, desc, api_type, score = row
+                        logger.info(f"  - [{api_type}] {method} {path}: {summary} (score: {score})")
+                    elif len(row) == 5:  # api_typeなし、スコア付き（後方互換）
                         path, method, summary, desc, score = row
                         logger.info(f"  - {method} {path}: {summary} (score: {score})")
-                    else:  # スコアなし
-                        path, method, summary, desc = row
+                    else:  # その他
+                        path, method, summary, desc = row[:4]  # 最初の4つを使用
                         logger.info(f"  - {method} {path}: {summary}")
             else:
                 logger.info("  検索結果なし")
@@ -529,6 +587,7 @@ def main():
     """メイン処理"""
     # パス設定
     openapi_spec_path = "resources/openapi-spec.json"
+    idp_openapi_spec_path = "resources/idp-openapi-spec.json"
     db_path = "resources/authlete_apis.duckdb"
 
     # OpenAPI仕様書の存在確認
@@ -543,15 +602,33 @@ def main():
         # スキーマ作成
         db.setup_database_schema()
 
-        # データ抽出と挿入
-        api_data = db.extract_api_data(openapi_spec_path)
+        # Authlete API データの抽出と挿入
+        api_data = db.extract_api_data(openapi_spec_path, api_type="api")
         if not api_data:
-            logger.error("APIデータが抽出できませんでした")
+            logger.error("Authlete APIデータが抽出できませんでした")
             return 1
 
         db.insert_api_data(api_data)
+        logger.info(f"Authlete APIデータ挿入完了: {len(api_data)}件")
 
-        # スキーマデータの抽出と挿入
+        # IdP API データの抽出と挿入（ファイルが存在する場合）
+        if Path(idp_openapi_spec_path).exists():
+            logger.info("IdP API仕様書を処理中...")
+            idp_api_data = db.extract_api_data(idp_openapi_spec_path, api_type="idp")
+            if idp_api_data:
+                # ID衝突を避けるため、既存の最大IDを取得して調整
+                max_id = max(item["id"] for item in api_data)
+                for i, item in enumerate(idp_api_data):
+                    item["id"] = max_id + i + 1
+
+                db.insert_api_data(idp_api_data)
+                logger.info(f"IdP APIデータ挿入完了: {len(idp_api_data)}件")
+            else:
+                logger.warning("IdP APIデータが抽出できませんでした（フィルタリング後に対象なし）")
+        else:
+            logger.warning(f"IdP API仕様書が見つかりません: {idp_openapi_spec_path}")
+
+        # スキーマデータの抽出と挿入（Authlete APIのみ）
         schema_data = db.extract_schema_data(openapi_spec_path)
         if not schema_data:
             logger.warning("スキーマデータが抽出できませんでした")

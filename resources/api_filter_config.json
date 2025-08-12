@@ -1,0 +1,44 @@
+{
+  "description": "Configuration for filtering Authlete API endpoints in the search database",
+  "comment": "This file controls which API endpoints are included or excluded from the search database based on ORGANIZATION_ACCESS_TOKEN compatibility",
+  
+  "authlete_api": {
+    "description": "Main Authlete API (docs.authlete.com) endpoints",
+    "base_url": "https://api.authlete.com",
+    "excluded_paths": [
+      {
+        "path": "/api/service/create",
+        "method": "POST",
+        "reason": "Service creation requires IdP API with ORGANIZATION_ACCESS_TOKEN"
+      },
+      {
+        "path": "/api/{serviceId}/service/delete",
+        "method": "DELETE", 
+        "reason": "Service deletion requires IdP API with ORGANIZATION_ACCESS_TOKEN"
+      }
+    ]
+  },
+  
+  "idp_api": {
+    "description": "Authlete IdP API (dev-idp.authlete.net) endpoints",
+    "base_url": "https://dev-idp.authlete.net",
+    "included_paths": [
+      {
+        "path": "/api/service",
+        "method": "POST",
+        "reason": "Service creation supported with ORGANIZATION_ACCESS_TOKEN",
+        "operation_ids": ["createService"]
+      },
+      {
+        "path": "/api/service/remove",
+        "method": "POST", 
+        "reason": "Service deletion supported with ORGANIZATION_ACCESS_TOKEN",
+        "operation_ids": ["deleteService"]
+      }
+    ],
+    "note": "Only service creation and deletion operations are currently supported with ORGANIZATION_ACCESS_TOKEN. Other IdP API endpoints require different authentication mechanisms."
+  },
+  
+  "version": "1.0.0",
+  "last_updated": "2025-01-12"
+}
