@@ -6,7 +6,6 @@ from mcp.server.fastmcp import Context
 
 from ..api.client import make_authlete_idp_request, make_authlete_request
 from ..config import DEFAULT_ORGANIZATION_ID, ORGANIZATION_ACCESS_TOKEN, AuthleteConfig
-from ..logging import get_logger, log_request_response
 
 
 async def create_service(name: str, description: str = "", ctx: Context = None) -> str:
@@ -16,8 +15,6 @@ async def create_service(name: str, description: str = "", ctx: Context = None) 
         name: Service name
         description: Service description
     """
-    logger = get_logger(__name__)
-
     if not ORGANIZATION_ACCESS_TOKEN:
         return "Error: ORGANIZATION_ACCESS_TOKEN environment variable not set"
 
@@ -125,12 +122,9 @@ async def create_service(name: str, description: str = "", ctx: Context = None) 
     }
 
     try:
-        log_request_response(logger, "POST", "IdP API /service", request_data=data)
         result = await make_authlete_idp_request("POST", "service", config, data)
-        log_request_response(logger, "POST", "IdP API /service", response_data=result)
         return json.dumps(result, indent=2)
     except Exception as e:
-        log_request_response(logger, "POST", "IdP API /service", request_data=data, error=e)
         return f"Error creating service: {str(e)}"
 
 
@@ -143,8 +137,6 @@ async def create_service_detailed(
     Args:
         service_config: JSON string containing service configuration following Authlete API service schema
     """
-    logger = get_logger(__name__)
-
     if not ORGANIZATION_ACCESS_TOKEN:
         return "Error: ORGANIZATION_ACCESS_TOKEN environment variable not set"
 
@@ -167,17 +159,12 @@ async def create_service_detailed(
             "service": service_dict,
         }
 
-        log_request_response(logger, "POST", "IdP API /service", request_data=data)
-
         # Send request to Authlete IdP API
         result = await make_authlete_idp_request("POST", "service", config, data)
-
-        log_request_response(logger, "POST", "IdP API /service", response_data=result)
 
         return json.dumps(result, indent=2)
 
     except Exception as e:
-        log_request_response(logger, "POST", "IdP API /service", request_data=data, error=e)
         return f"Error creating service: {str(e)}"
 
 
