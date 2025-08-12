@@ -193,12 +193,11 @@ jobs:
             echo "✅ Trivy vulnerability scan completed successfully" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
             echo "**SARIF file generated**: \`trivy-results.sarif\`" >> $GITHUB_STEP_SUMMARY
-            
+
             # Run Trivy again in table format for summary display
             docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
               -v $(pwd):/workspace aquasec/trivy:latest image \
               --format table --exit-code 0 authlete-mcp:scan >> trivy-summary.txt 2>&1 || true
-            
             if [ -f trivy-summary.txt ]; then
               echo "" >> $GITHUB_STEP_SUMMARY
               echo "### Vulnerability Summary:" >> $GITHUB_STEP_SUMMARY
