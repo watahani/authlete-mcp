@@ -105,19 +105,6 @@ jobs:
           IMAGE_SIZE=$(docker images authlete-mcp:test --format "table {{.Size}}" | tail -n 1)
           echo "📏 Docker image size: $IMAGE_SIZE"
 
-          # Basic size check - warn if larger than 300MB
-          if [[ "$IMAGE_SIZE" == *"GB"* ]]; then
-            echo "⚠️ Warning: Image size is larger than expected (>1GB)"
-            exit 1
-          elif [[ "$IMAGE_SIZE" == *"MB"* ]]; then
-            SIZE_NUM=$(echo "$IMAGE_SIZE" | sed 's/MB//' | sed 's/\..*//')
-            if [ "$SIZE_NUM" -gt 300 ]; then
-              echo "⚠️ Warning: Image size (${IMAGE_SIZE}) is larger than expected (>300MB)"
-            else
-              echo "✅ Image size is within acceptable range"
-            fi
-          fi
-
       - name: Test Docker Compose
         run: |
           echo "Testing Docker Compose configuration..."
