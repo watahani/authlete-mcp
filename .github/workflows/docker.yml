@@ -59,7 +59,7 @@ jobs:
           docker run --rm --entrypoint="" authlete-mcp:test /usr/bin/python3.11 -c "
           import sys
           print('✅ Python version:', sys.version)
-          
+
           # Test essential package imports
           packages = ['duckdb', 'pydantic', 'httpx', 'mcp']
           for pkg in packages:
@@ -69,7 +69,7 @@ jobs:
               except ImportError as e:
                   print(f'❌ {pkg}: {e}')
                   sys.exit(1)
-          
+
           # Test application modules
           try:
               import src.authlete_mcp.server
@@ -87,10 +87,10 @@ jobs:
             -e ORGANIZATION_ACCESS_TOKEN="dummy_token" \
             -e ORGANIZATION_ID="test_org" \
             authlete-mcp:test 2>&1 | tee startup_log.txt &
-          
+
           # Wait for the process to start and check logs
           sleep 3
-          
+
           if grep -q "Starting Authlete MCP Server" startup_log.txt; then
             echo "✅ Container starts successfully and shows expected log message"
           elif grep -q "INFO:" startup_log.txt; then
@@ -104,7 +104,7 @@ jobs:
           echo "Checking Docker image size..."
           IMAGE_SIZE=$(docker images authlete-mcp:test --format "table {{.Size}}" | tail -n 1)
           echo "📏 Docker image size: $IMAGE_SIZE"
-          
+
           # Basic size check - warn if larger than 300MB
           if [[ "$IMAGE_SIZE" == *"GB"* ]]; then
             echo "⚠️ Warning: Image size is larger than expected (>1GB)"
