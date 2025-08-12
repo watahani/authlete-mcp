@@ -4,6 +4,8 @@ A unified Model Context Protocol (MCP) server that provides comprehensive tools 
 1. **Authlete Service Management**: Managing Authlete services and clients through a standardized interface
 2. **Advanced API Search**: Natural language search capabilities for Authlete OpenAPI specifications with fuzzy matching and semantic search
 
+**⚠️ Compatibility Note**: This server supports **Authlete 3.0 only**. It is not compatible with Authlete 2.3.
+
 ## Architecture
 
 The server follows a modular architecture with clear separation of concerns:
@@ -29,8 +31,9 @@ src/authlete_mcp/
 ### Reference Resources
 
 When implementing new Authlete API tools, please refer to these resource files:
-- `resources/postman_collection.json`: Complete Postman collection with all available Authlete API endpoints, request formats, and expected responses
+- `resources/postman_collection.json`: Postman collection for Authlete service and client management APIs including service operations, client operations, and tool-related endpoints
 - `resources/openapi-spec.json`: OpenAPI specification for Authlete API with detailed schema definitions and parameter descriptions
+- `resources/idp-openapi-spec.json`: Authlete IdP API specification for service creation and deletion operations (service create and service remove endpoints only)
 
 These resources provide authoritative examples of:
 - Correct API endpoint URLs and HTTP methods
@@ -157,7 +160,7 @@ docker run -it --rm \
 cat > .env << EOF
 ORGANIZATION_ACCESS_TOKEN=your-organization-token
 ORGANIZATION_ID=your-organization-id
-AUTHLETE_BASE_URL=https://jp.authlete.com
+AUTHLETE_API_URL=https://jp.authlete.com
 AUTHLETE_API_SERVER_ID=53285
 EOF
 
@@ -185,7 +188,7 @@ Add the unified server to your Claude Desktop configuration:
       "env": {
         "ORGANIZATION_ACCESS_TOKEN": "your-organization-access-token",
         "ORGANIZATION_ID": "your-organization-id", 
-        "AUTHLETE_BASE_URL": "https://jp.authlete.com",
+        "AUTHLETE_API_URL": "https://jp.authlete.com",
         "AUTHLETE_API_SERVER_ID": "53285",
         "LOG_LEVEL": "INFO"
       }
@@ -207,7 +210,7 @@ You can also run the server using Docker:
         "run", "--rm", "-i",
         "-e", "ORGANIZATION_ACCESS_TOKEN=your-organization-access-token",
         "-e", "ORGANIZATION_ID=your-organization-id",
-        "-e", "AUTHLETE_BASE_URL=https://jp.authlete.com",
+        "-e", "AUTHLETE_API_URL=https://jp.authlete.com",
         "-e", "AUTHLETE_API_SERVER_ID=53285",
         "-e", "LOG_LEVEL=INFO",
         "ghcr.io/watahani/authlete-mcp:latest"
@@ -226,8 +229,8 @@ uv run python main.py
 # Using custom organization access token
 ORGANIZATION_ACCESS_TOKEN=your-token uv run python main.py
 
-# Run with specific authlete server
-AUTHLETE_BASE_URL=https://eu.authlete.com uv run python main.py
+# Run with specific authlete server (EU region)
+AUTHLETE_API_URL=https://eu.authlete.com AUTHLETE_API_SERVER_ID=63294 uv run python main.py
 ```
 
 ## Configuration
@@ -239,10 +242,14 @@ The unified server supports the following environment variables:
 - `ORGANIZATION_ID`: Your organization ID (required for service creation and deletion operations)
 
 ### Optional Configuration
-- `AUTHLETE_BASE_URL`: Authlete API base URL (default: `https://jp.authlete.com`)
-- `AUTHLETE_IDP_URL`: Authlete IdP URL (default: `https://login.authlete.com`)
+- `AUTHLETE_API_URL`: Authlete API URL (default: `https://jp.authlete.com`)
 - `AUTHLETE_API_SERVER_ID`: API Server ID (default: `53285` for JP)
+- `AUTHLETE_IDP_URL`: Authlete IdP URL (default: `https://login.authlete.com`)
 - `LOG_LEVEL`: Logging level (default: `INFO`) - Set to `DEBUG` for detailed HTTP request/response logging with PII masking
+
+**⚠️ Important**: `AUTHLETE_API_URL` and `AUTHLETE_API_SERVER_ID` must be configured as a pair:
+- **JP region**: `AUTHLETE_API_URL=https://jp.authlete.com` + `AUTHLETE_API_SERVER_ID=53285`
+- **EU region**: `AUTHLETE_API_URL=https://eu.authlete.com` + `AUTHLETE_API_SERVER_ID=63294`
 
 ### API Search Requirements
 - `resources/authlete_apis.duckdb`: Search database file (created by `scripts/create_search_database.py`)
@@ -445,7 +452,7 @@ Retrieve sample code for a specific API endpoint in the requested language.
       "env": {
         "ORGANIZATION_ACCESS_TOKEN": "06uqWx-1R9pH8z07Ex3OxvBOdrwJeps-hPxxUm35uTc",
         "ORGANIZATION_ID": "143361107080408",
-        "AUTHLETE_BASE_URL": "https://jp.authlete.com",
+        "AUTHLETE_API_URL": "https://jp.authlete.com",
         "AUTHLETE_API_SERVER_ID": "53285"
       }
     }
@@ -472,9 +479,9 @@ For EU region (eu.authlete.com):
       "env": {
         "ORGANIZATION_ACCESS_TOKEN": "your-eu-org-token",
         "ORGANIZATION_ID": "your-eu-org-id",
-        "AUTHLETE_BASE_URL": "https://eu.authlete.com",
+        "AUTHLETE_API_URL": "https://eu.authlete.com",
         "AUTHLETE_IDP_URL": "https://login.authlete.com",
-        "AUTHLETE_API_SERVER_ID": "your-eu-api-server-id"
+        "AUTHLETE_API_SERVER_ID": "63294"
       }
     }
   }
@@ -488,7 +495,7 @@ For testing and development:
 # Set environment variables
 export ORGANIZATION_ACCESS_TOKEN="your-test-token"
 export ORGANIZATION_ID="your-test-org-id"
-export AUTHLETE_BASE_URL="https://jp.authlete.com"
+export AUTHLETE_API_URL="https://jp.authlete.com"
 export AUTHLETE_API_SERVER_ID="53285"
 
 # Run the server

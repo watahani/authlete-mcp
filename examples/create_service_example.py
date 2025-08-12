@@ -18,7 +18,7 @@ async def create_service_example():
         env={
             "ORGANIZATION_ACCESS_TOKEN": os.getenv("ORGANIZATION_ACCESS_TOKEN", ""),
             "ORGANIZATION_ID": os.getenv("ORGANIZATION_ID", ""),
-            "AUTHLETE_BASE_URL": os.getenv("AUTHLETE_BASE_URL", "https://jp.authlete.com"),
+            "AUTHLETE_API_URL": os.getenv("AUTHLETE_API_URL", "https://jp.authlete.com"),
             "AUTHLETE_API_SERVER_ID": os.getenv("AUTHLETE_API_SERVER_ID", "53285")
         }
     )

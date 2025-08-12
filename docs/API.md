@@ -143,7 +143,7 @@ The following environment variables are required:
 
 - `ORGANIZATION_ACCESS_TOKEN`: Authlete organization access token
 - `ORGANIZATION_ID`: Authlete organization ID
-- `AUTHLETE_BASE_URL` (optional): Authlete base URL (defaults to https://jp.authlete.com)
+- `AUTHLETE_API_URL` (optional): Authlete API URL (defaults to https://jp.authlete.com)
 - `AUTHLETE_IDP_URL` (optional): Authlete IdP URL (defaults to https://login.authlete.com)
 - `AUTHLETE_API_SERVER_ID` (optional): API Server ID (defaults to 53285)
 
