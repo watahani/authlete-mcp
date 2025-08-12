@@ -184,8 +184,35 @@ jobs:
           format: 'sarif'
           output: 'trivy-results.sarif'
 
+      - name: Display Trivy scan results
+        if: always()
+        run: |
+          echo "## Security Scan Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          if [ -f trivy-results.sarif ]; then
+            echo "✅ Trivy vulnerability scan completed successfully" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "**SARIF file generated**: \`trivy-results.sarif\`" >> $GITHUB_STEP_SUMMARY
+            
+            # Run Trivy again in table format for summary display
+            docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
+              -v $(pwd):/workspace aquasec/trivy:latest image \
+              --format table --exit-code 0 authlete-mcp:scan >> trivy-summary.txt 2>&1 || true
+            
+            if [ -f trivy-summary.txt ]; then
+              echo "" >> $GITHUB_STEP_SUMMARY
+              echo "### Vulnerability Summary:" >> $GITHUB_STEP_SUMMARY
+              echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+              head -50 trivy-summary.txt >> $GITHUB_STEP_SUMMARY
+              echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+            fi
+          else
+            echo "❌ SARIF file not found" >> $GITHUB_STEP_SUMMARY
+          fi
+
       - name: Upload Trivy scan results to GitHub Security tab
         uses: github/codeql-action/upload-sarif@v3
-        if: always()
+        # Only upload SARIF in main branch pushes due to security-events permission requirements
+        if: always() && github.event_name == 'push' && github.ref == 'refs/heads/main'
         with:
           sarif_file: 'trivy-results.sarif'
