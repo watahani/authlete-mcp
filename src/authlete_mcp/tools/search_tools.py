@@ -17,7 +17,7 @@ async def search_apis(
     description_query: str = "",
     tag_filter: str = "",
     method_filter: str = "",
-    limit: int = 20,
+    limit: int = 5,
     ctx: Context = None,
 ) -> str:
     """Natural language API search. Semantic matching like 'revoke token' → 'This API revokes access tokens'. Returns description truncated to ~100 chars. Use get_api_detail for full information.
@@ -34,7 +34,7 @@ async def search_apis(
         description_query: Description search (e.g., 'revokes access tokens')
         tag_filter: Tag filter (e.g., 'Token Operations', 'Authorization') - applies to query and description_query
         method_filter: HTTP method filter (GET, POST, PUT, DELETE) - applies to all search types
-        limit: Maximum number of results (default: 20, max: 100)
+        limit: Maximum number of results (default: 5, max: 100)
     """
 
     try:
@@ -46,7 +46,7 @@ async def search_apis(
 
         # Validate limit
         if limit < 1 or limit > 100:
-            limit = 20
+            limit = 5
 
         # Check which search will be executed
         if query and query.strip():
