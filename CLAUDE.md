@@ -60,8 +60,9 @@ uv run pytest --tb=long                # Detailed traceback
 # Create/update search database
 uv run python scripts/create_search_database.py  # Create resources/authlete_apis.duckdb from OpenAPI spec
 
-# Update OpenAPI specification
-uv run python scripts/update_openapi_spec.py  # Update resources/openapi-spec.json from latest Authlete docs
+# Update OpenAPI specifications
+uv run python scripts/update_openapi_spec.py      # Update resources/openapi-spec.json from latest Authlete docs
+uv run python scripts/update_idp_openapi_spec.py  # Update resources/idp-openapi-spec.yaml/json from Authlete IdP API
 
 # Clean up test services
 uv run python scripts/cleanup_test_services.py  # Delete services with "pytest-" prefix
@@ -120,6 +121,7 @@ For integration testing, the same environment variables from .env are used.
 When implementing new Authlete API tools, please refer to these resource files:
 - `resources/postman_collection.json`: Complete Postman collection with all available Authlete API endpoints, request formats, and expected responses
 - `resources/openapi-spec.json`: OpenAPI specification for Authlete API with detailed schema definitions and parameter descriptions
+- `resources/idp-openapi-spec.yaml/json`: Authlete IdP API OpenAPI specification (service creation/deletion, organization management)
 - `resources/authlete_apis.duckdb`: Search database containing indexed API documentation for fast retrieval
 
 These resources provide authoritative examples of:
@@ -128,6 +130,12 @@ These resources provide authoritative examples of:
 - Request body structures and data types
 - Expected response formats and status codes
 - Authentication requirements for each endpoint
+
+**IdP API Reference**: The `resources/idp-openapi-spec.yaml/json` contains the complete Authlete IdP API specification including:
+- Service management endpoints (`/api/service`, `/api/service/remove`, etc.)
+- Organization management endpoints (`/api/organization`, `/api/organizationtoken/*`, etc.)
+- Service token operations (`/api/servicetoken/*`)
+- Currently only service creation/deletion operations are supported with `ORGANIZATION_ACCESS_TOKEN`
 
 ## Testing Structure
 
