@@ -186,7 +186,8 @@ Add the unified server to your Claude Desktop configuration:
         "ORGANIZATION_ACCESS_TOKEN": "your-organization-access-token",
         "ORGANIZATION_ID": "your-organization-id", 
         "AUTHLETE_BASE_URL": "https://jp.authlete.com",
-        "AUTHLETE_API_SERVER_ID": "53285"
+        "AUTHLETE_API_SERVER_ID": "53285",
+        "LOG_LEVEL": "INFO"
       }
     }
   }
@@ -208,6 +209,7 @@ You can also run the server using Docker:
         "-e", "ORGANIZATION_ID=your-organization-id",
         "-e", "AUTHLETE_BASE_URL=https://jp.authlete.com",
         "-e", "AUTHLETE_API_SERVER_ID=53285",
+        "-e", "LOG_LEVEL=INFO",
         "ghcr.io/watahani/authlete-mcp:latest"
       ]
     }
@@ -240,11 +242,61 @@ The unified server supports the following environment variables:
 - `AUTHLETE_BASE_URL`: Authlete API base URL (default: `https://jp.authlete.com`)
 - `AUTHLETE_IDP_URL`: Authlete IdP URL (default: `https://login.authlete.com`)
 - `AUTHLETE_API_SERVER_ID`: API Server ID (default: `53285` for JP)
+- `LOG_LEVEL`: Logging level (default: `INFO`) - Set to `DEBUG` for detailed HTTP request/response logging with PII masking
 
 ### API Search Requirements
 - `resources/authlete_apis.duckdb`: Search database file (created by `scripts/create_search_database.py`)
 
 **Note**: API search functionality is automatically disabled if the search database is not found, but service management will still work.
+
+## Security Features
+
+### 🔐 PII Masking and Secure Logging
+
+The server includes comprehensive PII (Personally Identifiable Information) masking to protect sensitive data in logs:
+
+#### Automatic PII Protection
+- **Authlete Credentials**: `service_api_key`, `service_api_secret`, `ORGANIZATION_ACCESS_TOKEN`
+- **OAuth/OIDC Tokens**: `client_secret`, `access_token`, `refresh_token`, `id_token`, `authorization_code`
+- **Device Flow**: `user_code`, `client_notification_token`
+- **JWT/Crypto Data**: `jwks`, `signature_key_id`, JWK values (`n`, `d`, `p`, `q`, etc.)
+- **Authentication Data**: `password`, `authorization` headers, Bearer tokens
+
+#### Multi-Format Support
+- **JSON**: `{"client_secret": "value"}` → `{"client_secret": "***** REDACTED *****"}`
+- **URL-encoded**: `client_secret=value&param=normal` → `client_secret=***** REDACTED *****&param=normal`
+- **Environment Variables**: `ORGANIZATION_ACCESS_TOKEN=token123` → `ORGANIZATION_ACCESS_TOKEN=***** REDACTED *****`
+- **Authorization Headers**: `Bearer token123456789` → `Bearer ***** REDACTED *****`
+
+#### Logging Configuration
+```bash
+# Default INFO level - basic operational logs only
+LOG_LEVEL=INFO
+
+# DEBUG level - includes detailed HTTP request/response with PII masked
+LOG_LEVEL=DEBUG
+
+# Other levels: WARNING, ERROR, CRITICAL
+```
+
+#### Sample Secure Log Output
+```
+2025-08-12 18:45:23 - authlete_mcp.tools.service_tools - DEBUG - HTTP POST IdP API /service - Request: {
+  "service": {
+    "client_secret": "***** REDACTED *****",
+    "serviceName": "MyService"
+  }
+}
+2025-08-12 18:45:23 - authlete_mcp.tools.service_tools - DEBUG - HTTP POST IdP API /service - Response (200): {
+  "resultMessage": "Service created successfully"
+}
+```
+
+**Security Benefits:**
+- ✅ Complete protection of sensitive tokens and secrets in all log outputs
+- ✅ Safe for production environments and log aggregation systems
+- ✅ Maintains debugging capability without exposing credentials
+- ✅ Automatic detection across multiple data formats
 
 ## API Reference
 
