@@ -52,7 +52,7 @@ Thumbs.db
 # Documentation
 docs/
 *.md
-!README.md
+!/README.md
 
 # Tests
 tests/

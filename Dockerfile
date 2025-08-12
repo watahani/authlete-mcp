@@ -7,8 +7,8 @@ WORKDIR /app
 # Install uv for faster dependency management
 RUN pip install uv
 
-# Copy dependency files
-COPY pyproject.toml uv.lock ./
+# Copy dependency files and README for hatchling
+COPY pyproject.toml uv.lock README.md ./
 
 # Install dependencies
 RUN uv sync --no-dev --frozen
