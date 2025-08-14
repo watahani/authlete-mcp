@@ -230,7 +230,7 @@ async def test_patch_client_integration():
                     # Verify unchanged fields remain the same
                     assert updated_data.get("applicationType") == "WEB"
                     assert updated_data.get("redirectUris") == ["https://test.example.com/callback"]
-                    assert updated_data.get("clientId") == client_id
+                    assert updated_data.get("clientId") == int(client_id)
 
                 else:
                     # If patch failed, verify it was due to API limitations
