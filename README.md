@@ -20,8 +20,8 @@ src/authlete_mcp/
 ├── api/
 │   └── client.py         # HTTP client for Authlete APIs
 └── tools/                # MCP tools organized by functionality
-    ├── service_tools.py  # Service management (7 tools)
-    ├── client_tools.py   # Client management (16 tools)
+    ├── service_tools.py  # Service management (8 tools)
+    ├── client_tools.py   # Client management (17 tools)
     ├── token_tools.py    # Token operations (5 tools)
     ├── jose_tools.py     # JOSE operations (2 tools)
     ├── search_tools.py   # API/schema search (5 tools)
@@ -50,14 +50,16 @@ These resources provide authoritative examples of:
 - `get_service_schema_example`: Get an example service configuration schema
 - `get_service`: Retrieve a service by API key
 - `list_services`: List all services
-- `update_service`: Update service configuration
+- `update_service`: Update service configuration (full overwrite)
+- `patch_service`: Partially update service configuration (merges with current data)
 - `delete_service`: Delete a service via IdP
 
 ### Client Management
 - `create_client`: Create a new OAuth client
 - `get_client`: Retrieve a client by ID
 - `list_clients`: List all clients for a service
-- `update_client`: Update client configuration
+- `update_client`: Update client configuration (full overwrite)
+- `patch_client`: Partially update client configuration (merges with current data)
 - `delete_client`: Delete a client
 - `rotate_client_secret`: Generate new client secret
 - `update_client_secret`: Update client secret manually
@@ -358,10 +360,17 @@ Retrieves service information.
 - `service_api_key` (string, optional): Specific service API key to retrieve
 
 #### update_service
-Updates service configuration.
+Updates service configuration with complete data (full overwrite).
 
 **Parameters:**
-- `service_data` (string, required): JSON string containing service data
+- `service_data` (string, required): JSON string containing complete service data
+- `service_api_key` (string, optional): Service API key
+
+#### patch_service
+Partially updates service configuration by merging with existing data.
+
+**Parameters:**
+- `service_patch_data` (string, required): JSON string containing fields to update (partial data)
 - `service_api_key` (string, optional): Service API key
 
 #### delete_service
@@ -384,6 +393,22 @@ Retrieves client information.
 
 **Parameters:**
 - `client_id` (string, required): Client ID
+- `service_api_key` (string, optional): Service API key
+
+#### update_client
+Updates client configuration with complete data (full overwrite).
+
+**Parameters:**
+- `client_id` (string, required): Client ID to update
+- `client_data` (string, required): JSON string containing complete client data
+- `service_api_key` (string, optional): Service API key
+
+#### patch_client
+Partially updates client configuration by merging with existing data.
+
+**Parameters:**
+- `client_id` (string, required): Client ID to patch
+- `client_patch_data` (string, required): JSON string containing fields to update (partial data)
 - `service_api_key` (string, optional): Service API key
 
 ### API Search Operations
