@@ -89,12 +89,60 @@ async def list_clients(service_api_key: str = "") -> str:
         return f"Error listing clients: {str(e)}"
 
 
+async def patch_client(client_id: str, client_patch_data: str, service_api_key: str = "") -> str:
+    """Patch an Authlete client by merging new data with existing configuration.
+
+    This function first retrieves the current client data, merges it with the provided
+    patch data, and then performs a full update with the merged configuration.
+
+    Args:
+        client_id: Client ID to patch
+        client_patch_data: JSON string containing fields to update (partial data)
+        service_api_key: Service API key (required for URL path)
+    """
+    # Validate required parameters
+    if not service_api_key:
+        return "Error: service_api_key parameter is required"
+
+    try:
+        # Parse patch data
+        patch_data = json.loads(client_patch_data)
+    except json.JSONDecodeError as e:
+        return f"Error parsing client patch data JSON: {str(e)}"
+
+    try:
+        # Get current client data
+        current_result = await get_client(client_id, service_api_key)
+
+        # Check if get_client returned an error
+        if current_result.startswith("Error"):
+            return f"Error getting current client data: {current_result}"
+
+        # Parse current client data
+        current_data = json.loads(current_result)
+
+        # Merge patch data with current data
+        merged_data = {**current_data, **patch_data}
+
+        # Convert merged data back to JSON string and call update_client
+        merged_data_str = json.dumps(merged_data)
+        return await update_client(client_id, merged_data_str, service_api_key)
+
+    except json.JSONDecodeError as e:
+        return f"Error parsing current client data JSON: {str(e)}"
+    except Exception as e:
+        return f"Error patching client: {str(e)}"
+
+
 async def update_client(client_id: str, client_data: str, service_api_key: str = "") -> str:
     """Update an Authlete client.
 
+    Note: This is a full update operation that overwrites the entire client configuration.
+    If you want to update only specific fields, use patch_client instead to merge with existing data.
+
     Args:
         client_id: Client ID to update
-        client_data: JSON string containing client data to update
+        client_data: JSON string containing complete client data (overwrites all fields)
         service_api_key: Service API key (required for URL path)
     """
     # Validate required parameters
@@ -174,6 +222,8 @@ async def rotate_client_secret(client_id: str, service_api_key: str = "") -> str
 async def update_client_secret(client_id: str, secret_data: str, service_api_key: str = "") -> str:
     """Update an Authlete client secret.
 
+    Note: This is a full update operation for client secret configuration.
+
     Args:
         client_id: Client ID
         secret_data: JSON string containing new secret data
@@ -205,6 +255,8 @@ async def update_client_secret(client_id: str, secret_data: str, service_api_key
 
 async def update_client_lock(client_id: str, lock_flag: bool, service_api_key: str = "") -> str:
     """Update an Authlete client lock status.
+
+    Note: This updates only the lock status of the client.
 
     Args:
         client_id: Client ID
@@ -275,6 +327,8 @@ async def update_client_tokens(
     service_api_key: str = "",
 ) -> str:
     """Update client tokens for a subject.
+
+    Note: This is a full update operation for client tokens.
 
     Args:
         subject: Subject (required)
@@ -471,6 +525,8 @@ async def update_requestable_scopes(
     service_api_key: str = "",
 ) -> str:
     """Update requestable scopes for a client.
+
+    Note: This is a full update operation that overwrites all requestable scopes.
 
     Args:
         client_id: Client ID (required)
