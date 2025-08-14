@@ -241,11 +241,58 @@ async def list_services(ctx: Context = None) -> str:
         return f"Error listing services: {str(e)}"
 
 
+async def patch_service(service_patch_data: str, service_api_key: str = "", ctx: Context = None) -> str:
+    """Patch an Authlete service by merging new data with existing configuration.
+
+    This function first retrieves the current service data, merges it with the provided
+    patch data, and then performs a full update with the merged configuration.
+
+    Args:
+        service_patch_data: JSON string containing fields to update (partial data)
+        service_api_key: Service API key (if empty, uses the main token)
+    """
+    # Validate required parameters
+    if not service_api_key:
+        return "Error: service_api_key parameter is required"
+
+    try:
+        # Parse patch data
+        patch_data = json.loads(service_patch_data)
+    except json.JSONDecodeError as e:
+        return f"Error parsing service patch data JSON: {str(e)}"
+
+    try:
+        # Get current service data
+        current_result = await get_service(service_api_key, ctx)
+
+        # Check if get_service returned an error
+        if current_result.startswith("Error"):
+            return f"Error getting current service data: {current_result}"
+
+        # Parse current service data
+        current_data = json.loads(current_result)
+
+        # Merge patch data with current data
+        merged_data = {**current_data, **patch_data}
+
+        # Convert merged data back to JSON string and call update_service
+        merged_data_str = json.dumps(merged_data)
+        return await update_service(merged_data_str, service_api_key, ctx)
+
+    except json.JSONDecodeError as e:
+        return f"Error parsing current service data JSON: {str(e)}"
+    except Exception as e:
+        return f"Error patching service: {str(e)}"
+
+
 async def update_service(service_data: str, service_api_key: str = "", ctx: Context = None) -> str:
     """Update an Authlete service.
 
+    Note: This is a full update operation that overwrites the entire service configuration.
+    If you want to update only specific fields, use patch_service instead to merge with existing data.
+
     Args:
-        service_data: JSON string containing service data to update
+        service_data: JSON string containing complete service data (overwrites all fields)
         service_api_key: Service API key (if empty, uses the main token)
     """
     # Validate required parameters
