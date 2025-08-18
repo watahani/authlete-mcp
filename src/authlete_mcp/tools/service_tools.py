@@ -212,7 +212,7 @@ async def get_service(service_api_key: str = "", ctx: Context = None) -> str:
     """Get an Authlete service by API key.
 
     Args:
-        service_api_key: Service API key to retrieve (if empty, uses the main token)
+        service_api_key: Service ID (also known as Service API Key) to retrieve (if empty, uses the main token)
     """
     if not ORGANIZATION_ACCESS_TOKEN:
         return "Error: ORGANIZATION_ACCESS_TOKEN environment variable not set"
@@ -249,7 +249,7 @@ async def patch_service(service_patch_data: str, service_api_key: str = "", ctx:
 
     Args:
         service_patch_data: JSON string containing fields to update (partial data)
-        service_api_key: Service API key (if empty, uses the main token)
+        service_api_key: Service ID (also known as Service API Key) (if empty, uses the main token)
     """
     # Validate required parameters
     if not service_api_key:
@@ -293,7 +293,7 @@ async def update_service(service_data: str, service_api_key: str = "", ctx: Cont
 
     Args:
         service_data: JSON string containing complete service data (overwrites all fields)
-        service_api_key: Service API key (if empty, uses the main token)
+        service_api_key: Service ID (also known as Service API Key) (if empty, uses the main token)
     """
     # Validate required parameters
     if not service_api_key:

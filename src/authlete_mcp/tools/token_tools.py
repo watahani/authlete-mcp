@@ -19,7 +19,7 @@ async def list_issued_tokens(
     Args:
         subject: Subject to filter by (optional)
         client_identifier: Client identifier to filter by (optional)
-        service_api_key: Service API key (required)
+        service_api_key: Service ID (also known as Service API Key) (required)
     """
 
     try:
@@ -65,7 +65,7 @@ async def create_access_token(
 
     Args:
         token_data: JSON string with token creation parameters
-        service_api_key: Service API key (required)
+        service_api_key: Service ID (also known as Service API Key) (required)
     """
 
     try:
@@ -104,7 +104,7 @@ async def update_access_token(
     Args:
         access_token: Access token to update (required)
         token_data: JSON string with token update parameters
-        service_api_key: Service API key (required)
+        service_api_key: Service ID (also known as Service API Key) (required)
     """
 
     try:
@@ -144,7 +144,7 @@ async def revoke_access_token(
 
     Args:
         access_token: Access token to revoke (required)
-        service_api_key: Service API key (required)
+        service_api_key: Service ID (also known as Service API Key) (required)
     """
 
     try:
@@ -178,7 +178,7 @@ async def delete_access_token(
 
     Args:
         access_token: Access token to delete (required)
-        service_api_key: Service API key (required)
+        service_api_key: Service ID (also known as Service API Key) (required)
     """
 
     try:
