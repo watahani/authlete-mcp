@@ -13,7 +13,7 @@ async def create_client(client_data: str, service_api_key: str = "") -> str:
 
     Args:
         client_data: JSON string containing client data
-        service_api_key: Service API key (required for URL path)
+        service_api_key: Service ID (also known as Service API Key, required for URL path)
     """
     # Validate required parameters
     if not service_api_key:
@@ -43,7 +43,7 @@ async def get_client(client_id: str, service_api_key: str = "") -> str:
 
     Args:
         client_id: Client ID to retrieve
-        service_api_key: Service API key (required for URL path)
+        service_api_key: Service ID (also known as Service API Key, required for URL path)
     """
     # Validate required parameters
     if not service_api_key:
@@ -68,7 +68,7 @@ async def list_clients(service_api_key: str = "") -> str:
     """List all Authlete clients.
 
     Args:
-        service_api_key: Service API key (required for URL path)
+        service_api_key: Service ID (also known as Service API Key, required for URL path)
     """
     # Validate required parameters
     if not service_api_key:
@@ -98,7 +98,7 @@ async def patch_client(client_id: str, client_patch_data: str, service_api_key: 
     Args:
         client_id: Client ID to patch
         client_patch_data: JSON string containing fields to update (partial data)
-        service_api_key: Service API key (required for URL path)
+        service_api_key: Service ID (also known as Service API Key, required for URL path)
     """
     # Validate required parameters
     if not service_api_key:
@@ -143,7 +143,7 @@ async def update_client(client_id: str, client_data: str, service_api_key: str =
     Args:
         client_id: Client ID to update
         client_data: JSON string containing complete client data (overwrites all fields)
-        service_api_key: Service API key (required for URL path)
+        service_api_key: Service ID (also known as Service API Key, required for URL path)
     """
     # Validate required parameters
     if not service_api_key:
@@ -172,7 +172,7 @@ async def delete_client(client_id: str, service_api_key: str = "") -> str:
 
     Args:
         client_id: Client ID to delete
-        service_api_key: Service API key (required for URL path)
+        service_api_key: Service ID (also known as Service API Key, required for URL path)
     """
     # Validate required parameters
     if not service_api_key:
@@ -198,7 +198,7 @@ async def rotate_client_secret(client_id: str, service_api_key: str = "") -> str
 
     Args:
         client_id: Client ID
-        service_api_key: Service API key (required for URL path)
+        service_api_key: Service ID (also known as Service API Key, required for URL path)
     """
     # Validate required parameters
     if not service_api_key:
@@ -227,7 +227,7 @@ async def update_client_secret(client_id: str, secret_data: str, service_api_key
     Args:
         client_id: Client ID
         secret_data: JSON string containing new secret data
-        service_api_key: Service API key (required for URL path)
+        service_api_key: Service ID (also known as Service API Key, required for URL path)
     """
     # Validate required parameters
     if not service_api_key:
@@ -261,7 +261,7 @@ async def update_client_lock(client_id: str, lock_flag: bool, service_api_key: s
     Args:
         client_id: Client ID
         lock_flag: True to lock, False to unlock
-        service_api_key: Service API key (required for URL path)
+        service_api_key: Service ID (also known as Service API Key, required for URL path)
     """
     # Validate required parameters
     if not service_api_key:
@@ -294,7 +294,7 @@ async def get_authorized_applications(
 
     Args:
         subject: Subject to get applications for (required)
-        service_api_key: Service API key (required for URL path)
+        service_api_key: Service ID (also known as Service API Key, required for URL path)
     """
 
     try:
@@ -334,7 +334,7 @@ async def update_client_tokens(
         subject: Subject (required)
         client_id: Client ID (required)
         token_data: JSON string with token update parameters
-        service_api_key: Service API key (required for URL path)
+        service_api_key: Service ID (also known as Service API Key, required for URL path)
     """
 
     try:
@@ -378,7 +378,7 @@ async def delete_client_tokens(
     Args:
         subject: Subject (required)
         client_id: Client ID (required)
-        service_api_key: Service API key (required for URL path)
+        service_api_key: Service ID (also known as Service API Key, required for URL path)
     """
 
     try:
@@ -417,7 +417,7 @@ async def get_granted_scopes(
     Args:
         subject: Subject (required)
         client_id: Client ID (required)
-        service_api_key: Service API key (required for URL path)
+        service_api_key: Service ID (also known as Service API Key, required for URL path)
     """
 
     try:
@@ -456,7 +456,7 @@ async def delete_granted_scopes(
     Args:
         subject: Subject (required)
         client_id: Client ID (required)
-        service_api_key: Service API key (required for URL path)
+        service_api_key: Service ID (also known as Service API Key, required for URL path)
     """
 
     try:
@@ -493,7 +493,7 @@ async def get_requestable_scopes(
 
     Args:
         client_id: Client ID (required)
-        service_api_key: Service API key (required for URL path)
+        service_api_key: Service ID (also known as Service API Key, required for URL path)
     """
 
     try:
@@ -531,7 +531,7 @@ async def update_requestable_scopes(
     Args:
         client_id: Client ID (required)
         scopes_data: JSON string with scopes data
-        service_api_key: Service API key (required for URL path)
+        service_api_key: Service ID (also known as Service API Key, required for URL path)
     """
 
     try:
@@ -571,7 +571,7 @@ async def delete_requestable_scopes(
 
     Args:
         client_id: Client ID (required)
-        service_api_key: Service API key (required for URL path)
+        service_api_key: Service ID (also known as Service API Key, required for URL path)
     """
 
     try:

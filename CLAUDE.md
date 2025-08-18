@@ -157,22 +157,25 @@ Each test creates its own MCP client session using `stdio_client` and `ClientSes
 When implementing or modifying MCP tools, follow these established patterns:
 
 ### Parameter Validation Order
-1. **Service API Key Validation**: Always check `service_api_key` parameter is provided for operations requiring it
+1. **Service ID Validation**: Always check `service_api_key` parameter (Service ID) is provided for operations requiring it
 2. **Required Parameters**: Validate all required parameters (e.g., `client_id`, `access_token`, etc.)
 3. **JSON Parsing**: Parse JSON parameters using `json.loads()` with proper error handling
 4. **Environment Variables**: Check for `ORGANIZATION_ACCESS_TOKEN` (organization token) existence last
 
 ### Error Handling Patterns
 - All tools return JSON strings, with errors prefixed as "Error: ..."
+- Service ID validation errors: `"Error: service_api_key parameter is required"`
 - Parameter validation errors: `"Error: [parameter_name] parameter is required"`
 - JSON parsing errors: `"Error parsing [data_type] JSON: {error_details}"`
 - Environment errors: `"Error: ORGANIZATION_ACCESS_TOKEN environment variable not set"`
 - API errors: Extract and return Authlete API `resultMessage` when available
 
 ### Authentication Patterns
-- **Client Operations**: Always require `service_api_key` parameter (no fallback to organization token)
-- **Service Operations**: Use `service_api_key` if provided, otherwise fall back to `ORGANIZATION_ACCESS_TOKEN`
-- **Token/JOSE Operations**: Always require `service_api_key` parameter
+- **Client Operations**: Always require `service_api_key` parameter (Service ID, no fallback to organization token)
+- **Service Operations**: Use `service_api_key` (Service ID) if provided, otherwise fall back to `ORGANIZATION_ACCESS_TOKEN`
+- **Token/JOSE Operations**: Always require `service_api_key` parameter (Service ID)
+
+**Note**: The `service_api_key` parameter in MCP tools refers to the Service ID (also known as Service API Key in Authlete console). This is the `apiKey` field in the Service object and serves as the unique identifier for each Authlete service.
 
 ### API Response Handling
 1. **HTTP 204 No Content**: Handle as successful deletion/update operations
@@ -184,8 +187,8 @@ When implementing or modifying MCP tools, follow these established patterns:
 
 ### Tool Categories and Patterns
 - **Service Management**: Support both direct API and IdP API operations
-- **Client Management**: Full CRUD operations with mandatory service API key validation
-- **Token Management**: Access token lifecycle management with service API key requirement
+- **Client Management**: Full CRUD operations with mandatory Service ID validation
+- **Token Management**: Access token lifecycle management with Service ID requirement
 - **Extended Client Operations**: Authorization, scopes, and token management for clients
 - **JOSE Operations**: JWT/JWS/JWE generation and verification utilities
 

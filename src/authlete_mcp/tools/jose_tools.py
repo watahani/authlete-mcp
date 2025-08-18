@@ -16,7 +16,7 @@ async def generate_jose(
 
     Args:
         jose_data: JSON string with JOSE generation parameters
-        service_api_key: Service API key (required)
+        service_api_key: Service ID (also known as Service API Key) (required)
     """
 
     try:
@@ -57,7 +57,7 @@ async def verify_jose(
 
     Args:
         jose_token: JOSE token to verify (required)
-        service_api_key: Service API key (required)
+        service_api_key: Service ID (also known as Service API Key) (required)
     """
 
     try:
