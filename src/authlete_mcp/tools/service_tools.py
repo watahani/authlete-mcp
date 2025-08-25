@@ -227,15 +227,51 @@ async def get_service(service_api_key: str = "", ctx: Context = None) -> str:
         return f"Error getting service: {str(e)}"
 
 
-async def list_services(ctx: Context = None) -> str:
-    """List all Authlete services."""
+async def list_services(limit: int = 100, ctx: Context = None) -> str:
+    """List all Authlete services with pagination.
+
+    Args:
+        limit: Maximum number of services to return (default: 100)
+    """
     if not ORGANIZATION_ACCESS_TOKEN:
         return "Error: ORGANIZATION_ACCESS_TOKEN environment variable not set"
 
     config = AuthleteConfig(api_key=ORGANIZATION_ACCESS_TOKEN)
 
+    all_services = []
+    start = 0
+    page_size = min(limit, 100)  # Use 100 as base page size, but reduce if limit is smaller
+
     try:
-        result = await make_authlete_request("GET", "service/get/list", config)
+        while True:
+            end = start + page_size
+            endpoint = f"service/get/list?limited=true&start={start}&end={end}"
+            response = await make_authlete_request("GET", endpoint, config)
+
+            services = response.get("services", [])
+            total_count = response.get("totalCount", 0)
+
+            all_services.extend(services)
+
+            # Check if we've reached the end or got all requested services
+            if start >= total_count or len(services) == 0 or len(all_services) >= limit:
+                break
+
+            start = end
+
+            # If we've reached the limit, trim the list
+            if len(all_services) >= limit:
+                all_services = all_services[:limit]
+                break
+
+        # Return paginated result with metadata
+        result = {
+            "services": all_services[:limit],
+            "totalCount": total_count,
+            "returnedCount": min(len(all_services), limit),
+            "limited": len(all_services) >= limit or total_count > limit,
+        }
+
         return json.dumps(result, indent=2)
     except Exception as e:
         return f"Error listing services: {str(e)}"
