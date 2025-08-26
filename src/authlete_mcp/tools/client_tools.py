@@ -64,11 +64,12 @@ async def get_client(client_id: str, service_api_key: str = "") -> str:
         return f"Error getting client: {str(e)}"
 
 
-async def list_clients(service_api_key: str = "") -> str:
-    """List all Authlete clients.
+async def list_clients(service_api_key: str = "", limit: int = 100) -> str:
+    """List all Authlete clients with pagination.
 
     Args:
         service_api_key: Service ID (also known as Service API Key, required for URL path)
+        limit: Maximum number of clients to return (default: 100)
     """
     # Validate required parameters
     if not service_api_key:
@@ -82,8 +83,40 @@ async def list_clients(service_api_key: str = "") -> str:
 
     config = AuthleteConfig(api_key=ORGANIZATION_ACCESS_TOKEN)
 
+    all_clients = []
+    start = 0
+    page_size = min(limit, 100)  # Use 100 as base page size, but reduce if limit is smaller
+
     try:
-        result = await make_authlete_request("GET", f"{service_api_key}/client/get/list", config)
+        while True:
+            end = start + page_size
+            endpoint = f"{service_api_key}/client/get/list?limited=true&start={start}&end={end}"
+            response = await make_authlete_request("GET", endpoint, config)
+
+            clients = response.get("clients", [])
+            total_count = response.get("totalCount", 0)
+
+            all_clients.extend(clients)
+
+            # Check if we've reached the end or got all requested clients
+            if start >= total_count or len(clients) == 0 or len(all_clients) >= limit:
+                break
+
+            start = end
+
+            # If we've reached the limit, trim the list
+            if len(all_clients) >= limit:
+                all_clients = all_clients[:limit]
+                break
+
+        # Return paginated result with metadata
+        result = {
+            "clients": all_clients[:limit],
+            "totalCount": total_count,
+            "returnedCount": min(len(all_clients), limit),
+            "limited": len(all_clients) >= limit or total_count > limit,
+        }
+
         return json.dumps(result, indent=2)
     except Exception as e:
         return f"Error listing clients: {str(e)}"
