@@ -21,7 +21,7 @@ async def create_service(name: str, description: str = "", ctx: Context = None) 
     if not DEFAULT_ORGANIZATION_ID:
         return "Error: ORGANIZATION_ID environment variable must be set"
 
-    config = AuthleteConfig(api_key=ORGANIZATION_ACCESS_TOKEN)
+    config = AuthleteConfig(access_token=ORGANIZATION_ACCESS_TOKEN)
 
     # Create service configuration for IdP API (without number, serviceOwnerNumber, apiKey, cluster)
     service_data = {
@@ -143,7 +143,7 @@ async def create_service_detailed(
     if not DEFAULT_ORGANIZATION_ID:
         return "Error: ORGANIZATION_ID environment variable must be set"
 
-    config = AuthleteConfig(api_key=ORGANIZATION_ACCESS_TOKEN)
+    config = AuthleteConfig(access_token=ORGANIZATION_ACCESS_TOKEN)
 
     try:
         # Parse service configuration JSON
@@ -217,7 +217,7 @@ async def get_service(service_api_key: str = "", ctx: Context = None) -> str:
     if not ORGANIZATION_ACCESS_TOKEN:
         return "Error: ORGANIZATION_ACCESS_TOKEN environment variable not set"
 
-    config = AuthleteConfig(api_key=ORGANIZATION_ACCESS_TOKEN)
+    config = AuthleteConfig(access_token=ORGANIZATION_ACCESS_TOKEN)
     key_to_use = service_api_key if service_api_key else ORGANIZATION_ACCESS_TOKEN
 
     try:
@@ -236,7 +236,7 @@ async def list_services(limit: int = 100, ctx: Context = None) -> str:
     if not ORGANIZATION_ACCESS_TOKEN:
         return "Error: ORGANIZATION_ACCESS_TOKEN environment variable not set"
 
-    config = AuthleteConfig(api_key=ORGANIZATION_ACCESS_TOKEN)
+    config = AuthleteConfig(access_token=ORGANIZATION_ACCESS_TOKEN)
 
     all_services = []
     start = 0
@@ -338,7 +338,7 @@ async def update_service(service_data: str, service_api_key: str = "", ctx: Cont
     if not ORGANIZATION_ACCESS_TOKEN:
         return "Error: ORGANIZATION_ACCESS_TOKEN environment variable not set"
 
-    config = AuthleteConfig(api_key=ORGANIZATION_ACCESS_TOKEN)
+    config = AuthleteConfig(access_token=ORGANIZATION_ACCESS_TOKEN)
     key_to_use = service_api_key if service_api_key else ORGANIZATION_ACCESS_TOKEN
 
     try:
@@ -363,7 +363,7 @@ async def delete_service(service_id: str, ctx: Context = None) -> str:
     if not DEFAULT_ORGANIZATION_ID:
         return "Error: ORGANIZATION_ID environment variable must be set"
 
-    config = AuthleteConfig(api_key=ORGANIZATION_ACCESS_TOKEN)
+    config = AuthleteConfig(access_token=ORGANIZATION_ACCESS_TOKEN)
 
     # Try with environment variable values first
     data = {

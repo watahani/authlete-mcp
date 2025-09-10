@@ -15,7 +15,7 @@ DEFAULT_ORGANIZATION_ID = os.getenv("ORGANIZATION_ID", "")
 class AuthleteConfig(BaseModel):
     """Configuration for Authlete API."""
 
-    api_key: str = Field(..., description="Organization access token")
+    access_token: str = Field(..., description="Organization access token")
     base_url: str = Field(default=AUTHLETE_API_URL, description="Authlete API URL")
     idp_url: str = Field(default=AUTHLETE_IDP_URL, description="Authlete IdP URL")
     api_server_id: str = Field(default=DEFAULT_API_SERVER_ID, description="API Server ID")

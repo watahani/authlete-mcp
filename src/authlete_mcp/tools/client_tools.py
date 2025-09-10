@@ -25,7 +25,7 @@ async def create_client(client_data: str, service_api_key: str = "") -> str:
     if not ORGANIZATION_ACCESS_TOKEN:
         return "Error: ORGANIZATION_ACCESS_TOKEN environment variable not set"
 
-    config = AuthleteConfig(api_key=ORGANIZATION_ACCESS_TOKEN)
+    config = AuthleteConfig(access_token=ORGANIZATION_ACCESS_TOKEN)
 
     try:
         data = json.loads(client_data)
@@ -55,7 +55,7 @@ async def get_client(client_id: str, service_api_key: str = "") -> str:
     if not ORGANIZATION_ACCESS_TOKEN:
         return "Error: ORGANIZATION_ACCESS_TOKEN environment variable not set"
 
-    config = AuthleteConfig(api_key=ORGANIZATION_ACCESS_TOKEN)
+    config = AuthleteConfig(access_token=ORGANIZATION_ACCESS_TOKEN)
 
     try:
         result = await make_authlete_request("GET", f"{service_api_key}/client/get/{client_id}", config)
@@ -81,7 +81,7 @@ async def list_clients(service_api_key: str = "", limit: int = 100) -> str:
     if not ORGANIZATION_ACCESS_TOKEN:
         return "Error: ORGANIZATION_ACCESS_TOKEN environment variable not set"
 
-    config = AuthleteConfig(api_key=ORGANIZATION_ACCESS_TOKEN)
+    config = AuthleteConfig(access_token=ORGANIZATION_ACCESS_TOKEN)
 
     all_clients = []
     start = 0
@@ -188,7 +188,7 @@ async def update_client(client_id: str, client_data: str, service_api_key: str =
     if not ORGANIZATION_ACCESS_TOKEN:
         return "Error: ORGANIZATION_ACCESS_TOKEN environment variable not set"
 
-    config = AuthleteConfig(api_key=ORGANIZATION_ACCESS_TOKEN)
+    config = AuthleteConfig(access_token=ORGANIZATION_ACCESS_TOKEN)
 
     try:
         data = json.loads(client_data)
@@ -217,7 +217,7 @@ async def delete_client(client_id: str, service_api_key: str = "") -> str:
     if not ORGANIZATION_ACCESS_TOKEN:
         return "Error: ORGANIZATION_ACCESS_TOKEN environment variable not set"
 
-    config = AuthleteConfig(api_key=ORGANIZATION_ACCESS_TOKEN)
+    config = AuthleteConfig(access_token=ORGANIZATION_ACCESS_TOKEN)
 
     try:
         result = await make_authlete_request("DELETE", f"{service_api_key}/client/delete/{client_id}", config)
@@ -243,7 +243,7 @@ async def rotate_client_secret(client_id: str, service_api_key: str = "") -> str
     if not ORGANIZATION_ACCESS_TOKEN:
         return "Error: ORGANIZATION_ACCESS_TOKEN environment variable not set"
 
-    config = AuthleteConfig(api_key=ORGANIZATION_ACCESS_TOKEN)
+    config = AuthleteConfig(access_token=ORGANIZATION_ACCESS_TOKEN)
 
     try:
         result = await make_authlete_request("GET", f"{service_api_key}/client/secret/refresh/{client_id}", config)
@@ -272,7 +272,7 @@ async def update_client_secret(client_id: str, secret_data: str, service_api_key
     if not ORGANIZATION_ACCESS_TOKEN:
         return "Error: ORGANIZATION_ACCESS_TOKEN environment variable not set"
 
-    config = AuthleteConfig(api_key=ORGANIZATION_ACCESS_TOKEN)
+    config = AuthleteConfig(access_token=ORGANIZATION_ACCESS_TOKEN)
 
     try:
         data = json.loads(secret_data)
@@ -306,7 +306,7 @@ async def update_client_lock(client_id: str, lock_flag: bool, service_api_key: s
     if not ORGANIZATION_ACCESS_TOKEN:
         return "Error: ORGANIZATION_ACCESS_TOKEN environment variable not set"
 
-    config = AuthleteConfig(api_key=ORGANIZATION_ACCESS_TOKEN)
+    config = AuthleteConfig(access_token=ORGANIZATION_ACCESS_TOKEN)
 
     data = {"locked": lock_flag}
 
@@ -338,7 +338,7 @@ async def get_authorized_applications(
         if not subject:
             return "Error: subject parameter is required"
 
-        config = AuthleteConfig(api_key=service_api_key)
+        config = AuthleteConfig(access_token=service_api_key)
 
         # Make request to Authlete API
         result = await make_authlete_request("GET", f"auth/authorization/application/{subject}", config)
@@ -384,7 +384,7 @@ async def update_client_tokens(
         except json.JSONDecodeError as e:
             return f"Error parsing token data JSON: {str(e)}"
 
-        config = AuthleteConfig(api_key=service_api_key)
+        config = AuthleteConfig(access_token=service_api_key)
 
         # Make request to Authlete API
         result = await make_authlete_request(
@@ -425,7 +425,7 @@ async def delete_client_tokens(
         if not client_id:
             return "Error: client_id parameter is required"
 
-        config = AuthleteConfig(api_key=service_api_key)
+        config = AuthleteConfig(access_token=service_api_key)
 
         # Make request to Authlete API
         result = await make_authlete_request("DELETE", f"auth/authorization/application/{subject}/{client_id}", config)
@@ -464,7 +464,7 @@ async def get_granted_scopes(
         if not client_id:
             return "Error: client_id parameter is required"
 
-        config = AuthleteConfig(api_key=service_api_key)
+        config = AuthleteConfig(access_token=service_api_key)
 
         # Make request to Authlete API
         result = await make_authlete_request("GET", f"auth/authorization/grant/{subject}/{client_id}", config)
@@ -503,7 +503,7 @@ async def delete_granted_scopes(
         if not client_id:
             return "Error: client_id parameter is required"
 
-        config = AuthleteConfig(api_key=service_api_key)
+        config = AuthleteConfig(access_token=service_api_key)
 
         # Make request to Authlete API
         result = await make_authlete_request("DELETE", f"auth/authorization/grant/{subject}/{client_id}", config)
@@ -537,7 +537,7 @@ async def get_requestable_scopes(
         if not client_id:
             return "Error: client_id parameter is required"
 
-        config = AuthleteConfig(api_key=service_api_key)
+        config = AuthleteConfig(access_token=service_api_key)
 
         # Make request to Authlete API
         result = await make_authlete_request("GET", f"client/requestable_scopes/{client_id}", config)
@@ -581,7 +581,7 @@ async def update_requestable_scopes(
         except json.JSONDecodeError as e:
             return f"Error parsing scopes data JSON: {str(e)}"
 
-        config = AuthleteConfig(api_key=service_api_key)
+        config = AuthleteConfig(access_token=service_api_key)
 
         # Make request to Authlete API
         result = await make_authlete_request("PUT", f"client/requestable_scopes/{client_id}", config, scopes_params)
@@ -615,7 +615,7 @@ async def delete_requestable_scopes(
         if not client_id:
             return "Error: client_id parameter is required"
 
-        config = AuthleteConfig(api_key=service_api_key)
+        config = AuthleteConfig(access_token=service_api_key)
 
         # Make request to Authlete API
         result = await make_authlete_request("DELETE", f"client/requestable_scopes/{client_id}", config)

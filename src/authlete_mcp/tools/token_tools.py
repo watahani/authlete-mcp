@@ -31,7 +31,7 @@ async def list_issued_tokens(
         if not ORGANIZATION_ACCESS_TOKEN:
             return "Error: ORGANIZATION_ACCESS_TOKEN environment variable not set"
 
-        config = AuthleteConfig(api_key=service_api_key)
+        config = AuthleteConfig(access_token=service_api_key)
 
         # Build query parameters
         params = {}
@@ -79,7 +79,7 @@ async def create_access_token(
         except json.JSONDecodeError as e:
             return f"Error parsing token data JSON: {str(e)}"
 
-        config = AuthleteConfig(api_key=service_api_key)
+        config = AuthleteConfig(access_token=service_api_key)
 
         # Make request to Authlete API
         result = await make_authlete_request("POST", "auth/token/create", config, token_params)
@@ -121,7 +121,7 @@ async def update_access_token(
         except json.JSONDecodeError as e:
             return f"Error parsing token data JSON: {str(e)}"
 
-        config = AuthleteConfig(api_key=service_api_key)
+        config = AuthleteConfig(access_token=service_api_key)
 
         # Make request to Authlete API
         result = await make_authlete_request("PUT", f"auth/token/update/{access_token}", config, token_params)
@@ -155,7 +155,7 @@ async def revoke_access_token(
         if not access_token:
             return "Error: access_token parameter is required"
 
-        config = AuthleteConfig(api_key=service_api_key)
+        config = AuthleteConfig(access_token=service_api_key)
 
         # Make request to Authlete API
         result = await make_authlete_request("POST", f"auth/token/revoke/{access_token}", config)
@@ -189,7 +189,7 @@ async def delete_access_token(
         if not access_token:
             return "Error: access_token parameter is required"
 
-        config = AuthleteConfig(api_key=service_api_key)
+        config = AuthleteConfig(access_token=service_api_key)
 
         # Make request to Authlete API
         result = await make_authlete_request("DELETE", f"auth/token/delete/{access_token}", config)

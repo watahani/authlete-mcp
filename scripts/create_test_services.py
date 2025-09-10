@@ -67,7 +67,7 @@ async def create_test_services():
         return False
 
     # Create config
-    config = AuthleteConfig(api_key=org_token)
+    config = AuthleteConfig(access_token=org_token)
 
     # Create services
     created_count = 0
