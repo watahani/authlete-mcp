@@ -23,7 +23,7 @@ async def make_authlete_request(
         # Use structured logging with PII masking
         log_request_response(logger, method, url, request_data=data)
 
-        headers = {"Authorization": f"Bearer {config.api_key}", "Content-Type": "application/json"}
+        headers = {"Authorization": f"Bearer {config.access_token}", "Content-Type": "application/json"}
 
         async with httpx.AsyncClient() as client:
             if method.upper() == "GET":
@@ -89,7 +89,7 @@ async def make_authlete_idp_request(
         # Use structured logging with PII masking
         log_request_response(logger, method, f"{url} (IdP API)", request_data=data)
 
-        headers = {"Authorization": f"Bearer {config.api_key}", "Content-Type": "application/json"}
+        headers = {"Authorization": f"Bearer {config.access_token}", "Content-Type": "application/json"}
 
         async with httpx.AsyncClient() as client:
             if method.upper() == "GET":

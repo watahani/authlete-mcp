@@ -84,7 +84,7 @@ async def cleanup_test_services():
         print("⚠️ ORGANIZATION_ID not set, using empty string")
 
     # Create config
-    config = AuthleteConfig(api_key=org_token)
+    config = AuthleteConfig(access_token=org_token)
 
     # List all services
     services = await list_all_services(config)

@@ -97,7 +97,7 @@ async def verify_jose(
         if not ORGANIZATION_ACCESS_TOKEN:
             return "Error: ORGANIZATION_ACCESS_TOKEN environment variable not set"
 
-        config = AuthleteConfig(api_key=service_api_key)
+        config = AuthleteConfig(access_token=service_api_key)
 
         # Make request to Authlete API
         result = await make_authlete_request("POST", "jose/verify", config, {"jose": jose_token})
