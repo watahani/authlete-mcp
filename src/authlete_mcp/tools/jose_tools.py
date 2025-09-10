@@ -77,12 +77,20 @@ async def generate_jose(
 async def verify_jose(
     jose_token: str = "",
     service_api_key: str = "",
+    mandatory_claims: str = "",
+    clock_skew: int = 0,
+    client_identifier: str = "",
+    signed_by_client: bool = False,
 ) -> str:
     """Verify JOSE (JSON Web Signature/Encryption) object.
 
     Args:
         jose_token: JOSE token to verify (required)
         service_api_key: Service ID (also known as Service API Key) (required)
+        mandatory_claims: Mandatory claims that are required to be included in the JOSE object (comma or space separated string, optional)
+        clock_skew: Allowable clock skew in seconds (optional, default: 0)
+        client_identifier: The identifier of the client application whose keys are required for verification (optional)
+        signed_by_client: Whether the signature of the JOSE object has been signed by a client application (optional, default: false)
     """
 
     try:
@@ -99,8 +107,27 @@ async def verify_jose(
 
         config = AuthleteConfig(access_token=service_api_key)
 
+        # Build request body
+        request_body = {"jose": jose_token}
+
+        # Add optional parameters if provided
+        if mandatory_claims:
+            # Convert string to array for Authlete API (expects string[])
+            if isinstance(mandatory_claims, str):
+                # Split by comma or space, then filter empty strings
+                claims_list = [claim.strip() for claim in mandatory_claims.replace(",", " ").split() if claim.strip()]
+                request_body["mandatoryClaims"] = claims_list
+            else:
+                request_body["mandatoryClaims"] = mandatory_claims
+        if clock_skew > 0:
+            request_body["clockSkew"] = clock_skew
+        if client_identifier:
+            request_body["clientIdentifier"] = client_identifier
+        if signed_by_client:
+            request_body["signedByClient"] = signed_by_client
+
         # Make request to Authlete API
-        result = await make_authlete_request("POST", "jose/verify", config, {"jose": jose_token})
+        result = await make_authlete_request("POST", f"{service_api_key}/jose/verify", config, request_body)
 
         return json.dumps(result, indent=2)
 
