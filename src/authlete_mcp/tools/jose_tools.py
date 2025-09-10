@@ -9,35 +9,60 @@ from ..config import ORGANIZATION_ACCESS_TOKEN, AuthleteConfig
 
 
 async def generate_jose(
-    jose_data: str = "{}",
-    service_api_key: str = "",
+    payload: str = "{}",
+    algorithm: str = "ES256",
+    jwk: str = "",
 ) -> str:
-    """Generate JOSE (JSON Web Signature/Encryption) object.
+    """Generate JOSE (JSON Web Signature/Encryption) object using mkjose.org API.
 
     Args:
-        jose_data: JSON string with JOSE generation parameters
-        service_api_key: Service ID (also known as Service API Key) (required)
+        payload: JSON string containing JWT payload (e.g., '{"sub": "user123", "exp": 1234567890}')
+        algorithm: Signing algorithm (e.g., "ES256", "RS256", "HS256")
+        jwk: JSON Web Key for signing as JSON string (required for ES256/RS256)
     """
 
     try:
-        # Validate required parameters
-        if not service_api_key:
-            return "Error: service_api_key parameter is required"
-
-        # Parse JOSE data
+        # Validate payload is valid JSON
         try:
-            jose_params = json.loads(jose_data)
+            json.loads(payload)  # Just validate, don't store
         except json.JSONDecodeError as e:
-            return f"Error parsing JOSE data JSON: {str(e)}"
+            return f"Error parsing payload JSON: {str(e)}"
 
-        # Check if organization token is available for JOSE operations
-        if not ORGANIZATION_ACCESS_TOKEN:
-            return "Error: ORGANIZATION_ACCESS_TOKEN environment variable not set"
+        # Validate JWK if provided
+        if jwk:
+            try:
+                json.loads(jwk)  # Just validate, don't store
+            except json.JSONDecodeError as e:
+                return f"Error parsing JWK JSON: {str(e)}"
 
-        config = AuthleteConfig(api_key=service_api_key)
+        # Make request to mkjose.org API (external service)
+        headers = {
+            "Content-Type": "application/x-www-form-urlencoded",
+        }
 
-        # Make request to Authlete API
-        result = await make_authlete_request("POST", "jose/generate", config, jose_params)
+        # Convert parameters to form data format expected by mkjose.org
+        form_data = {
+            "payload": payload,
+            "signing-alg": algorithm,
+        }
+
+        if jwk:
+            form_data["jwk-signing-alg"] = jwk
+
+        async with httpx.AsyncClient() as client:
+            response = await client.post(
+                "https://mkjose.org/api/jose/generate",
+                headers=headers,
+                data=form_data,
+            )
+            response.raise_for_status()
+
+            # mkjose.org may return plain text or JSON
+            try:
+                result = response.json()
+            except json.JSONDecodeError:
+                # If not JSON, return the text response
+                result = {"jwt": response.text.strip()}
 
         return json.dumps(result, indent=2)
 
