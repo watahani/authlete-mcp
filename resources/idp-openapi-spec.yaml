@@ -1614,12 +1614,16 @@ paths:
     get:
       tags:
       - api-server-api
-      summary: 'Get a list of all api servers available to you.
+      summary: 'Get a list of all api servers available to you, or to the organization
+        token.
 
-        Api servers associated with organizations that you are not a part of are not
-        returned.
+        Api servers associated with organizations that you or the org token
 
-        For admin users, all api servers are returned.'
+        are not a part of are not returned.
+
+        For admin users, all api servers are returned.
+
+        '
       operationId: getAllApiServers
       parameters:
       - name: Authorization
@@ -2346,6 +2350,18 @@ paths:
           description: OK
           content:
             application/json:
+              schema:
+                type: string
+  /config.js:
+    get:
+      tags:
+      - frontend-config-api
+      operationId: getFrontendConfig
+      responses:
+        '200':
+          description: OK
+          content:
+            application/javascript:
               schema:
                 type: string
   /api/user/{id}/auth:
