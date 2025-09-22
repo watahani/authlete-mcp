@@ -316,6 +316,9 @@ class OpenAPISearchDatabase:
         """データベースを最適化"""
         logger.info("データベースを最適化中...")
 
+        # FTSインデックスの作成
+        self.create_fts_indexes()
+
         # 統計情報を更新
         self.conn.execute("ANALYZE")
 
@@ -323,6 +326,48 @@ class OpenAPISearchDatabase:
         self.conn.execute("VACUUM")
 
         logger.info("データベース最適化完了")
+
+    def create_fts_indexes(self) -> None:
+        """FTSインデックスを作成"""
+        logger.info("FTSインデックスを作成中...")
+
+        try:
+            # FTS拡張をインストール・ロード
+            self.conn.execute("INSTALL fts")
+            self.conn.execute("LOAD fts")
+
+            # 既存のFTSインデックスを削除（もしあれば）
+            try:
+                self.conn.execute("PRAGMA drop_fts_index('api_endpoints')")
+                logger.debug("既存のapi_endpoints FTSインデックスを削除")
+            except Exception:
+                pass  # インデックスが存在しない場合はスキップ
+
+            try:
+                self.conn.execute("PRAGMA drop_fts_index('api_schemas')")
+                logger.debug("既存のapi_schemas FTSインデックスを削除")
+            except Exception:
+                pass  # インデックスが存在しない場合はスキップ
+
+            # api_endpointsテーブル用のFTSインデックス作成
+            self.conn.execute("""
+                PRAGMA create_fts_index(
+                    'api_endpoints', 'id', 'search_content'
+                )
+            """)
+            logger.info("api_endpoints FTSインデックス作成完了")
+
+            # api_schemasテーブル用のFTSインデックス作成
+            self.conn.execute("""
+                PRAGMA create_fts_index(
+                    'api_schemas', 'id', 'search_content'
+                )
+            """)
+            logger.info("api_schemas FTSインデックス作成完了")
+
+        except Exception as e:
+            logger.warning(f"FTSインデックス作成をスキップ: {e}")
+            logger.info("フォールバック: 通常のLIKE検索を使用します")
 
     def test_search(self) -> None:
         """検索機能のテスト"""
@@ -336,18 +381,21 @@ class OpenAPISearchDatabase:
 
             # DuckDBのFTSクエリ実行
             try:
-                # まずFTSクエリを試行
+                try:
+                    self.conn.execute("LOAD fts")
+                except Exception:
+                    pass  # May already be loaded
+                # まずFTSクエリを試行（正しいmatch_bm25構文を使用）
                 result = self.conn.execute(
                     """
                     SELECT path, method, summary, description, api_type, score
                     FROM (
-                        SELECT a.*, fts.score
-                        FROM api_endpoints a
-                        JOIN (SELECT rowid, score FROM fts_main_api_endpoints(?)) fts
-                        ON a.id = fts.rowid
-                        ORDER BY fts.score DESC
-                        LIMIT 3
-                    )
+                        SELECT *, fts_main_api_endpoints.match_bm25(id, ?) AS score
+                        FROM api_endpoints
+                    ) sq
+                    WHERE score IS NOT NULL
+                    ORDER BY score DESC
+                    LIMIT 3
                 """,
                     [query],
                 ).fetchall()
@@ -405,13 +453,13 @@ class OpenAPISearchDatabase:
             if result:
                 for row in result:
                     if len(row) == 6:  # api_type + スコア付き
-                        path, method, summary, desc, api_type, score = row
+                        path, method, summary, _, api_type, score = row
                         logger.info(f"  - [{api_type}] {method} {path}: {summary} (score: {score})")
                     elif len(row) == 5:  # api_typeなし、スコア付き（後方互換）
-                        path, method, summary, desc, score = row
+                        path, method, summary, _, score = row
                         logger.info(f"  - {method} {path}: {summary} (score: {score})")
                     else:  # その他
-                        path, method, summary, desc = row[:4]  # 最初の4つを使用
+                        path, method, summary = row[:3]  # 最初の3つを使用
                         logger.info(f"  - {method} {path}: {summary}")
             else:
                 logger.info("  検索結果なし")

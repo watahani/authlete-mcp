@@ -7,11 +7,11 @@ the local resources/openapi-spec.json file.
 """
 
 import asyncio
-import json
 import sys
 from pathlib import Path
 
 import httpx
+import yaml
 
 AUTHLETE_SPEC_URL = "https://docs.authlete.com/en/shared/3.0.0/spec"
 RESOURCES_DIR = Path(__file__).parent.parent / "resources"
@@ -19,7 +19,7 @@ OPENAPI_SPEC_FILE = RESOURCES_DIR / "openapi-spec.json"
 
 
 async def download_openapi_spec() -> dict:
-    """Download the OpenAPI spec JSON directly from Authlete docs."""
+    """Download the OpenAPI spec (YAML format) from Authlete docs."""
     print(f"Downloading OpenAPI spec from {AUTHLETE_SPEC_URL}...")
 
     async with httpx.AsyncClient(follow_redirects=True) as client:
@@ -27,13 +27,16 @@ async def download_openapi_spec() -> dict:
         response.raise_for_status()
 
         print(f"Downloaded {len(response.content)} bytes")
+        content_type = response.headers.get("content-type", "").lower()
+        print(f"Content-Type: {content_type}")
 
-        # Parse JSON directly
+        # Parse as YAML
         try:
-            spec_data = response.json()
+            spec_data = yaml.safe_load(response.text)
+            print("Parsed as YAML format")
             return spec_data
-        except json.JSONDecodeError as e:
-            raise ValueError(f"Failed to parse JSON response: {e}")
+        except yaml.YAMLError as e:
+            raise ValueError(f"Failed to parse YAML response: {e}")
 
 
 def save_openapi_spec(spec_data: dict) -> None:
@@ -42,6 +45,8 @@ def save_openapi_spec(spec_data: dict) -> None:
     RESOURCES_DIR.mkdir(exist_ok=True)
 
     # Save with pretty formatting
+    import json
+
     with open(OPENAPI_SPEC_FILE, "w", encoding="utf-8") as f:
         json.dump(spec_data, f, indent=2, ensure_ascii=False)
 
@@ -55,6 +60,8 @@ def check_for_changes(new_spec: dict) -> bool:
         return True
 
     try:
+        import json
+
         with open(OPENAPI_SPEC_FILE, encoding="utf-8") as f:
             existing_spec = json.load(f)
 
@@ -78,7 +85,7 @@ def check_for_changes(new_spec: dict) -> bool:
         print("No significant changes detected")
         return False
 
-    except (json.JSONDecodeError, FileNotFoundError):
+    except (Exception, FileNotFoundError):
         print("Error reading existing spec - will update")
         return True
 
@@ -93,7 +100,7 @@ async def main():
 
         # Validate it's a proper OpenAPI spec
         if "openapi" not in spec_data and "swagger" not in spec_data:
-            print("WARNING: Downloaded JSON doesn't appear to be an OpenAPI spec")
+            print("WARNING: Downloaded data doesn't appear to be an OpenAPI spec")
             print(f"Keys found: {list(spec_data.keys())}")
 
         # Check for changes
