@@ -138,21 +138,44 @@ class AuthleteApiSearcher:
             if filter_conditions:
                 additional_where = f"AND {' AND '.join(filter_conditions)}"
 
-            # FTS search with BM25 scoring
+            # Enhanced FTS search with path-aware scoring
+
+            # Split query into words for path match ratio calculation
+            query_words = [word.lower() for word in query.lower().split() if len(word) > 2]
+
+            # Calculate path match ratio dynamically
+            path_match_expressions = []
+            for word in query_words:
+                # Count how many characters of the path this word represents
+                path_match_expressions.append(
+                    f"LENGTH('{word}') * (CASE WHEN LOWER(path) LIKE '%{word}%' THEN 1 ELSE 0 END)"
+                )
+
+            path_match_ratio_expr = " + ".join(path_match_expressions) if path_match_expressions else "0"
+
             sql = f"""
             SELECT
                 path, method, operation_id, summary, description, tags,
-                sample_languages, sample_codes, score
+                sample_languages, sample_codes, enhanced_score AS score
             FROM (
-                SELECT *, fts_main_api_endpoints.match_bm25(id, ?) AS score
+                SELECT *,
+                    fts_main_api_endpoints.match_bm25(id, ?) AS base_score,
+                    (fts_main_api_endpoints.match_bm25(id, ?) +
+                     -- Path match ratio bonus: matched chars / total path length * 3.0
+                     (CAST(({path_match_ratio_expr}) AS FLOAT) / GREATEST(LENGTH(path), 1)) * 3.0 +
+                     -- Small bonus for summary matches
+                     CASE WHEN LOWER(summary) LIKE LOWER(?) THEN 0.5 ELSE 0.0 END
+                    ) AS enhanced_score
                 FROM api_endpoints
             ) sq
-            WHERE score IS NOT NULL {additional_where}
-            ORDER BY score DESC, path ASC
+            WHERE enhanced_score IS NOT NULL {additional_where}
+            ORDER BY enhanced_score DESC, path ASC
             LIMIT ?
             """
 
-            params = [query] + filter_params + [limit]
+            # Build parameters: query + query + summary_pattern + filters + limit
+            summary_pattern = f"%{query}%"
+            params = [query, query, summary_pattern] + filter_params + [limit]
             result = self.conn.execute(sql, params).fetchall()
 
             return self._format_search_results(result)
