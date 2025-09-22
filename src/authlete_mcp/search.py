@@ -99,7 +99,95 @@ class AuthleteApiSearcher:
     async def _natural_language_search(
         self, query: str, tag_filter: str | None, method_filter: str | None, limit: int
     ) -> list[dict[str, Any]]:
-        """Natural language search"""
+        """Natural language search with FTS BM25 scoring"""
+
+        # First try FTS (Full Text Search) with true BM25 scoring
+        fts_results = await self._try_fts_search(query, tag_filter, method_filter, limit)
+        if fts_results is not None:
+            logger.debug(f"Using FTS search for query: {query}")
+            return fts_results
+
+        # Fallback to LIKE-based search
+        logger.debug(f"Falling back to LIKE search for query: {query}")
+        return await self._fallback_like_search(query, tag_filter, method_filter, limit)
+
+    async def _try_fts_search(
+        self, query: str, tag_filter: str | None, method_filter: str | None, limit: int
+    ) -> list[dict[str, Any]] | None:
+        """Try FTS search with BM25 scoring"""
+        try:
+            # Ensure FTS extension is loaded
+            try:
+                self.conn.execute("LOAD fts")
+            except Exception:
+                pass  # May already be loaded
+
+            # Build additional WHERE conditions for filters
+            filter_conditions = []
+            filter_params = []
+
+            if method_filter:
+                filter_conditions.append("method = ?")
+                filter_params.append(method_filter.upper())
+
+            if tag_filter:
+                filter_conditions.append("tags LIKE ?")
+                filter_params.append(f"%{tag_filter}%")
+
+            additional_where = ""
+            if filter_conditions:
+                additional_where = f"AND {' AND '.join(filter_conditions)}"
+
+            # Enhanced FTS search with path-aware scoring
+
+            # Split query into words for path match ratio calculation
+            query_words = [word.lower() for word in query.lower().split() if len(word) > 2]
+
+            # Calculate path match ratio dynamically
+            path_match_expressions = []
+            for word in query_words:
+                # Count how many characters of the path this word represents
+                path_match_expressions.append(
+                    f"LENGTH('{word}') * (CASE WHEN LOWER(path) LIKE '%{word}%' THEN 1 ELSE 0 END)"
+                )
+
+            path_match_ratio_expr = " + ".join(path_match_expressions) if path_match_expressions else "0"
+
+            sql = f"""
+            SELECT
+                path, method, operation_id, summary, description, tags,
+                sample_languages, sample_codes, enhanced_score AS score
+            FROM (
+                SELECT *,
+                    fts_main_api_endpoints.match_bm25(id, ?) AS base_score,
+                    (fts_main_api_endpoints.match_bm25(id, ?) +
+                     -- Path match ratio bonus: matched chars / total path length * 3.0
+                     (CAST(({path_match_ratio_expr}) AS FLOAT) / GREATEST(LENGTH(path), 1)) * 3.0 +
+                     -- Small bonus for summary matches
+                     CASE WHEN LOWER(summary) LIKE LOWER(?) THEN 0.5 ELSE 0.0 END
+                    ) AS enhanced_score
+                FROM api_endpoints
+            ) sq
+            WHERE enhanced_score IS NOT NULL {additional_where}
+            ORDER BY enhanced_score DESC, path ASC
+            LIMIT ?
+            """
+
+            # Build parameters: query + query + summary_pattern + filters + limit
+            summary_pattern = f"%{query}%"
+            params = [query, query, summary_pattern] + filter_params + [limit]
+            result = self.conn.execute(sql, params).fetchall()
+
+            return self._format_search_results(result)
+
+        except Exception as e:
+            logger.debug(f"FTS search failed: {e}")
+            return None
+
+    async def _fallback_like_search(
+        self, query: str, tag_filter: str | None, method_filter: str | None, limit: int
+    ) -> list[dict[str, Any]]:
+        """Fallback LIKE-based search with custom scoring"""
 
         # Split query into words
         query_words = query.lower().split()

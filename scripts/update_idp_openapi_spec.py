@@ -7,7 +7,6 @@ the local resources/idp-openapi-spec.yaml file.
 """
 
 import asyncio
-import json
 import sys
 from pathlib import Path
 
@@ -17,7 +16,6 @@ import yaml
 AUTHLETE_IDP_SPEC_URL = "https://login.authlete.com/v3/api-docs.yaml"
 RESOURCES_DIR = Path(__file__).parent.parent / "resources"
 IDP_OPENAPI_SPEC_FILE = RESOURCES_DIR / "idp-openapi-spec.yaml"
-IDP_OPENAPI_SPEC_JSON_FILE = RESOURCES_DIR / "idp-openapi-spec.json"
 
 
 async def download_idp_openapi_spec() -> dict:
@@ -39,7 +37,7 @@ async def download_idp_openapi_spec() -> dict:
 
 
 def save_idp_openapi_spec(spec_data: dict) -> None:
-    """Save the IdP OpenAPI spec to resources/."""
+    """Save the IdP OpenAPI spec to resources/idp-openapi-spec.yaml."""
     # Ensure resources directory exists
     RESOURCES_DIR.mkdir(exist_ok=True)
 
@@ -47,22 +45,18 @@ def save_idp_openapi_spec(spec_data: dict) -> None:
     with open(IDP_OPENAPI_SPEC_FILE, "w", encoding="utf-8") as f:
         yaml.dump(spec_data, f, default_flow_style=False, allow_unicode=True, sort_keys=False)
 
-    # Save as JSON for compatibility
-    with open(IDP_OPENAPI_SPEC_JSON_FILE, "w", encoding="utf-8") as f:
-        json.dump(spec_data, f, indent=2, ensure_ascii=False)
-
-    print(f"IdP OpenAPI spec saved to {IDP_OPENAPI_SPEC_FILE} and {IDP_OPENAPI_SPEC_JSON_FILE}")
+    print(f"IdP OpenAPI spec saved to {IDP_OPENAPI_SPEC_FILE}")
 
 
 def check_for_changes(new_spec: dict) -> bool:
     """Check if the downloaded IdP spec is different from the existing one."""
-    if not IDP_OPENAPI_SPEC_JSON_FILE.exists():
+    if not IDP_OPENAPI_SPEC_FILE.exists():
         print("No existing IdP OpenAPI spec found - will create new file")
         return True
 
     try:
-        with open(IDP_OPENAPI_SPEC_JSON_FILE, encoding="utf-8") as f:
-            existing_spec = json.load(f)
+        with open(IDP_OPENAPI_SPEC_FILE, encoding="utf-8") as f:
+            existing_spec = yaml.safe_load(f)
 
         # Compare versions if available
         existing_version = existing_spec.get("info", {}).get("version")
@@ -84,7 +78,7 @@ def check_for_changes(new_spec: dict) -> bool:
         print("No significant changes detected")
         return False
 
-    except (json.JSONDecodeError, FileNotFoundError):
+    except (yaml.YAMLError, FileNotFoundError):
         print("Error reading existing spec - will update")
         return True
 
