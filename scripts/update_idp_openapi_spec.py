@@ -14,7 +14,7 @@ from pathlib import Path
 import httpx
 import yaml
 
-AUTHLETE_IDP_SPEC_URL = "https://dev-idp.authlete.net/v3/api-docs.yaml"
+AUTHLETE_IDP_SPEC_URL = "https://login.authlete.com/v3/api-docs.yaml"
 RESOURCES_DIR = Path(__file__).parent.parent / "resources"
 IDP_OPENAPI_SPEC_FILE = RESOURCES_DIR / "idp-openapi-spec.yaml"
 IDP_OPENAPI_SPEC_JSON_FILE = RESOURCES_DIR / "idp-openapi-spec.json"
