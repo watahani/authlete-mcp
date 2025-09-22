@@ -4,6 +4,7 @@ import logging
 
 from mcp.server.fastmcp import FastMCP
 
+from .config import check_deprecated_env_vars
 from .tools import (
     client_tools,
     jose_tools,
@@ -70,10 +71,15 @@ mcp.tool()(search_tools.get_schema_detail)
 
 # Utility Tools
 mcp.tool()(utility_tools.generate_jwks)
+mcp.tool()(utility_tools.list_api_servers)
+mcp.tool()(utility_tools.set_api_server)
+mcp.tool()(utility_tools.get_current_api_server_info)
 
 
 def run():
     """Run the MCP server."""
+    # Check for deprecated environment variables
+    check_deprecated_env_vars()
     mcp.run()
 
 

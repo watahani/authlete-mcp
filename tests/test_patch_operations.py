@@ -136,6 +136,9 @@ async def test_patch_client_integration():
         async with ClientSession(read_stream, write_stream) as session:
             await session.initialize()
 
+            # Set API server to jp.authlete.com (ID: 53285)
+            await session.call_tool("set_api_server", {"apiServerId": "53285"})
+
             try:
                 # 1. Create test service
                 service_result = await session.call_tool(
@@ -273,6 +276,9 @@ async def test_patch_service_integration():
     async with stdio_client(server_params) as (read_stream, write_stream):
         async with ClientSession(read_stream, write_stream) as session:
             await session.initialize()
+
+            # Set API server to jp.authlete.com (ID: 53285)
+            await session.call_tool("set_api_server", {"apiServerId": "53285"})
 
             try:
                 # 1. Create test service

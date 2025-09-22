@@ -29,6 +29,9 @@ async def test_delete_service_with_real_credentials():
         async with ClientSession(read_stream, write_stream) as session:
             await session.initialize()
 
+            # Set API server to jp.authlete.com (ID: 53285)
+            await session.call_tool("set_api_server", {"apiServerId": "53285"})
+
             # まずサービスを作成
             create_result = await session.call_tool(
                 "create_service", {"name": "pytest-deletion-test", "description": "Pytest deletion test service"}
@@ -46,7 +49,9 @@ async def test_delete_service_with_real_credentials():
                 service_id = str(service_data.get("apiKey"))
 
                 # 削除を試行
-                delete_result = await session.call_tool("delete_service", {"service_id": service_id})
+                delete_result = await session.call_tool(
+                    "delete_service", {"service_id": service_id, "apiServerId": "53285"}
+                )
 
                 assert delete_result.content
                 delete_response = delete_result.content[0].text

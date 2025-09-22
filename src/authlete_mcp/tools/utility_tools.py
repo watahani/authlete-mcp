@@ -5,6 +5,9 @@ import json
 import httpx
 from mcp.server.fastmcp import Context
 
+from ..api.client import make_authlete_idp_request
+from ..config import ORGANIZATION_ACCESS_TOKEN, get_current_api_server, set_current_api_server
+
 
 async def generate_jwks(
     kty: str = "rsa",
@@ -86,3 +89,120 @@ async def generate_jwks(
         return f"Error: Invalid JSON response - {str(e)}"
     except Exception as e:
         return f"Error generating JWKS: {str(e)}"
+
+
+async def list_api_servers() -> str:
+    """List all API servers available to the organization token.
+
+    This function dynamically retrieves the list of API servers and their IDs
+    from the Authlete IdP API, eliminating the need to hardcode apiServerId
+    in environment variables.
+
+    Returns:
+        JSON string containing the list of API servers with their IDs and URLs
+    """
+    if not ORGANIZATION_ACCESS_TOKEN:
+        return "Error: ORGANIZATION_ACCESS_TOKEN environment variable not set"
+
+    try:
+        response = await make_authlete_idp_request(
+            endpoint="apiserver",
+            method="GET",
+            access_token=ORGANIZATION_ACCESS_TOKEN,
+        )
+
+        return json.dumps(response, indent=2)
+
+    except Exception as e:
+        return f"Error listing API servers: {str(e)}"
+
+
+async def set_api_server(apiServerId: str, ctx: Context = None) -> str:
+    """Set the current API server for all Authlete API calls.
+
+    This function sets the API server to be used for all subsequent Authlete API calls.
+    You must call this function before using other Authlete API tools.
+
+    Args:
+        apiServerId: API Server ID to set as current - use list_api_servers to see available options
+
+    Returns:
+        JSON string confirming the API server has been set
+    """
+    if not ORGANIZATION_ACCESS_TOKEN:
+        return "Error: ORGANIZATION_ACCESS_TOKEN environment variable not set"
+
+    if not apiServerId:
+        return (
+            "Error: apiServerId parameter is required. "
+            "Please use the 'list_api_servers' tool to see available API servers and their IDs, "
+            "then specify the desired apiServerId."
+        )
+
+    try:
+        # Get the list of available API servers to validate the ID and get the URL
+        response = await make_authlete_idp_request(
+            endpoint="apiserver",
+            method="GET",
+            access_token=ORGANIZATION_ACCESS_TOKEN,
+        )
+
+        if not response or len(response) == 0:
+            return "Error: No API servers found for this organization"
+
+        # Find the server with the specified ID
+        target_server = None
+        for server in response:
+            if str(server["id"]) == str(apiServerId):
+                target_server = server
+                break
+
+        if not target_server:
+            available_ids = [str(server["id"]) for server in response]
+            return (
+                f"Error: API server with ID '{apiServerId}' not found. "
+                f"Available API server IDs: {', '.join(available_ids)}"
+            )
+
+        # Set the current API server
+        set_current_api_server(
+            api_server_id=target_server["id"],
+            api_server_url=target_server["apiServerUrl"],
+            description=target_server.get("description", ""),
+        )
+
+        result = {
+            "message": "API server set successfully",
+            "apiServerId": target_server["id"],
+            "apiServerUrl": target_server["apiServerUrl"],
+            "description": target_server.get("description", ""),
+        }
+
+        return json.dumps(result, indent=2)
+
+    except Exception as e:
+        return f"Error setting API server: {str(e)}"
+
+
+async def get_current_api_server_info(ctx: Context = None) -> str:
+    """Get the currently configured API server information.
+
+    Returns:
+        JSON string containing current API server configuration or instructions to set one
+    """
+    current_server = get_current_api_server()
+
+    if current_server:
+        result = {
+            "message": "Current API server configuration",
+            "apiServerId": current_server["id"],
+            "apiServerUrl": current_server["url"],
+            "description": current_server.get("description", ""),
+        }
+        return json.dumps(result, indent=2)
+    else:
+        return (
+            "No API server is currently configured. "
+            "Please use the 'list_api_servers' tool to see available options, "
+            "then use 'set_api_server' to configure your preferred API server."
+        )

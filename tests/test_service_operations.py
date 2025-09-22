@@ -56,6 +56,16 @@ async def test_create_service():
         async with ClientSession(read_stream, write_stream) as session:
             await session.initialize()
 
+            # Set API server to jp.authlete.com (ID: 53285)
+            set_result = await session.call_tool("set_api_server", {"apiServerId": "53285"})
+
+            assert set_result.content
+            set_response = set_result.content[0].text
+
+            # If API server setting fails due to invalid credentials, skip the test
+            if "Error" in set_response and ("Unknown user" in set_response or "invalid access token" in set_response):
+                pytest.skip("Invalid access token - skipping integration test")
+
             result = await session.call_tool(
                 "create_service", {"name": "pytest-test-service", "description": "Test service created by pytest"}
             )
