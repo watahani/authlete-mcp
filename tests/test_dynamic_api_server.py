@@ -2,11 +2,31 @@
 
 import json
 import os
+from contextlib import ExitStack
 from unittest.mock import AsyncMock, patch
 
 import pytest
 
 from src.authlete_mcp import config
+
+
+def _patch_org_env(org_id: str = "12345"):
+    """Return patches that align module-level constants with test credentials."""
+
+    return (
+        patch.dict(
+            os.environ,
+            {
+                "ORGANIZATION_ACCESS_TOKEN": "test_token",
+                "ORGANIZATION_ID": org_id,
+            },
+        ),
+        patch("src.authlete_mcp.config.ORGANIZATION_ACCESS_TOKEN", "test_token"),
+        patch("src.authlete_mcp.config.DEFAULT_ORGANIZATION_ID", org_id),
+        patch("src.authlete_mcp.tools.utility_tools.ORGANIZATION_ACCESS_TOKEN", "test_token"),
+        patch("src.authlete_mcp.tools.service_tools.ORGANIZATION_ACCESS_TOKEN", "test_token"),
+        patch("src.authlete_mcp.tools.service_tools.DEFAULT_ORGANIZATION_ID", org_id),
+    )
 
 
 @pytest.mark.asyncio
@@ -51,17 +71,21 @@ async def test_auto_detect_api_server_from_url():
         {"id": 63294, "apiServerUrl": "https://eu.authlete.com", "description": "EU API Server"},
     ]
 
-    with patch.dict(os.environ, {"ORGANIZATION_ACCESS_TOKEN": "test_token"}):
-        with patch("src.authlete_mcp.config.AUTHLETE_API_URL", "https://jp.authlete.com"):
-            with patch("src.authlete_mcp.api.client.make_authlete_idp_request", new_callable=AsyncMock) as mock_request:
-                mock_request.return_value = mock_response
+    with ExitStack() as stack:
+        for ctx in _patch_org_env():
+            stack.enter_context(ctx)
+        stack.enter_context(patch("src.authlete_mcp.config.AUTHLETE_API_URL", "https://jp.authlete.com"))
+        mock_request = stack.enter_context(
+            patch("src.authlete_mcp.api.client.make_authlete_idp_request", new_callable=AsyncMock)
+        )
+        mock_request.return_value = mock_response
 
-                result = await config.auto_detect_api_server_from_url()
+        result = await config.auto_detect_api_server_from_url()
 
-                assert result is not None
-                assert result["id"] == 53285
-                assert result["url"] == "https://jp.authlete.com"
-                assert result["description"] == "JP API Server"
+        assert result is not None
+        assert result["id"] == 53285
+        assert result["url"] == "https://jp.authlete.com"
+        assert result["description"] == "JP API Server"
 
 
 @pytest.mark.asyncio
@@ -70,15 +94,20 @@ async def test_auto_detect_api_server_not_found():
     """Test auto-detection when API server URL is not found."""
     mock_response = [{"id": 53285, "apiServerUrl": "https://jp.authlete.com", "description": "JP API Server"}]
 
-    with patch.dict(os.environ, {"ORGANIZATION_ACCESS_TOKEN": "test_token"}):
-        # Directly patch the AUTHLETE_API_URL constant in the config module
-        with patch("src.authlete_mcp.config.AUTHLETE_API_URL", "https://completely-different.example.com"):
-            with patch("src.authlete_mcp.api.client.make_authlete_idp_request", new_callable=AsyncMock) as mock_request:
-                mock_request.return_value = mock_response
+    with ExitStack() as stack:
+        for ctx in _patch_org_env():
+            stack.enter_context(ctx)
+        stack.enter_context(
+            patch("src.authlete_mcp.config.AUTHLETE_API_URL", "https://completely-different.example.com")
+        )
+        mock_request = stack.enter_context(
+            patch("src.authlete_mcp.api.client.make_authlete_idp_request", new_callable=AsyncMock)
+        )
+        mock_request.return_value = mock_response
 
-                result = await config.auto_detect_api_server_from_url()
+        result = await config.auto_detect_api_server_from_url()
 
-                assert result is None
+        assert result is None
 
 
 @pytest.mark.asyncio
@@ -98,16 +127,20 @@ async def test_ensure_api_server_configured():
 
     mock_response = [{"id": 53285, "apiServerUrl": "https://jp.authlete.com", "description": "JP API Server"}]
 
-    with patch.dict(os.environ, {"ORGANIZATION_ACCESS_TOKEN": "test_token"}):
-        with patch("src.authlete_mcp.config.AUTHLETE_API_URL", "https://jp.authlete.com"):
-            with patch("src.authlete_mcp.api.client.make_authlete_idp_request", new_callable=AsyncMock) as mock_request:
-                mock_request.return_value = mock_response
+    with ExitStack() as stack:
+        for ctx in _patch_org_env():
+            stack.enter_context(ctx)
+        stack.enter_context(patch("src.authlete_mcp.config.AUTHLETE_API_URL", "https://jp.authlete.com"))
+        mock_request = stack.enter_context(
+            patch("src.authlete_mcp.api.client.make_authlete_idp_request", new_callable=AsyncMock)
+        )
+        mock_request.return_value = mock_response
 
-                result = await config.ensure_api_server_configured()
+        result = await config.ensure_api_server_configured()
 
-                assert result is None  # No error when auto-detection succeeds
-                assert config.get_api_server_id() == 53285
-                assert config.get_api_server_url() == "https://jp.authlete.com"
+        assert result is None  # No error when auto-detection succeeds
+        assert config.get_api_server_id() == 53285
+        assert config.get_api_server_url() == "https://jp.authlete.com"
 
 
 @pytest.mark.asyncio
@@ -116,25 +149,32 @@ async def test_ensure_api_server_configured_no_auto_detect():
     """Test ensure_api_server_configured when auto-detection fails."""
     config.clear_current_api_server()
 
-    with patch.dict(os.environ, {"ORGANIZATION_ACCESS_TOKEN": "test_token"}):
-        with patch("src.authlete_mcp.config.AUTHLETE_API_URL", "https://completely-different.example.com"):
-            with patch("src.authlete_mcp.api.client.make_authlete_idp_request", new_callable=AsyncMock) as mock_request:
-                mock_request.return_value = []  # No servers found
+    with ExitStack() as stack:
+        for ctx in _patch_org_env():
+            stack.enter_context(ctx)
+        stack.enter_context(
+            patch("src.authlete_mcp.config.AUTHLETE_API_URL", "https://completely-different.example.com")
+        )
+        mock_request = stack.enter_context(
+            patch("src.authlete_mcp.api.client.make_authlete_idp_request", new_callable=AsyncMock)
+        )
+        mock_request.return_value = []  # No servers found
 
-                result = await config.ensure_api_server_configured()
+        result = await config.ensure_api_server_configured()
 
-                assert result is not None
-                assert "No API server is currently configured" in result
-                assert "list_api_servers" in result
+        assert result is not None
+        assert "No API server is currently configured" in result
+        assert "list_api_servers" in result
 
 
 def test_check_deprecated_env_vars(caplog):
     """Test deprecated environment variable warning."""
-    with patch.dict(os.environ, {"AUTHLETE_API_SERVER_ID": "12345"}):
+    with patch.dict(os.environ, {"AUTHLETE_API_SERVER_ID": "12345", "AUTHLETE_BASE_URL": "https://old"}):
         config.check_deprecated_env_vars()
 
         assert "deprecated" in caplog.text
         assert "AUTHLETE_API_SERVER_ID" in caplog.text
+        assert "AUTHLETE_BASE_URL" in caplog.text
 
 
 @pytest.mark.asyncio
@@ -148,19 +188,21 @@ async def test_list_api_servers_function():
         {"id": 63294, "apiServerUrl": "https://eu.authlete.com", "description": "EU API Server"},
     ]
 
-    with patch.dict(os.environ, {"ORGANIZATION_ACCESS_TOKEN": "test_token"}):
-        with patch(
-            "src.authlete_mcp.tools.utility_tools.make_authlete_idp_request", new_callable=AsyncMock
-        ) as mock_request:
-            mock_request.return_value = mock_response
+    with ExitStack() as stack:
+        for ctx in _patch_org_env():
+            stack.enter_context(ctx)
+        mock_request = stack.enter_context(
+            patch("src.authlete_mcp.tools.utility_tools.make_authlete_idp_request", new_callable=AsyncMock)
+        )
+        mock_request.return_value = mock_response
 
-            result = await list_api_servers()
+        result = await list_api_servers()
 
-            assert "Error:" not in result
-            response_data = json.loads(result)
-            assert len(response_data) == 2
-            assert response_data[0]["id"] == 53285
-            assert response_data[1]["id"] == 63294
+        assert "Error:" not in result
+        response_data = json.loads(result)
+        assert len(response_data) == 2
+        assert response_data[0]["id"] == 53285
+        assert response_data[1]["id"] == 63294
 
 
 @pytest.mark.asyncio
@@ -171,20 +213,24 @@ async def test_set_api_server_function():
 
     mock_response = [{"id": 53285, "apiServerUrl": "https://jp.authlete.com", "description": "JP API Server"}]
 
-    with patch.dict(os.environ, {"ORGANIZATION_ACCESS_TOKEN": "test_token"}):
-        with patch("src.authlete_mcp.api.client.make_authlete_idp_request", new_callable=AsyncMock) as mock_request:
-            mock_request.return_value = mock_response
+    with ExitStack() as stack:
+        for ctx in _patch_org_env():
+            stack.enter_context(ctx)
+        mock_request = stack.enter_context(
+            patch("src.authlete_mcp.api.client.make_authlete_idp_request", new_callable=AsyncMock)
+        )
+        mock_request.return_value = mock_response
 
-            # Clear any existing state
-            config.clear_current_api_server()
+        # Clear any existing state
+        config.clear_current_api_server()
 
-            result = await set_api_server("53285")
+        result = await set_api_server("53285")
 
-            assert "Error:" not in result
-            response_data = json.loads(result)
-            assert response_data["message"] == "API server set successfully"
-            assert response_data["apiServerId"] == 53285
-            assert response_data["apiServerUrl"] == "https://jp.authlete.com"
+        assert "Error:" not in result
+        response_data = json.loads(result)
+        assert response_data["message"] == "API server set successfully"
+        assert response_data["apiServerId"] == 53285
+        assert response_data["apiServerUrl"] == "https://jp.authlete.com"
 
 
 @pytest.mark.asyncio
@@ -195,14 +241,18 @@ async def test_set_api_server_invalid_id():
 
     mock_response = [{"id": 53285, "apiServerUrl": "https://jp.authlete.com", "description": "JP API Server"}]
 
-    with patch.dict(os.environ, {"ORGANIZATION_ACCESS_TOKEN": "test_token"}):
-        with patch("src.authlete_mcp.api.client.make_authlete_idp_request", new_callable=AsyncMock) as mock_request:
-            mock_request.return_value = mock_response
+    with ExitStack() as stack:
+        for ctx in _patch_org_env():
+            stack.enter_context(ctx)
+        mock_request = stack.enter_context(
+            patch("src.authlete_mcp.api.client.make_authlete_idp_request", new_callable=AsyncMock)
+        )
+        mock_request.return_value = mock_response
 
-            result = await set_api_server("99999")
+        result = await set_api_server("99999")
 
-            assert "API server with ID '99999' not found" in result
-            assert "Available API server IDs: 53285" in result
+        assert "API server with ID '99999' not found" in result
+        assert "Available API server IDs: 53285" in result
 
 
 @pytest.mark.asyncio
@@ -239,14 +289,16 @@ async def test_create_service_with_configured_server():
     # Mock service creation response
     mock_service_response = {"service": {"number": 123456, "serviceName": "Test Service", "apiKey": 987654321}}
 
-    with patch.dict(os.environ, {"ORGANIZATION_ACCESS_TOKEN": "test_token", "ORGANIZATION_ID": "12345"}):
-        with patch(
-            "src.authlete_mcp.tools.service_tools.make_authlete_idp_request", new_callable=AsyncMock
-        ) as mock_request:
-            mock_request.return_value = mock_service_response
+    with ExitStack() as stack:
+        for ctx in _patch_org_env():
+            stack.enter_context(ctx)
+        mock_request = stack.enter_context(
+            patch("src.authlete_mcp.tools.service_tools.make_authlete_idp_request", new_callable=AsyncMock)
+        )
+        mock_request.return_value = mock_service_response
 
-            result = await create_service("Test Service", "Test Description")
+        result = await create_service("Test Service", "Test Description")
 
-            assert "Error:" not in result
-            response_data = json.loads(result)
-            assert response_data["service"]["serviceName"] == "Test Service"
+        assert "Error:" not in result
+        response_data = json.loads(result)
+        assert response_data["service"]["serviceName"] == "Test Service"

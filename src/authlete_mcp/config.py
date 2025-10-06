@@ -7,7 +7,7 @@ from typing import Any
 from pydantic import BaseModel, Field
 
 # Configuration constants
-AUTHLETE_API_URL = os.getenv("AUTHLETE_API_URL", "https://jp.authlete.com")
+AUTHLETE_API_URL = os.getenv("AUTHLETE_API_URL") or os.getenv("AUTHLETE_BASE_URL") or "https://jp.authlete.com"
 AUTHLETE_IDP_URL = os.getenv("AUTHLETE_IDP_URL", "https://login.authlete.com")
 DEFAULT_API_SERVER_ID = os.getenv("AUTHLETE_API_SERVER_ID", "53285")
 ORGANIZATION_ACCESS_TOKEN = os.getenv("ORGANIZATION_ACCESS_TOKEN", "")
@@ -198,4 +198,10 @@ def check_deprecated_env_vars() -> None:
         logger.warning(
             "AUTHLETE_API_SERVER_ID environment variable is deprecated. "
             "Use the 'list_api_servers' and 'set_api_server' tools instead for dynamic API server selection."
+        )
+
+    if os.getenv("AUTHLETE_BASE_URL"):
+        logger.warning(
+            "AUTHLETE_BASE_URL environment variable is deprecated. "
+            "Use AUTHLETE_API_URL or the API server tools to manage your defaults."
         )

@@ -250,7 +250,8 @@ The unified server supports the following environment variables:
 - `ORGANIZATION_ID`: Your organization ID (required for service creation and deletion operations)
 
 ### Optional Configuration
-- `AUTHLETE_API_URL`: Optional default Authlete API URL
+- `AUTHLETE_API_URL`: Optional default Authlete API URL (falls back to `https://jp.authlete.com` when unset)
+- `AUTHLETE_BASE_URL`: Legacy alias for `AUTHLETE_API_URL` (supported for backward compatibility but deprecated)
 - `AUTHLETE_API_SERVER_ID`: Optional default API server ID. When provided together with `AUTHLETE_API_URL`, the pair becomes the starting configuration for all tools.
 - `AUTHLETE_IDP_URL`: Authlete IdP URL (default: `https://login.authlete.com`)
 - `LOG_LEVEL`: Logging level (default: `INFO`) - Set to `DEBUG` for detailed HTTP request/response logging with PII masking

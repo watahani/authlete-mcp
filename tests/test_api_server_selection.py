@@ -7,6 +7,7 @@ import pytest
 ENV_KEYS = [
     "AUTHLETE_API_SERVER_ID",
     "AUTHLETE_API_URL",
+    "AUTHLETE_BASE_URL",
     "ORGANIZATION_ACCESS_TOKEN",
     "ORGANIZATION_ID",
 ]
@@ -74,6 +75,38 @@ async def test_env_default_api_server_used(monkeypatch: pytest.MonkeyPatch):
     current = config.get_current_api_server()
     assert current == {"id": 12345, "url": "https://env.example", "description": ""}
     assert calls and calls[0][0] == "apiserver"
+
+
+@pytest.mark.asyncio
+async def test_env_base_url_fallback(monkeypatch: pytest.MonkeyPatch):
+    config, _, _ = reload_modules(
+        monkeypatch,
+        {
+            "AUTHLETE_BASE_URL": "https://env.example",
+            "ORGANIZATION_ACCESS_TOKEN": "token",
+            "ORGANIZATION_ID": "999",
+        },
+    )
+
+    import src.authlete_mcp.api.client as api_client
+
+    async def fake_make_authlete_idp_request(
+        endpoint: str,
+        method: str = "GET",
+        access_token: str | None = None,
+        data: dict[str, Any] | None = None,
+        config: Any = None,
+    ) -> Any:
+        assert endpoint == "apiserver"
+        return [{"id": 777, "apiServerUrl": "https://env.example"}]
+
+    monkeypatch.setattr(api_client, "make_authlete_idp_request", fake_make_authlete_idp_request)
+
+    api_server_id, error = await config.ensure_api_server_ready()
+
+    assert error is None
+    assert api_server_id == 777
+    assert config.get_current_api_server()["url"] == "https://env.example"
 
 
 @pytest.mark.asyncio
