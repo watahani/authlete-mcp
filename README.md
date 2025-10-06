@@ -162,6 +162,7 @@ docker run -it --rm \
 cat > .env << EOF
 ORGANIZATION_ACCESS_TOKEN=your-organization-token
 ORGANIZATION_ID=your-organization-id
+# Optional but recommended when you want a deterministic default
 AUTHLETE_API_URL=https://jp.authlete.com
 AUTHLETE_API_SERVER_ID=53285
 EOF
@@ -190,14 +191,16 @@ Add the unified server to your Claude Desktop configuration:
       "env": {
         "ORGANIZATION_ACCESS_TOKEN": "your-organization-access-token",
         "ORGANIZATION_ID": "your-organization-id", 
-        "AUTHLETE_API_URL": "https://jp.authlete.com",
-        "AUTHLETE_API_SERVER_ID": "53285",
+        // "AUTHLETE_API_URL": "https://jp.authlete.com",
+        // "AUTHLETE_API_SERVER_ID": "53285",
         "LOG_LEVEL": "INFO"
       }
     }
   }
 }
 ```
+
+`AUTHLETE_API_URL` and `AUTHLETE_API_SERVER_ID` act as optional defaults—you can omit them and call `set_api_server` after connecting if you prefer to choose dynamically.
 
 #### Docker Installation
 
@@ -212,8 +215,8 @@ You can also run the server using Docker:
         "run", "--rm", "-i",
         "-e", "ORGANIZATION_ACCESS_TOKEN=your-organization-access-token",
         "-e", "ORGANIZATION_ID=your-organization-id",
-        "-e", "AUTHLETE_API_URL=https://jp.authlete.com",
-        "-e", "AUTHLETE_API_SERVER_ID=53285",
+        // "-e", "AUTHLETE_API_URL=https://jp.authlete.com",
+        // "-e", "AUTHLETE_API_SERVER_ID=53285",
         "-e", "LOG_LEVEL=INFO",
         "ghcr.io/watahani/authlete-mcp:latest"
       ]
@@ -221,6 +224,8 @@ You can also run the server using Docker:
   }
 }
 ```
+
+The Docker example shows the optional defaults as well; remove them if you want the MCP client to decide the API server through `set_api_server`.
 
 ### Direct Usage
 
@@ -231,8 +236,9 @@ uv run python main.py
 # Using custom organization access token
 ORGANIZATION_ACCESS_TOKEN=your-token uv run python main.py
 
-# Run with specific authlete server (EU region)
+# Run with specific Authlete server defaults (optional)
 AUTHLETE_API_URL=https://eu.authlete.com AUTHLETE_API_SERVER_ID=63294 uv run python main.py
+# You can also omit these and call `set_api_server` from the client to choose dynamically
 ```
 
 ## Configuration
@@ -244,14 +250,18 @@ The unified server supports the following environment variables:
 - `ORGANIZATION_ID`: Your organization ID (required for service creation and deletion operations)
 
 ### Optional Configuration
-- `AUTHLETE_API_URL`: Authlete API URL (default: `https://jp.authlete.com`)
-- `AUTHLETE_API_SERVER_ID`: API Server ID (default: `53285` for JP)
+- `AUTHLETE_API_URL`: Optional default Authlete API URL
+- `AUTHLETE_API_SERVER_ID`: Optional default API server ID. When provided together with `AUTHLETE_API_URL`, the pair becomes the starting configuration for all tools.
 - `AUTHLETE_IDP_URL`: Authlete IdP URL (default: `https://login.authlete.com`)
 - `LOG_LEVEL`: Logging level (default: `INFO`) - Set to `DEBUG` for detailed HTTP request/response logging with PII masking
 
-**⚠️ Important**: `AUTHLETE_API_URL` and `AUTHLETE_API_SERVER_ID` must be configured as a pair:
-- **JP region**: `AUTHLETE_API_URL=https://jp.authlete.com` + `AUTHLETE_API_SERVER_ID=53285`
-- **EU region**: `AUTHLETE_API_URL=https://eu.authlete.com` + `AUTHLETE_API_SERVER_ID=63294`
+**API server precedence**
+1. Tool parameters (e.g., `create_service_detailed(apiServerId=...)`) and the `set_api_server` tool
+2. Currently configured server from a previous `set_api_server` call or auto-detection within the same process
+3. Environment defaults supplied via `AUTHLETE_API_URL` and `AUTHLETE_API_SERVER_ID`
+4. Automatic discovery based on `AUTHLETE_API_URL` (if provided) followed by an instruction to run `list_api_servers`/`set_api_server` when no match is found
+
+When you supply environment defaults, specify both values so the server is selected deterministically (examples: `JP` region → `AUTHLETE_API_URL=https://jp.authlete.com`, `AUTHLETE_API_SERVER_ID=53285`; `EU` region → `AUTHLETE_API_URL=https://eu.authlete.com`, `AUTHLETE_API_SERVER_ID=63294`).
 
 ### API Search Requirements
 - `resources/authlete_apis.duckdb`: Search database file (created by `scripts/create_search_database.py`)
