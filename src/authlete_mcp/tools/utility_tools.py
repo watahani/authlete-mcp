@@ -6,7 +6,7 @@ import httpx
 from mcp.server.fastmcp import Context
 
 from ..api.client import make_authlete_idp_request
-from ..config import ORGANIZATION_ACCESS_TOKEN, get_current_api_server, set_current_api_server
+from ..config import ORGANIZATION_ACCESS_TOKEN, configure_api_server_by_id, get_current_api_server
 
 
 async def generate_jwks(
@@ -139,49 +139,18 @@ async def set_api_server(apiServerId: str, ctx: Context = None) -> str:
             "then specify the desired apiServerId."
         )
 
-    try:
-        # Get the list of available API servers to validate the ID and get the URL
-        response = await make_authlete_idp_request(
-            endpoint="apiserver",
-            method="GET",
-            access_token=ORGANIZATION_ACCESS_TOKEN,
-        )
+    server_info, error = await configure_api_server_by_id(apiServerId)
+    if error:
+        return error
 
-        if not response or len(response) == 0:
-            return "Error: No API servers found for this organization"
+    result = {
+        "message": "API server set successfully",
+        "apiServerId": server_info["id"],
+        "apiServerUrl": server_info.get("apiServerUrl", ""),
+        "description": server_info.get("description", ""),
+    }
 
-        # Find the server with the specified ID
-        target_server = None
-        for server in response:
-            if str(server["id"]) == str(apiServerId):
-                target_server = server
-                break
-
-        if not target_server:
-            available_ids = [str(server["id"]) for server in response]
-            return (
-                f"Error: API server with ID '{apiServerId}' not found. "
-                f"Available API server IDs: {', '.join(available_ids)}"
-            )
-
-        # Set the current API server
-        set_current_api_server(
-            api_server_id=target_server["id"],
-            api_server_url=target_server["apiServerUrl"],
-            description=target_server.get("description", ""),
-        )
-
-        result = {
-            "message": "API server set successfully",
-            "apiServerId": target_server["id"],
-            "apiServerUrl": target_server["apiServerUrl"],
-            "description": target_server.get("description", ""),
-        }
-
-        return json.dumps(result, indent=2)
-
-    except Exception as e:
-        return f"Error setting API server: {str(e)}"
+    return json.dumps(result, indent=2)
 
 
 async def get_current_api_server_info(ctx: Context = None) -> str:

@@ -5,7 +5,7 @@ import json
 from mcp.server.fastmcp import Context
 
 from ..api.client import make_authlete_idp_request, make_authlete_request
-from ..config import DEFAULT_ORGANIZATION_ID, ORGANIZATION_ACCESS_TOKEN, AuthleteConfig, get_api_server_id
+from ..config import DEFAULT_ORGANIZATION_ID, ORGANIZATION_ACCESS_TOKEN, AuthleteConfig, ensure_api_server_ready
 
 
 async def create_service(name: str, description: str = "", ctx: Context = None) -> str:
@@ -27,17 +27,15 @@ async def create_service(name: str, description: str = "", ctx: Context = None) 
 
     # Get current API server ID using dynamic determination
     try:
-        from ..config import ensure_api_server_configured
-
-        error_msg = await ensure_api_server_configured()
-        if error_msg:
-            return error_msg
-
-        current_api_server_id = get_api_server_id()
-        if not current_api_server_id:
-            return "Error: Unable to determine API server ID"
+        current_api_server_id, error_msg = await ensure_api_server_ready()
     except Exception as e:
         return f"Error configuring API server: {str(e)}"
+
+    if error_msg:
+        return error_msg
+
+    if current_api_server_id is None:
+        return "Error: Unable to determine API server ID"
 
     # Create service configuration for IdP API (without number, serviceOwnerNumber, apiKey, cluster)
     service_data = {
@@ -155,7 +153,7 @@ async def create_service_detailed(
 
     Args:
         service_config: JSON string containing service configuration following Authlete API service schema
-        apiServerId: API Server ID (required) - use list_api_servers tool to see available options
+        apiServerId: API Server ID override. When omitted, uses the configured or auto-detected server.
     """
     if not ORGANIZATION_ACCESS_TOKEN:
         return "Error: ORGANIZATION_ACCESS_TOKEN environment variable not set"
@@ -163,14 +161,16 @@ async def create_service_detailed(
     if not DEFAULT_ORGANIZATION_ID:
         return "Error: ORGANIZATION_ID environment variable must be set"
 
-    if not apiServerId:
-        return (
-            "Error: apiServerId parameter is required. "
-            "Please use the 'list_api_servers' tool to see available API servers and their IDs, "
-            "then specify the desired apiServerId when calling this function."
-        )
+    try:
+        resolved_api_server_id, error_msg = await ensure_api_server_ready(apiServerId)
+    except Exception as e:
+        return f"Error configuring API server: {str(e)}"
 
-    config = AuthleteConfig(access_token=ORGANIZATION_ACCESS_TOKEN)
+    if error_msg:
+        return error_msg
+
+    if resolved_api_server_id is None:
+        return "Error: Unable to determine API server ID"
 
     try:
         # Parse service configuration JSON
@@ -181,13 +181,18 @@ async def create_service_detailed(
     try:
         # Create the IdP API request payload
         data = {
-            "apiServerId": int(apiServerId),
+            "apiServerId": int(resolved_api_server_id),
             "organizationId": int(DEFAULT_ORGANIZATION_ID),
             "service": service_dict,
         }
 
         # Send request to Authlete IdP API
-        result = await make_authlete_idp_request("POST", "service", config, data)
+        result = await make_authlete_idp_request(
+            endpoint="service",
+            method="POST",
+            access_token=ORGANIZATION_ACCESS_TOKEN,
+            data=data,
+        )
 
         return json.dumps(result, indent=2)
 
@@ -383,7 +388,7 @@ async def delete_service(service_id: str, apiServerId: str = "", ctx: Context = 
 
     Args:
         service_id: Service ID (apiKey) to delete
-        apiServerId: API Server ID (required) - use list_api_servers tool to see available options
+        apiServerId: API Server ID override. When omitted, uses the configured or auto-detected server.
     """
     if not ORGANIZATION_ACCESS_TOKEN:
         return "Error: ORGANIZATION_ACCESS_TOKEN environment variable not set"
@@ -391,24 +396,30 @@ async def delete_service(service_id: str, apiServerId: str = "", ctx: Context = 
     if not DEFAULT_ORGANIZATION_ID:
         return "Error: ORGANIZATION_ID environment variable must be set"
 
-    if not apiServerId:
-        return (
-            "Error: apiServerId parameter is required. "
-            "Please use the 'list_api_servers' tool to see available API servers and their IDs, "
-            "then specify the desired apiServerId when calling this function."
-        )
+    try:
+        resolved_api_server_id, error_msg = await ensure_api_server_ready(apiServerId)
+    except Exception as e:
+        return f"Error configuring API server: {str(e)}"
 
-    config = AuthleteConfig(access_token=ORGANIZATION_ACCESS_TOKEN)
+    if error_msg:
+        return error_msg
 
-    # Try with environment variable values first
+    if resolved_api_server_id is None:
+        return "Error: Unable to determine API server ID"
+
     data = {
         "serviceId": int(service_id),
-        "apiServerId": int(apiServerId),
+        "apiServerId": int(resolved_api_server_id),
         "organizationId": int(DEFAULT_ORGANIZATION_ID),
     }
 
     try:
-        result = await make_authlete_idp_request("POST", "service/remove", config, data)
+        result = await make_authlete_idp_request(
+            endpoint="service/remove",
+            method="POST",
+            access_token=ORGANIZATION_ACCESS_TOKEN,
+            data=data,
+        )
         return json.dumps(result, indent=2)
     except Exception as e:
         return f"Error deleting service: {str(e)}"

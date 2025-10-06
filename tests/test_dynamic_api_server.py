@@ -172,9 +172,7 @@ async def test_set_api_server_function():
     mock_response = [{"id": 53285, "apiServerUrl": "https://jp.authlete.com", "description": "JP API Server"}]
 
     with patch.dict(os.environ, {"ORGANIZATION_ACCESS_TOKEN": "test_token"}):
-        with patch(
-            "src.authlete_mcp.tools.utility_tools.make_authlete_idp_request", new_callable=AsyncMock
-        ) as mock_request:
+        with patch("src.authlete_mcp.api.client.make_authlete_idp_request", new_callable=AsyncMock) as mock_request:
             mock_request.return_value = mock_response
 
             # Clear any existing state
@@ -198,9 +196,7 @@ async def test_set_api_server_invalid_id():
     mock_response = [{"id": 53285, "apiServerUrl": "https://jp.authlete.com", "description": "JP API Server"}]
 
     with patch.dict(os.environ, {"ORGANIZATION_ACCESS_TOKEN": "test_token"}):
-        with patch(
-            "src.authlete_mcp.tools.utility_tools.make_authlete_idp_request", new_callable=AsyncMock
-        ) as mock_request:
+        with patch("src.authlete_mcp.api.client.make_authlete_idp_request", new_callable=AsyncMock) as mock_request:
             mock_request.return_value = mock_response
 
             result = await set_api_server("99999")

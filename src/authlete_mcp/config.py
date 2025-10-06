@@ -2,6 +2,7 @@
 
 import logging
 import os
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -101,6 +102,82 @@ async def ensure_api_server_configured() -> str | None:
         "Please use the 'list_api_servers' tool to see available options, "
         "then use 'set_api_server' to configure your preferred API server."
     )
+
+
+async def configure_api_server_by_id(
+    api_server_id: str | int,
+) -> tuple[dict[str, Any] | None, str | None]:
+    """Configure the current API server using an explicit server ID."""
+
+    if not ORGANIZATION_ACCESS_TOKEN:
+        return None, "Error: ORGANIZATION_ACCESS_TOKEN environment variable not set"
+
+    try:
+        from .api.client import make_authlete_idp_request
+
+        response = await make_authlete_idp_request(
+            endpoint="apiserver",
+            method="GET",
+            access_token=ORGANIZATION_ACCESS_TOKEN,
+        )
+    except Exception as exc:
+        logger.error(f"Failed to fetch API servers: {exc}")
+        return None, f"Error setting API server: {exc}"
+
+    if not response:
+        return None, "Error: No API servers found for this organization"
+
+    target_server: dict[str, Any] | None = None
+    available_ids: list[str] = []
+    for server in response:
+        server_id = str(server.get("id"))
+        if server_id:
+            available_ids.append(server_id)
+        if server_id == str(api_server_id):
+            target_server = server
+
+    if not target_server:
+        available_ids.sort()
+        available = ", ".join(available_ids)
+        return (
+            None,
+            f"Error: API server with ID '{api_server_id}' not found. Available API server IDs: {available}",
+        )
+
+    set_current_api_server(
+        api_server_id=int(target_server["id"]),
+        api_server_url=target_server.get("apiServerUrl", ""),
+        description=target_server.get("description", ""),
+    )
+
+    return target_server, None
+
+
+async def ensure_api_server_ready(
+    explicit_api_server_id: str | int | None = None,
+) -> tuple[int | None, str | None]:
+    """Ensure an API server ID is available, honoring explicit overrides."""
+
+    if explicit_api_server_id not in (None, ""):
+        server_info, error = await configure_api_server_by_id(explicit_api_server_id)
+        if error:
+            return None, error
+        return int(server_info["id"]), None
+
+    error_msg = await ensure_api_server_configured()
+    if error_msg:
+        if DEFAULT_API_SERVER_ID:
+            server_info, error = await configure_api_server_by_id(DEFAULT_API_SERVER_ID)
+            if error:
+                return None, error
+            return int(server_info["id"]), None
+        return None, error_msg
+
+    api_server_id = get_api_server_id()
+    if api_server_id is None:
+        return None, "Unable to determine API server ID"
+
+    return int(api_server_id), None
 
 
 def get_api_server_url() -> str | None:
