@@ -1,11 +1,16 @@
 """Client management tools for Authlete MCP Server."""
 
+import hashlib
 import json
 
 import httpx
 
 from ..api import make_authlete_request
 from ..config import AuthleteConfig
+from ..logging import get_logger
+
+
+logger = get_logger(__name__)
 
 
 async def create_client(client_data: str, service_api_key: str = "") -> str:
@@ -26,15 +31,23 @@ async def create_client(client_data: str, service_api_key: str = "") -> str:
         return "Error: ORGANIZATION_ACCESS_TOKEN environment variable not set"
 
     config = AuthleteConfig(access_token=ORGANIZATION_ACCESS_TOKEN)
+    token_hash = hashlib.sha256(ORGANIZATION_ACCESS_TOKEN.encode()).hexdigest()[:10]
 
     try:
         data = json.loads(client_data)
+        payload_keys = sorted(list(data.keys()))
         # Use the correct endpoint format: {service_api_key}/client/create
+        logger.info(
+            f"create_client: service_api_key={service_api_key} token_hash={token_hash} payload_keys={payload_keys}"
+        )
         result = await make_authlete_request("POST", f"{service_api_key}/client/create", config, data)
+        client_id = result.get("clientId")
+        logger.info(f"create_client_success: service_api_key={service_api_key} client_id={client_id}")
         return json.dumps(result, indent=2)
     except json.JSONDecodeError as e:
         return f"Error parsing client data JSON: {str(e)}"
     except Exception as e:
+        logger.error(f"create_client_error: service_api_key={service_api_key} token_hash={token_hash} error={str(e)}")
         return f"Error creating client: {str(e)}"
 
 

@@ -1,7 +1,10 @@
 """Test client management operations."""
 
+import hashlib
 import json
 import os
+import sys
+import time
 
 import pytest
 from mcp import ClientSession, StdioServerParameters
@@ -290,6 +293,12 @@ async def test_client_secret_operations_with_service_api_key():
         env={"ORGANIZATION_ACCESS_TOKEN": token, "ORGANIZATION_ID": org_id},
     )
 
+    token_hash = hashlib.sha256(token.encode()).hexdigest()[:10]
+    print(
+        "[debug] test_client_secret_operations_with_service_api_key: "
+        f"python={sys.version.split()[0]} token_hash={token_hash} org_id={org_id}"
+    )
+
     service_api_key = None
     client_id = None
 
@@ -302,10 +311,12 @@ async def test_client_secret_operations_with_service_api_key():
 
             try:
                 # 1. テスト用サービスを作成
+                create_service_started = time.perf_counter()
                 service_result = await session.call_tool(
                     "create_service",
                     {"name": "pytest-secret-test-service", "description": "Test service for client secret operations"},
                 )
+                service_duration_ms = (time.perf_counter() - create_service_started) * 1000
 
                 assert service_result.content
                 service_response = service_result.content[0].text
@@ -318,6 +329,23 @@ async def test_client_secret_operations_with_service_api_key():
                     f"Service API key not found in response: {service_response}"
                 )
 
+                print(f"[debug] service created: api_key={service_api_key} elapsed_ms={service_duration_ms:.1f}")
+
+                # 追加診断: サービス取得が成功するか確認
+                service_check = await session.call_tool("get_service", {"service_api_key": service_api_key})
+                if service_check.content:
+                    summary = service_check.content[0].text or ""
+                    try:
+                        service_json = json.loads(summary)
+                        service_info = service_json.get("service", {}) if isinstance(service_json, dict) else {}
+                        print(
+                            "[debug] service lookup summary: "
+                            f"serviceNumber={service_info.get('number')} "
+                            f"status={service_json.get('status', 'unknown')}"
+                        )
+                    except json.JSONDecodeError:
+                        print(f"[debug] service lookup raw prefix: {summary[:120]}")
+
                 # 2. テスト用クライアントを作成
                 client_data = {
                     "clientName": "pytest-secret-test-client",
@@ -326,13 +354,17 @@ async def test_client_secret_operations_with_service_api_key():
                     "redirectUris": ["https://test.example.com/callback"],
                 }
 
+                client_create_started = time.perf_counter()
                 client_result = await session.call_tool(
                     "create_client", {"client_data": json.dumps(client_data), "service_api_key": service_api_key}
                 )
+                client_duration_ms = (time.perf_counter() - client_create_started) * 1000
 
                 assert client_result.content
                 client_response = client_result.content[0].text
                 assert "Error" not in client_response, f"Client creation failed: {client_response}"
+
+                print(f"[debug] client created: service_api_key={service_api_key} elapsed_ms={client_duration_ms:.1f}")
 
                 client_response_data = json.loads(client_response)
                 client_id = str(client_response_data.get("clientId"))

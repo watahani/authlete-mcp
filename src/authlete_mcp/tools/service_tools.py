@@ -1,11 +1,16 @@
 """Service management tools for Authlete MCP Server."""
 
+import hashlib
 import json
 
 from mcp.server.fastmcp import Context
 
 from ..api.client import make_authlete_idp_request, make_authlete_request
 from ..config import DEFAULT_ORGANIZATION_ID, ORGANIZATION_ACCESS_TOKEN, AuthleteConfig, ensure_api_server_ready
+from ..logging import get_logger
+
+
+logger = get_logger(__name__)
 
 
 async def create_service(name: str, description: str = "", ctx: Context = None) -> str:
@@ -136,11 +141,30 @@ async def create_service(name: str, description: str = "", ctx: Context = None) 
     }
 
     try:
+        token_hash = hashlib.sha256(ORGANIZATION_ACCESS_TOKEN.encode()).hexdigest()[:10]
+        logger.info(
+            "create_service: org_id=%s api_server_id=%s token_hash=%s",
+            DEFAULT_ORGANIZATION_ID,
+            current_api_server_id,
+            token_hash,
+        )
         result = await make_authlete_idp_request(
             endpoint="service", method="POST", access_token=ORGANIZATION_ACCESS_TOKEN, data=data
         )
+        service_info = result.get("service", {}) if isinstance(result, dict) else {}
+        logger.info(
+            "create_service_success: api_key=%s api_number=%s",
+            result.get("apiKey"),
+            service_info.get("number"),
+        )
         return json.dumps(result, indent=2)
     except Exception as e:
+        logger.error(
+            "create_service_error: org_id=%s token_hash=%s error=%s",
+            DEFAULT_ORGANIZATION_ID,
+            token_hash if "token_hash" in locals() else "unknown",
+            str(e),
+        )
         return f"Error creating service: {str(e)}"
 
 

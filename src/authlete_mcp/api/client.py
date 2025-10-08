@@ -1,5 +1,6 @@
 """HTTP client for Authlete API."""
 
+import hashlib
 import json
 from typing import Any
 
@@ -18,6 +19,13 @@ async def make_authlete_request(
     """Make a request to the Authlete API."""
 
     url = f"{config.base_url}/api/{endpoint}"
+    token_hash = hashlib.sha256(config.access_token.encode()).hexdigest()[:10]
+    logger.debug(
+        "make_authlete_request: method=%s endpoint=%s token_hash=%s",
+        method,
+        endpoint,
+        token_hash,
+    )
 
     try:
         # Use structured logging with PII masking
@@ -170,6 +178,14 @@ async def make_authlete_idp_request(
     else:
         base_url = AUTHLETE_IDP_URL
         token = access_token
+
+    token_hash = hashlib.sha256((token or "").encode()).hexdigest()[:10] if token else "missing"
+    logger.debug(
+        "make_authlete_idp_request: method=%s endpoint=%s token_hash=%s",
+        method,
+        endpoint,
+        token_hash,
+    )
 
     url = f"{base_url}/api/{endpoint}"
 
