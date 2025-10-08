@@ -69,7 +69,7 @@ jobs:
             fi
             echo "🔑 Using configured secrets - running integration tests with coverage"
             uv run coverage erase
-            uv run pytest -m integration -v --tb=short --no-header
+            uv run pytest -m integration -v --tb=short --no-header -s
             uv run coverage combine
             uv run coverage report --show-missing
           fi
