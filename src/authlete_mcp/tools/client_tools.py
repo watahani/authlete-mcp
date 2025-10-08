@@ -9,7 +9,6 @@ from ..api import make_authlete_request
 from ..config import AuthleteConfig
 from ..logging import get_logger
 
-
 logger = get_logger(__name__)
 
 
@@ -35,7 +34,7 @@ async def create_client(client_data: str, service_api_key: str = "") -> str:
 
     try:
         data = json.loads(client_data)
-        payload_keys = sorted(list(data.keys()))
+        payload_keys = sorted(data.keys())
         # Use the correct endpoint format: {service_api_key}/client/create
         logger.info(
             f"create_client: service_api_key={service_api_key} token_hash={token_hash} payload_keys={payload_keys}"

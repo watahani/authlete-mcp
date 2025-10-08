@@ -9,7 +9,6 @@ from ..api.client import make_authlete_idp_request, make_authlete_request
 from ..config import DEFAULT_ORGANIZATION_ID, ORGANIZATION_ACCESS_TOKEN, AuthleteConfig, ensure_api_server_ready
 from ..logging import get_logger
 
-
 logger = get_logger(__name__)
 
 
