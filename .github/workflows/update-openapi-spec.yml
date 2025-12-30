@@ -84,7 +84,11 @@ jobs:
             echo "✅ Search database updated successfully (size: $DB_SIZE bytes)"
 
             # Get API count from database
-            API_COUNT=$(uv run python -c "import duckdb; conn = duckdb.connect('resources/authlete_apis.duckdb'); result = conn.execute('SELECT COUNT(*) FROM api_endpoints').fetchone(); print(result[0]); conn.close()" 2>/dev/null || echo "0")
+            API_COUNT=$(uv run python -c "import duckdb; \
+            conn = duckdb.connect('resources/authlete_apis.duckdb'); \
+            result = conn.execute('SELECT COUNT(*) FROM api_endpoints').fetchone(); \
+            print(result[0]); \
+            conn.close()" 2>/dev/null || echo "0")
             echo "📊 APIs indexed in search database: $API_COUNT"
           else
             echo "❌ Failed to create search database"
