@@ -42,6 +42,12 @@ if [ ! -f "pyproject.toml" ]; then
     exit 1
 fi
 
+# Configure uv caches to live inside the repo to avoid permission issues
+export UV_CACHE_DIR="${UV_CACHE_DIR:-$PWD/.uv-cache}"
+export XDG_CACHE_HOME="${XDG_CACHE_HOME:-$PWD/.cache}"
+export UV_LINK_MODE="${UV_LINK_MODE:-copy}"
+mkdir -p "$UV_CACHE_DIR" "$XDG_CACHE_HOME"
+
 # Ensure dependencies are synced
 print_status "Syncing dependencies..."
 uv sync --quiet
