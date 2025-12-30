@@ -80,7 +80,7 @@ jobs:
           commit-message: |
             chore: update Authlete IdP OpenAPI specification
 
-            - Updated from Authlete IdP API (https://dev-idp.authlete.net/v3/api-docs.yaml)
+            - Updated from Authlete IdP API (https://login.authlete.com/v3/api-docs)
             - Version: ${{ steps.current-spec.outputs.current-version }} → ${{ steps.update-spec.outputs.new-version }}
             - Paths: ${{ steps.current-spec.outputs.current-paths }} → ${{ steps.update-spec.outputs.new-paths }}
             - Added both YAML and JSON formats for reference
@@ -99,7 +99,7 @@ jobs:
               `${{ steps.update-spec.outputs.new-version }}`
             - **API Endpoints:** `${{ steps.current-spec.outputs.current-paths }}` → \
               `${{ steps.update-spec.outputs.new-paths }}`
-            - **Source:** https://dev-idp.authlete.net/v3/api-docs.yaml
+            - **Source:** https://login.authlete.com/v3/api-docs
 
             **Files Updated:**
             - `resources/idp-openapi-spec.yaml` - IdP OpenAPI specification (YAML format)
