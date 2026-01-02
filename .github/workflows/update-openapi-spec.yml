@@ -122,7 +122,7 @@ jobs:
               `${{ steps.update-spec.outputs.new-version }}`
             - **API Endpoints:** `${{ steps.current-spec.outputs.current-paths }}` → \
               `${{ steps.update-spec.outputs.new-paths }}`
-            - **Source:** https://docs.authlete.com/en/shared/3.0.0/spec
+            - **Source:** https://raw.githubusercontent.com/authlete/openapi/refs/heads/main/spec_next.yaml
 
             **Files Updated:**
             - `resources/openapi-spec.json` - OpenAPI specification
