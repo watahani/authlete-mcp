@@ -13,7 +13,7 @@ from pathlib import Path
 import httpx
 import yaml
 
-AUTHLETE_SPEC_URL = "https://docs.authlete.com/en/shared/3.0.0/spec"
+AUTHLETE_SPEC_URL = "https://raw.githubusercontent.com/authlete/openapi/refs/heads/main/spec_next.yaml"
 RESOURCES_DIR = Path(__file__).parent.parent / "resources"
 OPENAPI_SPEC_FILE = RESOURCES_DIR / "openapi-spec.json"
 
