@@ -4416,6 +4416,11 @@
           },
           "marketingOptIn": {
             "type": "boolean"
+          },
+          "organizationName": {
+            "maxLength": 255,
+            "minLength": 1,
+            "type": "string"
           }
         }
       },
@@ -4604,6 +4609,9 @@
             "type": "string"
           },
           "needSignup": {
+            "type": "boolean"
+          },
+          "invitedUser": {
             "type": "boolean"
           }
         }
@@ -6627,6 +6635,11 @@
             "type": "string"
           },
           "companyName": {
+            "maxLength": 255,
+            "minLength": 0,
+            "type": "string"
+          },
+          "organizationName": {
             "maxLength": 255,
             "minLength": 0,
             "type": "string"
