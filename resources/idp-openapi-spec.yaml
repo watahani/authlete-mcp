@@ -2950,6 +2950,10 @@ components:
           type: string
         marketingOptIn:
           type: boolean
+        organizationName:
+          maxLength: 255
+          minLength: 1
+          type: string
     CreateUserResponse:
       type: object
       properties:
@@ -3081,6 +3085,8 @@ components:
         email:
           type: string
         needSignup:
+          type: boolean
+        invitedUser:
           type: boolean
     RegisterRequest:
       required:
@@ -4518,6 +4524,10 @@ components:
         lastName:
           type: string
         companyName:
+          maxLength: 255
+          minLength: 0
+          type: string
+        organizationName:
           maxLength: 255
           minLength: 0
           type: string
