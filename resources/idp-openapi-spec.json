@@ -4917,6 +4917,14 @@
             "type": "string",
             "format": "uri"
           },
+          "notificationEndpoint": {
+            "type": "string",
+            "format": "uri"
+          },
+          "nonceEndpoint": {
+            "type": "string",
+            "format": "uri"
+          },
           "credentialResponseEncryptionAlgValuesSupported": {
             "type": "array",
             "items": {
@@ -4942,6 +4950,35 @@
               ]
             }
           },
+          "credentialRequestEncryptionJwks": {
+            "type": "string"
+          },
+          "credentialRequestEncryptionEncValuesSupported": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "A128CBC-HS256",
+                "A192CBC-HS384",
+                "A256CBC-HS512",
+                "A128GCM",
+                "A192GCM",
+                "A256GCM"
+              ]
+            }
+          },
+          "credentialRequestEncryptionZipValuesSupported": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "DEF"
+              ]
+            }
+          },
+          "requireCredentialRequestEncryption": {
+            "type": "boolean"
+          },
           "credentialResponseEncryptionEncValuesSupported": {
             "type": "array",
             "items": {
@@ -4956,8 +4993,24 @@
               ]
             }
           },
+          "credentialResponseEncryptionZipValuesSupported": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "DEF"
+              ]
+            }
+          },
           "requireCredentialResponseEncryption": {
             "type": "boolean"
+          },
+          "batchSize": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "display": {
+            "type": "string"
           },
           "credentialsSupported": {
             "type": "string"
@@ -5093,7 +5146,8 @@
                 "private_key_jwt",
                 "tls_client_auth",
                 "self_signed_tls_client_auth",
-                "attest_jwt_client_auth"
+                "attest_jwt_client_auth",
+                "spiffe_jwt"
               ]
             }
           },
@@ -5174,7 +5228,8 @@
                 "private_key_jwt",
                 "tls_client_auth",
                 "self_signed_tls_client_auth",
-                "attest_jwt_client_auth"
+                "attest_jwt_client_auth",
+                "spiffe_jwt"
               ]
             }
           },
@@ -5372,7 +5427,8 @@
                 "private_key_jwt",
                 "tls_client_auth",
                 "self_signed_tls_client_auth",
-                "attest_jwt_client_auth"
+                "attest_jwt_client_auth",
+                "spiffe_jwt"
               ]
             }
           },
@@ -5882,6 +5938,45 @@
           "tokenBatchNotificationEndpoint": {
             "type": "string",
             "format": "uri"
+          },
+          "clientAssertionAudRestrictedToIssuer": {
+            "type": "boolean"
+          },
+          "nativeSsoSupported": {
+            "type": "boolean"
+          },
+          "oid4vciVersion": {
+            "type": "string"
+          },
+          "clientIdMetadataDocumentSupported": {
+            "type": "boolean"
+          },
+          "cimdAllowlistEnabled": {
+            "type": "boolean"
+          },
+          "cimdAllowlist": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "cimdAlwaysRetrieved": {
+            "type": "boolean"
+          },
+          "cimdHttpPermitted": {
+            "type": "boolean"
+          },
+          "cimdQueryPermitted": {
+            "type": "boolean"
+          },
+          "cimdMetadataPolicyEnabled": {
+            "type": "boolean"
+          },
+          "cimdMetadataPolicy": {
+            "type": "string"
+          },
+          "httpAliasProhibited": {
+            "type": "boolean"
           }
         }
       },
@@ -6784,6 +6879,15 @@
           "resultMessage": {
             "type": "string"
           },
+          "responseHeaders": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
           "action": {
             "type": "string",
             "enum": [
@@ -6857,6 +6961,9 @@
             "type": "boolean"
           },
           "clientEntityIdUsed": {
+            "type": "boolean"
+          },
+          "metadataDocumentUsed": {
             "type": "boolean"
           },
           "acrs": {
@@ -6956,6 +7063,9 @@
           },
           "issuableCredentials": {
             "type": "string"
+          },
+          "nativeSsoRequested": {
+            "type": "boolean"
           },
           "responseContent": {
             "type": "string"
@@ -7361,7 +7471,8 @@
               "private_key_jwt",
               "tls_client_auth",
               "self_signed_tls_client_auth",
-              "attest_jwt_client_auth"
+              "attest_jwt_client_auth",
+              "spiffe_jwt"
             ]
           },
           "tokenAuthSignAlg": {
@@ -7638,6 +7749,9 @@
           "mtlsEndpointAliasesUsed": {
             "type": "boolean"
           },
+          "inScopeForTokenMigration": {
+            "type": "boolean"
+          },
           "entityId": {
             "type": "string",
             "format": "uri"
@@ -7690,6 +7804,39 @@
           "credentialResponseEncryptionRequired": {
             "type": "boolean"
           },
+          "metadataDocumentLocation": {
+            "type": "string",
+            "format": "uri"
+          },
+          "metadataDocumentExpiresAt": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "metadataDocumentUpdatedAt": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "discoveredByMetadataDocument": {
+            "type": "boolean"
+          },
+          "clientSource": {
+            "type": "string",
+            "enum": [
+              "STATIC_REGISTRATION",
+              "DYNAMIC_REGISTRATION",
+              "AUTOMATIC_REGISTRATION",
+              "EXPLICIT_REGISTRATION",
+              "METADATA_DOCUMENT"
+            ]
+          },
+          "spiffeId": {
+            "type": "string",
+            "format": "uri"
+          },
+          "spiffeBundleEndpoint": {
+            "type": "string",
+            "format": "uri"
+          },
           "sectorIdentifier": {
             "type": "string",
             "format": "uri",
@@ -7719,6 +7866,10 @@
           },
           "tokenExchangePermitted": {
             "type": "boolean"
+          },
+          "idTokenDuration": {
+            "type": "integer",
+            "format": "int64"
           }
         }
       },
