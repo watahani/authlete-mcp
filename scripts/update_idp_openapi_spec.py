@@ -29,22 +29,31 @@ def compute_spec_hash(spec_data: dict) -> str:
     return hashlib.sha256(normalized.encode("utf-8")).hexdigest()
 
 
-async def download_idp_openapi_spec() -> dict:
+async def download_idp_openapi_spec(max_retries: int = 3, retry_delay: float = 5.0) -> dict:
     """Download the IdP OpenAPI spec JSON from Authlete IdP API."""
     print(f"Downloading IdP OpenAPI spec from {AUTHLETE_IDP_SPEC_URL}...")
 
-    async with httpx.AsyncClient(follow_redirects=True) as client:
-        response = await client.get(AUTHLETE_IDP_SPEC_URL)
-        response.raise_for_status()
-
-        print(f"Downloaded {len(response.content)} bytes")
-
-        # Parse JSON directly
+    last_error: Exception | None = None
+    for attempt in range(1, max_retries + 1):
         try:
-            spec_data = response.json()
-            return spec_data
-        except ValueError as exc:
-            raise ValueError(f"Failed to parse JSON response: {exc}") from exc
+            async with httpx.AsyncClient(follow_redirects=True, timeout=30.0) as client:
+                response = await client.get(AUTHLETE_IDP_SPEC_URL)
+                response.raise_for_status()
+
+                print(f"Downloaded {len(response.content)} bytes")
+
+                spec_data = response.json()
+                return spec_data
+        except (httpx.HTTPStatusError, httpx.RequestError, ValueError) as exc:
+            last_error = exc
+            print(f"Attempt {attempt}/{max_retries} failed: {type(exc).__name__}: {exc}")
+            if attempt < max_retries:
+                print(f"Retrying in {retry_delay}s...")
+                await asyncio.sleep(retry_delay)
+
+    raise RuntimeError(
+        f"Failed to download IdP OpenAPI spec after {max_retries} attempts: {type(last_error).__name__}: {last_error}"
+    )
 
 
 def save_idp_openapi_spec(spec_data: dict) -> None:
@@ -165,7 +174,7 @@ async def main():
         )
 
     except Exception as e:
-        print(f"ERROR: Failed to update IdP OpenAPI spec: {e}")
+        print(f"ERROR: Failed to update IdP OpenAPI spec: {type(e).__name__}: {e}")
         sys.exit(1)
 
 

@@ -18,25 +18,34 @@ RESOURCES_DIR = Path(__file__).parent.parent / "resources"
 OPENAPI_SPEC_FILE = RESOURCES_DIR / "openapi-spec.json"
 
 
-async def download_openapi_spec() -> dict:
+async def download_openapi_spec(max_retries: int = 3, retry_delay: float = 5.0) -> dict:
     """Download the OpenAPI spec (YAML format) from Authlete docs."""
     print(f"Downloading OpenAPI spec from {AUTHLETE_SPEC_URL}...")
 
-    async with httpx.AsyncClient(follow_redirects=True) as client:
-        response = await client.get(AUTHLETE_SPEC_URL)
-        response.raise_for_status()
-
-        print(f"Downloaded {len(response.content)} bytes")
-        content_type = response.headers.get("content-type", "").lower()
-        print(f"Content-Type: {content_type}")
-
-        # Parse as YAML
+    last_error: Exception | None = None
+    for attempt in range(1, max_retries + 1):
         try:
-            spec_data = yaml.safe_load(response.text)
-            print("Parsed as YAML format")
-            return spec_data
-        except yaml.YAMLError as e:
-            raise ValueError(f"Failed to parse YAML response: {e}")
+            async with httpx.AsyncClient(follow_redirects=True, timeout=30.0) as client:
+                response = await client.get(AUTHLETE_SPEC_URL)
+                response.raise_for_status()
+
+                print(f"Downloaded {len(response.content)} bytes")
+                content_type = response.headers.get("content-type", "").lower()
+                print(f"Content-Type: {content_type}")
+
+                spec_data = yaml.safe_load(response.text)
+                print("Parsed as YAML format")
+                return spec_data
+        except (httpx.HTTPStatusError, httpx.RequestError, yaml.YAMLError) as exc:
+            last_error = exc
+            print(f"Attempt {attempt}/{max_retries} failed: {type(exc).__name__}: {exc}")
+            if attempt < max_retries:
+                print(f"Retrying in {retry_delay}s...")
+                await asyncio.sleep(retry_delay)
+
+    raise RuntimeError(
+        f"Failed to download OpenAPI spec after {max_retries} attempts: {type(last_error).__name__}: {last_error}"
+    )
 
 
 def save_openapi_spec(spec_data: dict) -> None:
@@ -123,7 +132,7 @@ async def main():
         print("OpenAPI spec update completed successfully!")
 
     except Exception as e:
-        print(f"ERROR: Failed to update OpenAPI spec: {e}")
+        print(f"ERROR: Failed to update OpenAPI spec: {type(e).__name__}: {e}")
         sys.exit(1)
 
 
