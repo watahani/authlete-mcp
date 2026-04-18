@@ -67,8 +67,12 @@ jobs:
             echo "🔑 Using configured secrets - running integration tests with coverage"
             uv run coverage erase
             uv run pytest -m integration -v --tb=short --no-header
-            uv run coverage combine
-            uv run coverage report --show-missing
+            if compgen -G "coverage/.coverage.*" > /dev/null; then
+              uv run coverage combine
+              uv run coverage report --show-missing
+            else
+              echo "⚠️ No coverage data collected (integration tests may have skipped) - skipping coverage report"
+            fi
           fi
 
 
