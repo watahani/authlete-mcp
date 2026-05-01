@@ -573,7 +573,7 @@ paths:
     post:
       tags:
       - service-token-api
-      summary: 'Rename a new service token.
+      summary: 'Rename a service token.
 
         A MODIFY_SERVICE role is required.'
       operationId: renameServiceToken
@@ -3194,6 +3194,24 @@ components:
           type: string
         description:
           type: string
+        permissions:
+          type: array
+          items:
+            type: string
+            enum:
+            - view_client
+            - view_service
+            - use_introspection
+            - use_service
+            - modify_client
+            - create_client
+            - modify_service
+        expiresAt:
+          type: string
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
     RotateServiceTokenRequest:
       required:
       - apiServerId
@@ -3214,6 +3232,11 @@ components:
         tokenId:
           type: string
     DeleteServiceTokenRequest:
+      required:
+      - apiServerId
+      - organizationId
+      - serviceId
+      - tokenId
       type: object
       properties:
         serviceId:
@@ -3227,13 +3250,12 @@ components:
           format: int64
         tokenId:
           type: string
-        description:
-          type: string
     CreateServiceTokenRequest:
       required:
       - apiServerId
       - description
       - organizationId
+      - preset
       - serviceId
       type: object
       properties:
@@ -3250,6 +3272,28 @@ components:
           maxLength: 255
           minLength: 0
           type: string
+        preset:
+          type: string
+          enum:
+          - standard_as
+          - resource_server
+          - admin_as
+          - custom
+        permissions:
+          type: array
+          items:
+            type: string
+            enum:
+            - view_client
+            - view_service
+            - use_introspection
+            - use_service
+            - modify_client
+            - create_client
+            - modify_service
+        durationSeconds:
+          type: integer
+          format: int64
     GetServiceTokensRequest:
       required:
       - apiServerId
@@ -3718,6 +3762,9 @@ components:
         idTokenDuration:
           type: integer
           format: int64
+        authorizationCodeDuration:
+          type: integer
+          format: int64
         authorizationResponseDuration:
           type: integer
           format: int64
@@ -4063,6 +4110,30 @@ components:
           type: string
         httpAliasProhibited:
           type: boolean
+        challengeEndpoint:
+          type: string
+          format: uri
+        attestationChallengeTimeWindow:
+          type: integer
+          format: int64
+        haipVersion:
+          type: string
+        clientAttesterRoots:
+          type: array
+          items:
+            type: string
+        clientAttesterRootsEnabled:
+          type: boolean
+        clientAttesterRootsOnly:
+          type: boolean
+        keyAttesterRoots:
+          type: array
+          items:
+            type: string
+        keyAttesterRootsEnabled:
+          type: boolean
+        keyAttesterRootsOnly:
+          type: boolean
     SnsCredentials:
       type: object
       properties:
@@ -4214,6 +4285,22 @@ components:
           type: string
         description:
           type: string
+        permissions:
+          type: array
+          items:
+            type: string
+            enum:
+            - create_service
+            - modify_service
+            - delete_service
+            - view_service
+            - view_audit_log
+        createdAt:
+          type: string
+          format: date-time
+        expiresAt:
+          type: string
+          format: date-time
     RotateOrganizationTokenRequest:
       required:
       - organizationId
@@ -4239,6 +4326,7 @@ components:
       required:
       - description
       - organizationId
+      - preset
       type: object
       properties:
         organizationId:
@@ -4248,6 +4336,26 @@ components:
           maxLength: 255
           minLength: 0
           type: string
+        preset:
+          type: string
+          enum:
+          - admin
+          - audit_reader
+          - read_only
+          - custom
+        permissions:
+          type: array
+          items:
+            type: string
+            enum:
+            - create_service
+            - modify_service
+            - delete_service
+            - view_service
+            - view_audit_log
+        durationSeconds:
+          type: integer
+          format: int64
     GetOrganizationTokensRequest:
       required:
       - organizationId
@@ -5419,6 +5527,8 @@ components:
         spiffeBundleEndpoint:
           type: string
           format: uri
+        haipVersion:
+          type: string
         sectorIdentifier:
           type: string
           format: uri
