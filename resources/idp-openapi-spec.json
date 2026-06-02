@@ -877,7 +877,7 @@
         "tags": [
           "service-token-api"
         ],
-        "summary": "Rename a new service token.\nA MODIFY_SERVICE role is required.",
+        "summary": "Rename a service token.\nA MODIFY_SERVICE role is required.",
         "operationId": "renameServiceToken",
         "parameters": [
           {
@@ -4769,6 +4769,29 @@
           },
           "description": {
             "type": "string"
+          },
+          "permissions": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "view_client",
+                "view_service",
+                "use_introspection",
+                "use_service",
+                "modify_client",
+                "create_client",
+                "modify_service"
+              ]
+            }
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
           }
         }
       },
@@ -4799,6 +4822,12 @@
         }
       },
       "DeleteServiceTokenRequest": {
+        "required": [
+          "apiServerId",
+          "organizationId",
+          "serviceId",
+          "tokenId"
+        ],
         "type": "object",
         "properties": {
           "serviceId": {
@@ -4815,9 +4844,6 @@
           },
           "tokenId": {
             "type": "string"
-          },
-          "description": {
-            "type": "string"
           }
         }
       },
@@ -4826,6 +4852,7 @@
           "apiServerId",
           "description",
           "organizationId",
+          "preset",
           "serviceId"
         ],
         "type": "object",
@@ -4846,6 +4873,34 @@
             "maxLength": 255,
             "minLength": 0,
             "type": "string"
+          },
+          "preset": {
+            "type": "string",
+            "enum": [
+              "standard_as",
+              "resource_server",
+              "admin_as",
+              "custom"
+            ]
+          },
+          "permissions": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "view_client",
+                "view_service",
+                "use_introspection",
+                "use_service",
+                "modify_client",
+                "create_client",
+                "modify_service"
+              ]
+            }
+          },
+          "durationSeconds": {
+            "type": "integer",
+            "format": "int64"
           }
         }
       },
@@ -5486,6 +5541,10 @@
             "type": "integer",
             "format": "int64"
           },
+          "authorizationCodeDuration": {
+            "type": "integer",
+            "format": "int64"
+          },
           "authorizationResponseDuration": {
             "type": "integer",
             "format": "int64"
@@ -5977,6 +6036,47 @@
           },
           "httpAliasProhibited": {
             "type": "boolean"
+          },
+          "challengeEndpoint": {
+            "type": "string",
+            "format": "uri"
+          },
+          "attestationChallengeTimeWindow": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "haipVersion": {
+            "type": "string"
+          },
+          "clientAttesterRoots": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "clientAttesterRootsEnabled": {
+            "type": "boolean"
+          },
+          "clientAttesterRootsOnly": {
+            "type": "boolean"
+          },
+          "keyAttesterRoots": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "keyAttesterRootsEnabled": {
+            "type": "boolean"
+          },
+          "keyAttesterRootsOnly": {
+            "type": "boolean"
+          },
+          "backchannelLogoutSupported": {
+            "type": "boolean"
+          },
+          "backchannelLogoutSessionSupported": {
+            "type": "boolean"
           }
         }
       },
@@ -6193,6 +6293,27 @@
           },
           "description": {
             "type": "string"
+          },
+          "permissions": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "create_service",
+                "modify_service",
+                "delete_service",
+                "view_service",
+                "view_audit_log"
+              ]
+            }
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time"
           }
         }
       },
@@ -6230,7 +6351,8 @@
       "CreateOrganizationTokenRequest": {
         "required": [
           "description",
-          "organizationId"
+          "organizationId",
+          "preset"
         ],
         "type": "object",
         "properties": {
@@ -6242,6 +6364,32 @@
             "maxLength": 255,
             "minLength": 0,
             "type": "string"
+          },
+          "preset": {
+            "type": "string",
+            "enum": [
+              "admin",
+              "audit_reader",
+              "read_only",
+              "custom"
+            ]
+          },
+          "permissions": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "create_service",
+                "modify_service",
+                "delete_service",
+                "view_service",
+                "view_audit_log"
+              ]
+            }
+          },
+          "durationSeconds": {
+            "type": "integer",
+            "format": "int64"
           }
         }
       },
@@ -7836,6 +7984,16 @@
           "spiffeBundleEndpoint": {
             "type": "string",
             "format": "uri"
+          },
+          "haipVersion": {
+            "type": "string"
+          },
+          "backchannelLogoutUri": {
+            "type": "string",
+            "format": "uri"
+          },
+          "backchannelLogoutSessionRequired": {
+            "type": "boolean"
           },
           "sectorIdentifier": {
             "type": "string",
