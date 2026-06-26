@@ -2554,42 +2554,14 @@ paths:
           format: date-time
       - name: types
         in: query
-        description: Limit audit logs to these types
+        description: If specified, only returns the specified type of audit events.
+          E.g. security.user.login, or service.create
         required: false
         schema:
           uniqueItems: true
           type: array
           items:
             type: string
-            enum:
-            - organization.create
-            - organization.delete
-            - security.login
-            - security.logout
-            - security.register
-            - user.create
-            - user.delete
-            - user.invite
-            - user.invite.accept
-            - user.invite.decline
-            - user.invite.revoke
-            - user.admin.set
-            - user.admin.unset
-            - permissions.change
-            - organization.token.create
-            - organization.token.rotate
-            - organization.token.delete
-            - security.verify.email
-            - service.token.create
-            - service.token.rotate
-            - service.token.delete
-            - security.login.mfa
-            - security.login.oidc
-            - security.mfa.create
-            - security.mfa.delete
-            - security.password.update
-            - service.create
-            - service.delete
       - name: organizationId
         in: query
         description: Id of the single organization where to get the audit logs from.
@@ -2607,6 +2579,7 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/AuditLogEntry'
+      deprecated: true
   /api/audit/types:
     get:
       tags:
@@ -2634,6 +2607,87 @@ paths:
                 type: array
                 items:
                   type: string
+  /api/audit/page:
+    get:
+      tags:
+      - audit-api
+      summary: 'Retrieve audit logs with cursor-based pagination. Optionally you can
+        limit the returned audit logs by time and type.
+
+        Admin users can optionally retrieve all audit logs,
+
+        including from organizations they do not belong to, without time restrictions.'
+      operationId: getAuditLogPage
+      parameters:
+      - name: Authorization
+        in: header
+        required: false
+        schema:
+          type: string
+      - name: DPoP
+        in: header
+        required: false
+        schema:
+          type: string
+      - name: after
+        in: query
+        description: 'Audit logs after this moment in time (exclusive). If both after
+          and before values are not given,
+
+          default to 30 days, the maximum allowed range.
+
+          '
+        required: false
+        schema:
+          type: string
+          format: date-time
+      - name: before
+        in: query
+        description: Audit logs before this moment in time (exclusive)
+        required: false
+        schema:
+          type: string
+          format: date-time
+      - name: types
+        in: query
+        description: If specified, only returns the specified type of audit events.
+          E.g. security.user.login, or service.create
+        required: false
+        schema:
+          uniqueItems: true
+          type: array
+          items:
+            type: string
+      - name: organizationId
+        in: query
+        description: Id of the single organization where to get the audit logs from.
+          Required for all non-Authlete admin users.
+        required: false
+        schema:
+          type: integer
+          format: int64
+      - name: limit
+        in: query
+        description: Maximum number of audit log entries to return (default 100)
+        required: false
+        schema:
+          type: integer
+          format: int32
+          default: 100
+      - name: cursor
+        in: query
+        description: Opaque pagination cursor returned in the previous response as
+          nextCursor
+        required: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/PaginatedAuditLogResponse'
   /api/accessmap:
     get:
       tags:
@@ -6425,6 +6479,18 @@ components:
           type: object
           additionalProperties:
             type: object
+    PaginatedAuditLogResponse:
+      type: object
+      properties:
+        entries:
+          type: array
+          items:
+            $ref: '#/components/schemas/AuditLogEntry'
+        nextCursor:
+          type: string
+        limit:
+          type: integer
+          format: int32
     ApiServerMembershipResponse:
       type: object
       properties:
