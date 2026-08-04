@@ -142,6 +142,11 @@
       "name": "Native SSO",
       "description": "API endpoints for Native SSO",
       "x-tag-expanded": false
+    },
+    {
+      "name": "Audit Logs",
+      "description": "API endpoints for retrieving audit logs, hosted on the Authlete IdP server.",
+      "x-tag-expanded": false
     }
   ],
   "paths": {
@@ -188,6 +193,7 @@
                       ],
                       "authorizationEndpoint": "https://my-service.example.com/authz",
                       "authorizationResponseDuration": 0,
+                      "authorizationCodeDuration": 0,
                       "backchannelAuthReqIdDuration": 0,
                       "backchannelBindingMessageRequiredInFapi": false,
                       "backchannelPollingInterval": 0,
@@ -317,6 +323,9 @@
           "403": {
             "$ref": "#/components/responses/403"
           },
+          "429": {
+            "$ref": "#/components/responses/429"
+          },
           "500": {
             "$ref": "#/components/responses/500"
           }
@@ -403,6 +412,7 @@
                           ],
                           "authorizationEndpoint": "https://as.example.com/authz",
                           "authorizationResponseDuration": 0,
+                          "authorizationCodeDuration": 0,
                           "backchannelAuthReqIdDuration": 0,
                           "backchannelBindingMessageRequiredInFapi": false,
                           "backchannelPollingInterval": 0,
@@ -533,6 +543,9 @@
           },
           "403": {
             "$ref": "#/components/responses/403"
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
           },
           "500": {
             "$ref": "#/components/responses/500"
@@ -669,6 +682,7 @@
                   ],
                   "authorizationEndpoint": "https://my-service.example.com/authz",
                   "authorizationResponseDuration": 0,
+                  "authorizationCodeDuration": 0,
                   "backchannelAuthReqIdDuration": 0,
                   "backchannelBindingMessageRequiredInFapi": false,
                   "backchannelPollingInterval": 0,
@@ -776,6 +790,9 @@
           "403": {
             "$ref": "#/components/responses/403"
           },
+          "429": {
+            "$ref": "#/components/responses/429"
+          },
           "500": {
             "$ref": "#/components/responses/500"
           }
@@ -840,6 +857,7 @@
                 ],
                 "authorizationEndpoint": "https://my-service.example.com/authz",
                 "authorizationResponseDuration": 0,
+                "authorizationCodeDuration": 0,
                 "backchannelAuthReqIdDuration": 0,
                 "backchannelBindingMessageRequiredInFapi": false,
                 "backchannelPollingInterval": 0,
@@ -959,6 +977,7 @@
                   ],
                   "authorizationEndpoint": "https://my-service.example.com/authz",
                   "authorizationResponseDuration": 0,
+                  "authorizationCodeDuration": 0,
                   "backchannelAuthReqIdDuration": 0,
                   "backchannelBindingMessageRequiredInFapi": false,
                   "backchannelPollingInterval": 0,
@@ -1066,6 +1085,9 @@
           "403": {
             "$ref": "#/components/responses/403"
           },
+          "429": {
+            "$ref": "#/components/responses/429"
+          },
           "500": {
             "$ref": "#/components/responses/500"
           }
@@ -1120,6 +1142,9 @@
           "403": {
             "$ref": "#/components/responses/403"
           },
+          "429": {
+            "$ref": "#/components/responses/429"
+          },
           "500": {
             "$ref": "#/components/responses/500"
           }
@@ -1143,6 +1168,355 @@
         ],
         "tags": [
           "Service Management"
+        ]
+      }
+    },
+    "/api/service": {
+      "servers": [
+        {
+          "url": "https://login.authlete.com",
+          "description": "IDP Server",
+          "x-speakeasy-server-id": "idp"
+        }
+      ],
+      "post": {
+        "summary": "Create Service (IDP)",
+        "description": "Create a new service on the API server, belonging to the specified organization.\nA service can be created with an organization token or by a user with the CREATE_SERVICE role.\n\nThis endpoint is hosted on the Authlete IdP server (`https://login.authlete.com`),\nnot on the regional API clusters.\n",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/service_create_idp_request"
+              },
+              "example": {
+                "apiServerId": 76281,
+                "organizationId": 123456789012345,
+                "service": {
+                  "serviceName": "My service",
+                  "issuer": "https://my-service.example.com"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Service created successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/service"
+                },
+                "example": {
+                  "apiKey": 21653835348762,
+                  "serviceName": "My service",
+                  "issuer": "https://my-service.example.com",
+                  "createdAt": 1639373421000,
+                  "modifiedAt": 1639373421000
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/idp_400"
+          },
+          "401": {
+            "$ref": "#/components/responses/idp_401"
+          },
+          "403": {
+            "$ref": "#/components/responses/idp_403"
+          },
+          "500": {
+            "$ref": "#/components/responses/idp_500"
+          }
+        },
+        "operationId": "service_create_idp_api",
+        "x-speakeasy-group": "service",
+        "x-speakeasy-name-override": "create",
+        "x-code-samples": [
+          {
+            "lang": "shell",
+            "label": "curl",
+            "source": "curl -v -X POST https://login.authlete.com/api/service \\\n-H 'Content-Type:application/json' \\\n-H 'Authorization: Bearer <organization-token>' \\\n-d '{ \"apiServerId\": 76281, \"organizationId\": 123456789012345, \"service\": { \"serviceName\": \"My Service\" } }'\n"
+          }
+        ],
+        "tags": [
+          "Service Management"
+        ]
+      }
+    },
+    "/api/service/remove": {
+      "servers": [
+        {
+          "url": "https://login.authlete.com",
+          "description": "IDP Server",
+          "x-speakeasy-server-id": "idp"
+        }
+      ],
+      "post": {
+        "summary": "Remove Service (IDP) ⚡",
+        "description": "Delete a service from the API server.\nA service can be deleted with an organization token or by a user with the MODIFY_SERVICE role.\n\nThis endpoint is hosted on the Authlete IdP server (`https://login.authlete.com`),\nnot on the regional API clusters.\n",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/service_remove_idp_request"
+              },
+              "example": {
+                "apiServerId": 76281,
+                "organizationId": 123456789012345,
+                "serviceId": 21653835348762
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Service removed successfully."
+          },
+          "400": {
+            "$ref": "#/components/responses/idp_400"
+          },
+          "401": {
+            "$ref": "#/components/responses/idp_401"
+          },
+          "403": {
+            "$ref": "#/components/responses/idp_403"
+          },
+          "500": {
+            "$ref": "#/components/responses/idp_500"
+          }
+        },
+        "operationId": "service_remove_idp_api",
+        "x-speakeasy-group": "service",
+        "x-speakeasy-name-override": "remove",
+        "x-code-samples": [
+          {
+            "lang": "shell",
+            "label": "curl",
+            "source": "curl -v -X POST https://login.authlete.com/api/service/remove \\\n-H 'Content-Type:application/json' \\\n-H 'Authorization: Bearer <organization-token>' \\\n-d '{ \"apiServerId\": 76281, \"organizationId\": 123456789012345, \"serviceId\": 21653835348762 }'\n"
+          }
+        ],
+        "tags": [
+          "Service Management"
+        ]
+      }
+    },
+    "/api/audit/entries": {
+      "servers": [
+        {
+          "url": "https://login.authlete.com",
+          "description": "IDP Server",
+          "x-speakeasy-server-id": "idp"
+        }
+      ],
+      "get": {
+        "summary": "Get Audit Logs",
+        "description": "Retrieve audit logs as a cursor-paginated list. Results can be filtered by time range, event type,\nand organization.\n",
+        "x-mint": {
+          "metadata": {
+            "description": "Retrieve audit logs as a cursor-paginated list. Results can be filtered by time range, event type, and organization."
+          },
+          "content": "<Accordion title=\"Full description\" defaultOpen={false}>\nThe response contains a page of roughly `limit` entries together with a `nextCursor` value.\nEntries sharing the same timestamp are never split across pages, so a page may occasionally\ncontain more than `limit` entries. To fetch the next page, repeat the request with the `cursor`\nparameter set to the `nextCursor` value from the previous response, keeping the other filter\nparameters unchanged. `nextCursor` is absent on the last page. If both `before` and `cursor`\nare provided, `cursor` takes precedence.\n\nThis endpoint is hosted on the Authlete IdP server (`https://login.authlete.com`),\nnot on the regional API clusters.\n</Accordion>\n"
+        },
+        "parameters": [
+          {
+            "name": "after",
+            "in": "query",
+            "required": false,
+            "description": "Return logs after this timestamp (ISO 8601).",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "before",
+            "in": "query",
+            "required": false,
+            "description": "Return logs before this timestamp (ISO 8601).",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "types",
+            "in": "query",
+            "required": false,
+            "description": "Filter by event type (e.g. `service.create`, `security.login`, `client.create`).\nCan be specified multiple times. The set of available event types is environment-specific\nand includes server-side types; retrieve the full list from the `/api/audit/types` endpoint.\n",
+            "schema": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "example": "service.create"
+              }
+            }
+          },
+          {
+            "name": "organizationId",
+            "in": "query",
+            "required": false,
+            "description": "The organization to retrieve audit logs for. Not required when authenticating with an\norganization token — the token's own organization is used, and a differing value is\nrejected. Required for user access tokens, unless the user is an Authlete administrator\n(administrators may omit it to query across all organizations).\n",
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "description": "The maximum number of entries to return per page. Values outside the allowed range are\nclamped; the effective value is echoed back in the response.\n",
+            "schema": {
+              "type": "integer",
+              "default": 100,
+              "minimum": 1,
+              "maximum": 1000
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "description": "An opaque cursor returned as `nextCursor` by a previous response. When provided, it takes\nprecedence over the `before` parameter.\n",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A page of audit log entries matching the query.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/audit_entries_get_response"
+                },
+                "example": {
+                  "entries": [
+                    {
+                      "event": "service.create",
+                      "status": "completed",
+                      "timestamp": "2026-06-01T12:34:56Z",
+                      "cluster": "us",
+                      "path": "/api/service",
+                      "remoteAddr": "203.0.113.10",
+                      "userAgent": "curl/8.4.0",
+                      "user": "admin@example.com",
+                      "details": {
+                        "serviceId": 21653835348762,
+                        "organizationId": 123456789012345
+                      }
+                    }
+                  ],
+                  "nextCursor": "MjAyNi0wNi0wMVQxMjozNDo1Nlo",
+                  "limit": 100
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/idp_400"
+          },
+          "401": {
+            "$ref": "#/components/responses/idp_401"
+          },
+          "403": {
+            "$ref": "#/components/responses/idp_403"
+          },
+          "500": {
+            "$ref": "#/components/responses/idp_500"
+          }
+        },
+        "operationId": "audit_entries_get_idp_api",
+        "x-speakeasy-group": "audit",
+        "x-speakeasy-name-override": "get",
+        "x-speakeasy-pagination": {
+          "type": "cursor",
+          "inputs": [
+            {
+              "name": "cursor",
+              "in": "parameters",
+              "type": "cursor"
+            }
+          ],
+          "outputs": {
+            "nextCursor": "$.nextCursor"
+          }
+        },
+        "x-code-samples": [
+          {
+            "lang": "shell",
+            "label": "curl",
+            "source": "curl -v \"https://login.authlete.com/api/audit/entries?types=service.create&limit=100\" \\\n-H 'Authorization: Bearer <organization-token>'\n"
+          }
+        ],
+        "tags": [
+          "Audit Logs"
+        ]
+      }
+    },
+    "/api/audit/types": {
+      "servers": [
+        {
+          "url": "https://login.authlete.com",
+          "description": "IDP Server",
+          "x-speakeasy-server-id": "idp"
+        }
+      ],
+      "get": {
+        "summary": "Get Audit Log Event Types",
+        "description": "Returns the list of available audit log event types for this environment.\n\nAccessible with a user access token or an organization token that has the\n`view_audit_log` permission (e.g. a token created with the `admin` or\n`audit_reader` preset).\n\nThis endpoint is hosted on the Authlete IdP server (`https://login.authlete.com`),\nnot on the regional API clusters.\n",
+        "responses": {
+          "200": {
+            "description": "List of available audit event type strings.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "uniqueItems": true,
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "example": [
+                  "organization.create",
+                  "security.login",
+                  "service.create",
+                  "service.delete"
+                ]
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/idp_400"
+          },
+          "401": {
+            "$ref": "#/components/responses/idp_401"
+          },
+          "403": {
+            "$ref": "#/components/responses/idp_403"
+          },
+          "500": {
+            "$ref": "#/components/responses/idp_500"
+          }
+        },
+        "operationId": "audit_types_get_idp_api",
+        "x-speakeasy-group": "audit",
+        "x-speakeasy-name-override": "getTypes",
+        "x-code-samples": [
+          {
+            "lang": "shell",
+            "label": "curl",
+            "source": "curl -v https://login.authlete.com/api/audit/types \\\n-H 'Authorization: Bearer <access-token>'\n"
+          }
+        ],
+        "tags": [
+          "Audit Logs"
         ]
       }
     },
@@ -1239,6 +1613,12 @@
           },
           "403": {
             "$ref": "#/components/responses/403"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
           },
           "500": {
             "$ref": "#/components/responses/500"
@@ -1409,6 +1789,9 @@
           "403": {
             "$ref": "#/components/responses/403"
           },
+          "429": {
+            "$ref": "#/components/responses/429"
+          },
           "500": {
             "$ref": "#/components/responses/500"
           }
@@ -1574,6 +1957,9 @@
           },
           "403": {
             "$ref": "#/components/responses/403"
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
           },
           "500": {
             "$ref": "#/components/responses/500"
@@ -1757,6 +2143,9 @@
           "404": {
             "description": "The client was not found."
           },
+          "429": {
+            "$ref": "#/components/responses/429"
+          },
           "500": {
             "$ref": "#/components/responses/500"
           }
@@ -1822,6 +2211,9 @@
           },
           "404": {
             "description": "The client was not found."
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
           },
           "500": {
             "$ref": "#/components/responses/500"
@@ -1911,6 +2303,9 @@
           "403": {
             "$ref": "#/components/responses/403"
           },
+          "429": {
+            "$ref": "#/components/responses/429"
+          },
           "500": {
             "$ref": "#/components/responses/500"
           }
@@ -1970,6 +2365,9 @@
           },
           "403": {
             "$ref": "#/components/responses/403"
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
           },
           "500": {
             "$ref": "#/components/responses/500"
@@ -2064,6 +2462,9 @@
           },
           "403": {
             "$ref": "#/components/responses/403"
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
           },
           "500": {
             "$ref": "#/components/responses/500"
@@ -2180,6 +2581,9 @@
           "403": {
             "$ref": "#/components/responses/403"
           },
+          "429": {
+            "$ref": "#/components/responses/429"
+          },
           "500": {
             "$ref": "#/components/responses/500"
           }
@@ -2237,6 +2641,9 @@
           },
           "403": {
             "$ref": "#/components/responses/403"
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
           },
           "500": {
             "$ref": "#/components/responses/500"
@@ -2337,6 +2744,9 @@
           "403": {
             "$ref": "#/components/responses/403"
           },
+          "429": {
+            "$ref": "#/components/responses/429"
+          },
           "500": {
             "$ref": "#/components/responses/500"
           }
@@ -2418,6 +2828,9 @@
           },
           "404": {
             "description": "The client was not found."
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
           },
           "500": {
             "$ref": "#/components/responses/500"
@@ -2502,6 +2915,9 @@
           "403": {
             "$ref": "#/components/responses/403"
           },
+          "429": {
+            "$ref": "#/components/responses/429"
+          },
           "500": {
             "$ref": "#/components/responses/500"
           }
@@ -2577,6 +2993,9 @@
                 }
               }
             }
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
           }
         },
         "operationId": "client_authorization_delete_api_post",
@@ -2653,6 +3072,9 @@
           },
           "403": {
             "$ref": "#/components/responses/403"
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
           },
           "500": {
             "$ref": "#/components/responses/500"
@@ -2738,6 +3160,9 @@
           "403": {
             "$ref": "#/components/responses/403"
           },
+          "429": {
+            "$ref": "#/components/responses/429"
+          },
           "500": {
             "$ref": "#/components/responses/500"
           }
@@ -2813,6 +3238,9 @@
                 }
               }
             }
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
           }
         },
         "operationId": "client_granted_scopes_get_api_post",
@@ -2890,6 +3318,9 @@
           "403": {
             "$ref": "#/components/responses/403"
           },
+          "429": {
+            "$ref": "#/components/responses/429"
+          },
           "500": {
             "$ref": "#/components/responses/500"
           }
@@ -2952,6 +3383,9 @@
           },
           "403": {
             "$ref": "#/components/responses/403"
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
           },
           "500": {
             "$ref": "#/components/responses/500"
@@ -3031,6 +3465,9 @@
           },
           "403": {
             "$ref": "#/components/responses/403"
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
           },
           "500": {
             "$ref": "#/components/responses/500"
@@ -3157,6 +3594,9 @@
           "403": {
             "$ref": "#/components/responses/403"
           },
+          "429": {
+            "$ref": "#/components/responses/429"
+          },
           "500": {
             "$ref": "#/components/responses/500"
           }
@@ -3254,6 +3694,9 @@
           },
           "403": {
             "$ref": "#/components/responses/403"
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
           },
           "500": {
             "$ref": "#/components/responses/500"
@@ -3356,6 +3799,9 @@
           "403": {
             "$ref": "#/components/responses/403"
           },
+          "429": {
+            "$ref": "#/components/responses/429"
+          },
           "500": {
             "$ref": "#/components/responses/500"
           }
@@ -3449,6 +3895,9 @@
           "403": {
             "$ref": "#/components/responses/403"
           },
+          "429": {
+            "$ref": "#/components/responses/429"
+          },
           "500": {
             "$ref": "#/components/responses/500"
           }
@@ -3483,7 +3932,7 @@
           "metadata": {
             "description": "This API parses request parameters of an authorization request and returns necessary data for the authorization server implementation to process the authorization request further."
           },
-          "content": "<Accordion title=\"Full description\" defaultOpen={false}>\nThis API is supposed to be called from with the implementation of the token endpoint of the service.\nThe endpoint implementation must extract the request parameters from the token request from the\nclient application and pass them as the value of parameters request parameter to Authlete's `/auth/token` API.\nThe value of parameters is the entire entity body (which is formatted in `application/x-www-form-urlencoded`)\nof the token request.\nIn addition, if the token endpoint of the authorization server implementation supports basic authentication\nas a means of [client authentication](https://datatracker.ietf.org/doc/html/rfc6749#section-2.3),\nthe client credentials must be extracted from `Authorization` header and they must be passed as\n`clientId` request parameter and `clientSecret` request parameter to Authlete's `/auth/token` API.\nThe following code snippet is an example in JAX-RS showing how to extract request parameters from\nthe token request and client credentials from Authorization header.\n```java\n@POST\n@Consumes(MediaType.APPLICATION_FORM_URLENCODED)\npublic Response post(\n@HeaderParam(HttpHeaders.AUTHORIZATION) String auth,\nString parameters)\n&#123;\n// Convert the value of Authorization header (credentials of\n// the client application), if any, into BasicCredentials.\nBasicCredentials credentials = BasicCredentials.parse(auth);\n// The credentials of the client application extracted from\n// 'Authorization' header. These may be null.\nString clientId = credentials == null ? null\n: credentials.getUserId();\nString clientSecret = credentials == null ? null\n: credentials.getPassword();\n// Process the given parameters.\nreturn process(parameters, clientId, clientSecret);\n&#125;\n```\nThe response from `/auth/token` API has some parameters. Among them, it is action parameter that\nthe service implementation should check first because it denotes the next action that the authorization\nserver implementation should take. According to the value of action, the authorization server\nimplementation must take the steps described below.\n\n## INTERNAL_SERVER_ERROR\n\nWhen the value of `action` is `INTERNAL_SERVER_ERROR`, it means that the request from the authorization\nserver implementation was wrong or that an error occurred in Authlete.\nIn either case, from the viewpoint of the client application, it is an error on the server side.\nTherefore, the service implementation should generate a response to the client application with\nHTTP status of \"500 Internal Server Error\". Authlete recommends `application/json` as the content\ntype although OAuth 2.0 specification does not mention the format of the error response when the\nredirect URI is not usable.\nThe value of `responseContent` is a JSON string which describes the error, so it can be\nused as     the entity body of the response.\n\n---\n\nThe following illustrates the response which the service implementation should generate and return\nto the client application.\n```\nHTTP/1.1 500 Internal Server Error\nContent-Type: application/json\nCache-Control: no-store\nPragma: no-cache\n&#123;responseContent&#125;\n```\nThe endpoint implementation may return another different response to the client application\nsince \"500 Internal Server Error\" is not required by OAuth 2.0.\n\n## INVALID_CLIENT\n\nWhen the value of `action` is `INVALID_CLIENT`, it means that authentication of the client failed.\nIn this case, the HTTP status of the response to the client application is either \"400 Bad Request\"\nor \"401 Unauthorized\". This requirement comes from [RFC 6749, 5.2. Error Response](https://datatracker.ietf.org/doc/html/rfc6749#section-5.2).\nThe description about `invalid_client` shown below is an excerpt from RFC 6749.\n\n---\n\nClient authentication failed (e.g., unknown client, no client authentication included, or unsupported\nauthentication method). The authorization server MAY return an HTTP 401 (Unauthorized) status code\nto indicate which HTTP authentication schemes are supported. If the client attempted to authenticate\nvia the `Authorization` request header field, the authorization server MUST respond with an HTTP\n401 (Unauthorized) status code and include the `WWW-Authenticate` response header field matching\nthe authentication scheme used by the client.\n\n---\n\nIn either case, the value of `responseContent` is a JSON string which can be used as the entity\nbody of the response to the client application.\n\n---\n\nThe following illustrate responses which the service implementation must generate and return to\nthe client application.\n\n```\nHTTP/1.1 400 Bad Request\nContent-Type: application/json\nCache-Control: no-store\nPragma: no-cache\n&#123;responseContent&#125;\n```\n\n```\nHTTP/1.1 401 Unauthorized\nWWW-Authenticate: &#123;challenge&#125;\nContent-Type: application/json\nCache-Control: no-store\nPragma: no-cache\n&#123;responseContent&#125;\n```\n\n## BAD_REQUEST\n\nWhen the value of `action` is `BAD_REQUEST`, it means that the request from the client application\nis invalid.\nA response with HTTP status of \"400 Bad Request\" must be returned to the client application and\nthe content type must be `application/json`.\nThe value of `responseContent` is a JSON string which describes the error, so it can be used as\nthe entity body of the response.\n\nThe following illustrates the response which the service implementation should generate and return\nto the client application.\n\n```\nHTTP/1.1 400 Bad Request\nContent-Type: application/json\nCache-Control: no-store\nPragma: no-cache\n&#123;responseContent&#125;\n```\n\n## PASSWORD\n\nWhen the value of `\"action\"` is `\"PASSWORD\"`, it means that\nthe request from the client application is valid and `grant_type`\nis `\"password\"`. That is, the flow is\n[\"Resource Owner\nPassword Credentials\"](https://www.rfc-editor.org/rfc/rfc6749.html#section-4.3).\nIn this case, &#123;@link #getUsername()&#125; returns the value of `\"username\"`\nrequest parameter and &#123;@link #getPassword()&#125; returns the value of &#123;@code\n\"password\"&#125; request parameter which were contained in the token request\nfrom the client application. The service implementation must validate the\ncredentials of the resource owner (= end-user) and take either of the\nactions below according to the validation result.\n1. When the credentials are valid, call Authlete's /auth/token/issue&#125; API to generate an access token for the client\napplication. The API requires `\"ticket\"` request parameter and\n`\"subject\"` request parameter.\nUse the value returned from &#123;@link #getTicket()&#125; method as the value\nfor `\"ticket\"` parameter.\n2. The response from `/auth/token/issue` API (&#123;@link\nTokenIssueResponse&#125;) contains data (an access token and others)\nwhich should be returned to the client application. Use the data\nto generate a response to the client application.\n3. When the credentials are invalid, call Authlete's &#123;@code\n/auth/token/fail&#125; API with `reason=`&#123;@link\nTokenFailRequest.Reason#INVALID_RESOURCE_OWNER_CREDENTIALS\nINVALID_RESOURCE_OWNER_CREDENTIALS&#125; to generate an error response\nfor the client application. The API requires `\"ticket\"`\nrequest parameter. Use the value returned from &#123;@link #getTicket()&#125;\nmethod as the value for `\"ticket\"` parameter.\n4. The response from `/auth/token/fail` API (&#123;@link\nTokenFailResponse&#125;) contains error information which should be\nreturned to the client application. Use it to generate a response\nto the client application.\n\n## OK\n\nWhen the value of `action` is `OK`, it means that the request from the client application is valid\nand an access token, and optionally an ID token, is ready to be issued.\nThe HTTP status of the response returned to the client application must be \"200 OK\" and the content\ntype must be `application/json`.\nThe value of `responseContent` is a JSON string which contains an access token (and optionally\nan ID token), so it can be used as     the entity body of the response.\n\n---\n\nThe following illustrates the response which the service implementation must generate and return\nto the client application.\n```\nHTTP/1.1 200 OK\nContent-Type: application/json\nCache-Control: no-store\nPragma: no-cache\n&#123;responseContent&#125;\n```\n\n## TOKEN_EXCHANGE (Authlete 2.3 onwards)\n\nWhen the value of `\"action\"` is `\"TOKEN_EXCHANGE\"`, it means\nthat the request from the client application is a valid token exchange\nrequest (cf. [RFC\n8693 OAuth 2.0 Token Exchange](https://www.rfc-editor.org/rfc/rfc8693.html)) and that the request has already passed\nthe following validation steps.\n1. Confirm that the value of the `requested_token_type` request parameter\nis one of the registered token type identifiers if the request parameter is\ngiven and its value is not empty.\n2. Confirm that the `subject_token` request parameter is given and its\nvalue is not empty.\n3. Confirm that the `subject_token_type` request parameter is given and\nits value is one of the registered token type identifiers.\n4. Confirm that the `actor_token_type` request parameter is given and\nits value is one of the registered token type identifiers if the\n`actor_token` request parameter is given and its value is not empty.\n5. Confirm that the `actor_token_type` request parameter is not given\nor its value is empty when the `actor_token` request parameter is\nnot given or its value is empty.\nFurthermore, Authlete performs additional validation on the tokens specified\nby the `subject_token` request parameter and the `actor_token`\nrequest parameter according to their respective token types as shown below.\n\n## Token Validation Steps\n\\*Token Type: `urn:ietf:params:oauth:token-type:jwt`\\*\n1. Confirm that the format conforms to the JWT specification [RFC 7519][https://www.rfc-editor.org/rfc/rfc7519.html].\n2. Check if the JWT is encrypted and if it is encrypted, then (a) reject\nthe token exchange request when the &#123;@link\nService#isTokenExchangeEncryptedJwtRejected()\ntokenExchangeEncryptedJwtRejected&#125; flag of the service is `true`\nor (b) skip remaining validation steps when the flag is `false`.\nNote that Authlete does not verify an encrypted JWT because there is\nno standard way to obtain the key to decrypt the JWT with. This means\nthat you must verify an encrypted JWT by yourself when one is used as\nan input token with the token type\n&#123; @code \"urn:ietf:params:oauth:token-type:jwt\" &#125;.\n3. Confirm that the current time has not reached the time indicated by\nthe `exp` claim if the JWT contains the claim.\n4. Confirm that the current time is equal to or after the time indicated\nby the `iat` claim if the JWT contains the claim.\n5.Confirm that the current time is equal to or after the time indicated\nby the `nbf` claim if the JWT contains the claim.\n6. Check if the JWT is signed and if it is not signed, then (a) reject\nthe token exchange request when the &#123;@link\nService#isTokenExchangeUnsignedJwtRejected()\ntokenExchangeUnsignedJwtRejected&#125; flag of the service is `true`\nor (b) finish validation on the input token. Note that Authlete does\nnot verify the signature of the JWT because there is no standard way\nto obtain the key to verify the signature of a JWT with. This means\nthat you must verify the signature by yourself when a signed JWT is\nused as an input token with the token type\n`\"urn:ietf:params:oauth:token-type:jwt\"`.\n\\*Token Type: `urn:ietf:params:oauth:token-type:access_token`\\*\n1. Confirm that the token is an access token that has been issued by\nthe Authlete server of your service. This implies that access\ntokens issued by other systems cannot be used as a subject token\nor an actor token with the token type\n`urn:ietf:params:oauth:token-type:access_token`.\n2. Confirm that the access token has not expired.\n3. Confirm that the access token belongs to the service.\n\\*Token Type: `urn:ietf:params:oauth:token-type:refresh_token`\\*\n1. Confirm that the token is a refresh token that has been issued by\nthe Authlete server of your service. This implies that refresh\ntokens issued by other systems cannot be used as a subject token\nor an actor token with the token type\n`urn:ietf:params:oauth:token-type:refresh_token`.\n2. Confirm that the refresh token has not expired.\n3. Confirm that the refresh token belongs to the service.\n\\*Token Type: `urn:ietf:params:oauth:token-type:id_token`\\*\n1. Confirm that the format conforms to the JWT specification ([RFC 7519](https://www.rfc-editor.org/rfc/rfc7519.html)).\n2. Check if the ID Token is encrypted and if it is encrypted, then (a)\nreject the token exchange request when the &#123;@link\nService#isTokenExchangeEncryptedJwtRejected()\ntokenExchangeEncryptedJwtRejected&#125; flag of the service is `true`\nor (b) skip remaining validation steps when the flag is `false`.\nNote that Authlete does not verify an encrypted ID Token because\nthere is no standard way to obtain the key to decrypt the ID Token\nwith in the context of token exchange where the client ID for the\nencrypted ID Token cannot be determined. This means that you must\nverify an encrypted ID Token by yourself when one is used as an\ninput token with the token type\n`\"urn:ietf:params:oauth:token-type:id_token\"`.\n3. Confirm that the ID Token contains the `exp` claim and the\ncurrent time has not reached the time indicated by the claim.\n4. Confirm that the ID Token contains the `iat` claim and the\ncurrent time is equal to or after the time indicated by the claim.\n5. Confirm that the current time is equal to or after the time indicated\nby the `nbf` claim if the ID Token contains the claim.\n6. Confirm that the ID Token contains the `iss` claim and the\nvalue is a valid URI. In addition, confirm that the URI has the\n`https` scheme, no query component and no fragment component.\n7. Confirm that the ID Token contains the `aud` claim and its\nvalue is a JSON string or an array of JSON strings.\n8. Confirm that the value of the `nonce` claim is a JSON string\nif the ID Token contains the claim.\n9. Check if the ID Token is signed and if it is not signed, then (a)\nreject the token exchange request when the &#123;@link\nService#isTokenExchangeUnsignedJwtRejected()\ntokenExchangeUnsignedJwtRejected&#125; flag of the service is `true`\nor (b) finish validation on the input token.\n10. Confirm that the signature algorithm is asymmetric. This implies that\nID Tokens whose signature algorithm is symmetric (`HS256`,\n`HS384` or `HS512`) cannot be used as a subject token or\nan actor token with the token type\n`urn:ietf:params:oauth:token-type:id_token`.\n11. Verify the signature of the ID Token. Signature verification is\nperformed even in the case where the issuer of the ID Token is not\nyour service. But in that case, the issuer must support the discovery\nendpoint defined in [OpenID\nConnect Discovery 1.0](https://openid.net/specs/openid-connect-discovery-1_0.html). Otherwise, signature verification fails.\n\\*Token Type: `urn:ietf:params:oauth:token-type:saml1`\\*\n(Authlete does not perform any validation for this token type.)\n\\*Token Type: `urn:ietf:params:oauth:token-type:saml2`\\*\n(Authlete does not perform any validation for this token type.)\nThe specification of Token Exchange ([RFC 8693](https://www.rfc-editor.org/rfc/rfc8693.html)) is very\nflexible. In other words, the specification has abandoned the task of\ndetermining details. Therefore, for secure token exchange, you have\nto complement the specification with your own rules. For that purpose,\nAuthlete provides some configuration options as listed below.\nAuthorization server implementers may utilize them and/or implement\ntheir own rules.\nIn the case of &#123;@link Action#TOKEN_EXCHANGE TOKEN_EXCHANGE&#125;, the &#123;@link\n#getResponseContent()&#125; method returns `null`. You have to construct\nthe token response by yourself.\nFor example, you may generate an access token by calling Authlete's\n`/api/auth/token/create` API and construct a token response like\nbelow.\n```\nHTTP/1.1 401 Unauthorized\nWWW-Authenticate: &#123;challenge&#125;\nContent-Type: application/json\nCache-Control: no-store\nPragma: no-cache\n&#123;responseContent&#125;\n```\n```\nHTTP/1.1 200 OK\nContent-Type: application/json\nCache-Control: no-cache, no-store\n&#123;\n\"access_token\": \"&#123;@link TokenCreateResponse#getAccessToken()&#125;\",\n\"issued_token_type\": \"urn:ietf:params:oauth:token-type:access_token\",\n\"token_type\": \"Bearer\",\n\"expires_in\": &#123; @link TokenCreateResponse#getExpiresIn() &#125;,\n\"scope\": \"String.join(\" \", &#123;@link TokenCreateResponse#getScopes()&#125;)\"\n&#125;\n```\n\n## JWT_BEARER JWT_BEARER (Authlete 2.3 onwards)\n\nWhen the value of `\"action\"` is `\"JWT_BEARER\"`, it means that\nthe request from the client application is a valid token request with the\ngrant type `\"urn:ietf:params:oauth:grant-type:jwt-bearer\"` ([RFC 7523 JSON Web Token (JWT)\nProfile for OAuth 2.0 Client Authentication and Authorization Grants](https://www.rfc-editor.org/rfc/rfc7523.html))\nand that the request has already passed the following validation steps.\n1. Confirm that the `assertion` request parameter is given and its value\nis not empty.\n2. Confirm that the format of the assertion conforms to the JWT specification\n([RFC 7519](https://www.rfc-editor.org/rfc/rfc7519.html)).\n3. Check if the JWT is encrypted and if it is encrypted, then (a) reject the\ntoken request when the &#123;@link Service#isJwtGrantEncryptedJwtRejected()\njwtGrantEncryptedJwtRejected&#125; flag of the service is `true` or (b)\nskip remaining validation steps when the flag is `false`. Note that\nAuthlete does not verify an encrypted JWT because there is no standard way\nto obtain the key to decrypt the JWT with. This means that you must verify\nan encrypted JWT by yourself.\n4. Confirm that the JWT contains the `iss` claim and its value is a\nJSON string.\n5. Confirm that the JWT contains the `sub` claim and its value is a\nJSON string.\n6. Confirm that the JWT contains the `aud` claim and its value is\neither a JSON string or an array of JSON strings.\n7. Confirm that the issuer identifier of the service (cf. &#123;@link Service#getIssuer()&#125;)\nor the URL of the token endpoint (cf. &#123;@link Service#getTokenEndpoint()&#125;)\nis listed as audience in the `aud` claim.\n8. Confirm that the JWT contains the `exp` claim and the current time\nhas not reached the time indicated by the claim.\n9. Confirm that the current time is equal to or after the time indicated by\nby the `iat` claim if the JWT contains the claim.\n10. Confirm that the current time is equal to or after the time indicated by\nby the `nbf` claim if the JWT contains the claim.\n11. Check if the JWT is signed and if it is not signed, then (a) reject the\ntoken request when the &#123;@link Service#isJwtGrantUnsignedJwtRejected()\njwtGrantUnsignedJwtRejected&#125; flag of the service is `true` or (b)\nfinish validation on the JWT. Note that Authlete does not verify the\nsignature of the JWT because there is no standard way to obtain the key\nto verify the signature of a JWT with. This means that you must verify\nthe signature by yourself.\nAuthlete provides some configuration options for the grant type as listed\nbelow. Authorization server implementers may utilize them and/or implement\ntheir own rules.\n```\nHTTP/1.1 200 OK\nContent-Type: application/json\nCache-Control: no-cache, no-store\n&#123;\n\"access_token\": \"&#123;@link TokenCreateResponse#getAccessToken()&#125;\",\n\"token_type\": \"Bearer\",\n\"expires_in\": &#123;@link TokenCreateResponse#getExpiresIn()&#125;,\n\"scope\": \"String.join(\" \", &#123;@link TokenCreateResponse#getScopes()&#125;)\"\n&#125;\n```\nFinally, note again that Authlete does not verify the signature of the JWT\nspecified by the `assertion` request parameter. You must verify the\nsignature by yourself.\n</Accordion>\n"
+          "content": "<Accordion title=\"Full description\" defaultOpen={false}>\nThis API is supposed to be called from with the implementation of the token endpoint of the service.\nThe endpoint implementation must extract the request parameters from the token request from the\nclient application and pass them as the value of parameters request parameter to Authlete's `/auth/token` API.\nThe value of parameters is the entire entity body (which is formatted in `application/x-www-form-urlencoded`)\nof the token request.\nIn addition, if the token endpoint of the authorization server implementation supports basic authentication\nas a means of [client authentication](https://datatracker.ietf.org/doc/html/rfc6749#section-2.3),\nthe client credentials must be extracted from `Authorization` header and they must be passed as\n`clientId` request parameter and `clientSecret` request parameter to Authlete's `/auth/token` API.\nThe following code snippet is an example in JAX-RS showing how to extract request parameters from\nthe token request and client credentials from Authorization header.\n```java\n@POST\n@Consumes(MediaType.APPLICATION_FORM_URLENCODED)\npublic Response post(\n@HeaderParam(HttpHeaders.AUTHORIZATION) String auth,\nString parameters)\n&#123;\n// Convert the value of Authorization header (credentials of\n// the client application), if any, into BasicCredentials.\nBasicCredentials credentials = BasicCredentials.parse(auth);\n// The credentials of the client application extracted from\n// 'Authorization' header. These may be null.\nString clientId = credentials == null ? null\n: credentials.getUserId();\nString clientSecret = credentials == null ? null\n: credentials.getPassword();\n// Process the given parameters.\nreturn process(parameters, clientId, clientSecret);\n&#125;\n```\n**Note**: The `jwtAtClaims` request parameter is effective only when this API directly issues an access\ntoken, i.e., in the `client_credentials` grant flow (and the Native SSO branch of Token Exchange). For\nother grant flows, additional JWT claims must be set via the corresponding API instead: `/auth/authorization/issue`\n(authorization_code), `/auth/backchannel/authentication/complete` (CIBA), or `/auth/device/complete`\n(device_code). `jwtAtClaims` is silently ignored when sent with other grants.\n\nThe response from `/auth/token` API has some parameters. Among them, it is action parameter that\nthe service implementation should check first because it denotes the next action that the authorization\nserver implementation should take. According to the value of action, the authorization server\nimplementation must take the steps described below.\n\n## INTERNAL_SERVER_ERROR\n\nWhen the value of `action` is `INTERNAL_SERVER_ERROR`, it means that the request from the authorization\nserver implementation was wrong or that an error occurred in Authlete.\nIn either case, from the viewpoint of the client application, it is an error on the server side.\nTherefore, the service implementation should generate a response to the client application with\nHTTP status of \"500 Internal Server Error\". Authlete recommends `application/json` as the content\ntype although OAuth 2.0 specification does not mention the format of the error response when the\nredirect URI is not usable.\nThe value of `responseContent` is a JSON string which describes the error, so it can be\nused as     the entity body of the response.\n\n---\n\nThe following illustrates the response which the service implementation should generate and return\nto the client application.\n```\nHTTP/1.1 500 Internal Server Error\nContent-Type: application/json\nCache-Control: no-store\nPragma: no-cache\n&#123;responseContent&#125;\n```\nThe endpoint implementation may return another different response to the client application\nsince \"500 Internal Server Error\" is not required by OAuth 2.0.\n\n## INVALID_CLIENT\n\nWhen the value of `action` is `INVALID_CLIENT`, it means that authentication of the client failed.\nIn this case, the HTTP status of the response to the client application is either \"400 Bad Request\"\nor \"401 Unauthorized\". This requirement comes from [RFC 6749, 5.2. Error Response](https://datatracker.ietf.org/doc/html/rfc6749#section-5.2).\nThe description about `invalid_client` shown below is an excerpt from RFC 6749.\n\n---\n\nClient authentication failed (e.g., unknown client, no client authentication included, or unsupported\nauthentication method). The authorization server MAY return an HTTP 401 (Unauthorized) status code\nto indicate which HTTP authentication schemes are supported. If the client attempted to authenticate\nvia the `Authorization` request header field, the authorization server MUST respond with an HTTP\n401 (Unauthorized) status code and include the `WWW-Authenticate` response header field matching\nthe authentication scheme used by the client.\n\n---\n\nIn either case, the value of `responseContent` is a JSON string which can be used as the entity\nbody of the response to the client application.\n\n---\n\nThe following illustrate responses which the service implementation must generate and return to\nthe client application.\n\n```\nHTTP/1.1 400 Bad Request\nContent-Type: application/json\nCache-Control: no-store\nPragma: no-cache\n&#123;responseContent&#125;\n```\n\n```\nHTTP/1.1 401 Unauthorized\nWWW-Authenticate: &#123;challenge&#125;\nContent-Type: application/json\nCache-Control: no-store\nPragma: no-cache\n&#123;responseContent&#125;\n```\n\n## BAD_REQUEST\n\nWhen the value of `action` is `BAD_REQUEST`, it means that the request from the client application\nis invalid.\nA response with HTTP status of \"400 Bad Request\" must be returned to the client application and\nthe content type must be `application/json`.\nThe value of `responseContent` is a JSON string which describes the error, so it can be used as\nthe entity body of the response.\n\nThe following illustrates the response which the service implementation should generate and return\nto the client application.\n\n```\nHTTP/1.1 400 Bad Request\nContent-Type: application/json\nCache-Control: no-store\nPragma: no-cache\n&#123;responseContent&#125;\n```\n\n## PASSWORD\n\nWhen the value of `\"action\"` is `\"PASSWORD\"`, it means that\nthe request from the client application is valid and `grant_type`\nis `\"password\"`. That is, the flow is\n[\"Resource Owner\nPassword Credentials\"](https://www.rfc-editor.org/rfc/rfc6749.html#section-4.3).\nIn this case, &#123;@link #getUsername()&#125; returns the value of `\"username\"`\nrequest parameter and &#123;@link #getPassword()&#125; returns the value of &#123;@code\n\"password\"&#125; request parameter which were contained in the token request\nfrom the client application. The service implementation must validate the\ncredentials of the resource owner (= end-user) and take either of the\nactions below according to the validation result.\n1. When the credentials are valid, call Authlete's /auth/token/issue&#125; API to generate an access token for the client\napplication. The API requires `\"ticket\"` request parameter and\n`\"subject\"` request parameter.\nUse the value returned from &#123;@link #getTicket()&#125; method as the value\nfor `\"ticket\"` parameter.\n2. The response from `/auth/token/issue` API (&#123;@link\nTokenIssueResponse&#125;) contains data (an access token and others)\nwhich should be returned to the client application. Use the data\nto generate a response to the client application.\n3. When the credentials are invalid, call Authlete's &#123;@code\n/auth/token/fail&#125; API with `reason=`&#123;@link\nTokenFailRequest.Reason#INVALID_RESOURCE_OWNER_CREDENTIALS\nINVALID_RESOURCE_OWNER_CREDENTIALS&#125; to generate an error response\nfor the client application. The API requires `\"ticket\"`\nrequest parameter. Use the value returned from &#123;@link #getTicket()&#125;\nmethod as the value for `\"ticket\"` parameter.\n4. The response from `/auth/token/fail` API (&#123;@link\nTokenFailResponse&#125;) contains error information which should be\nreturned to the client application. Use it to generate a response\nto the client application.\n\n## OK\n\nWhen the value of `action` is `OK`, it means that the request from the client application is valid\nand an access token, and optionally an ID token, is ready to be issued.\nThe HTTP status of the response returned to the client application must be \"200 OK\" and the content\ntype must be `application/json`.\nThe value of `responseContent` is a JSON string which contains an access token (and optionally\nan ID token), so it can be used as     the entity body of the response.\n\n---\n\nThe following illustrates the response which the service implementation must generate and return\nto the client application.\n```\nHTTP/1.1 200 OK\nContent-Type: application/json\nCache-Control: no-store\nPragma: no-cache\n&#123;responseContent&#125;\n```\n\n## TOKEN_EXCHANGE (Authlete 2.3 onwards)\n\nWhen the value of `\"action\"` is `\"TOKEN_EXCHANGE\"`, it means\nthat the request from the client application is a valid token exchange\nrequest (cf. [RFC\n8693 OAuth 2.0 Token Exchange](https://www.rfc-editor.org/rfc/rfc8693.html)) and that the request has already passed\nthe following validation steps.\n1. Confirm that the value of the `requested_token_type` request parameter\nis one of the registered token type identifiers if the request parameter is\ngiven and its value is not empty.\n2. Confirm that the `subject_token` request parameter is given and its\nvalue is not empty.\n3. Confirm that the `subject_token_type` request parameter is given and\nits value is one of the registered token type identifiers.\n4. Confirm that the `actor_token_type` request parameter is given and\nits value is one of the registered token type identifiers if the\n`actor_token` request parameter is given and its value is not empty.\n5. Confirm that the `actor_token_type` request parameter is not given\nor its value is empty when the `actor_token` request parameter is\nnot given or its value is empty.\nFurthermore, Authlete performs additional validation on the tokens specified\nby the `subject_token` request parameter and the `actor_token`\nrequest parameter according to their respective token types as shown below.\n\n## Token Validation Steps\n\\*Token Type: `urn:ietf:params:oauth:token-type:jwt`\\*\n1. Confirm that the format conforms to the JWT specification [RFC 7519][https://www.rfc-editor.org/rfc/rfc7519.html].\n2. Check if the JWT is encrypted and if it is encrypted, then (a) reject\nthe token exchange request when the &#123;@link\nService#isTokenExchangeEncryptedJwtRejected()\ntokenExchangeEncryptedJwtRejected&#125; flag of the service is `true`\nor (b) skip remaining validation steps when the flag is `false`.\nNote that Authlete does not verify an encrypted JWT because there is\nno standard way to obtain the key to decrypt the JWT with. This means\nthat you must verify an encrypted JWT by yourself when one is used as\nan input token with the token type\n&#123; @code \"urn:ietf:params:oauth:token-type:jwt\" &#125;.\n3. Confirm that the current time has not reached the time indicated by\nthe `exp` claim if the JWT contains the claim.\n4. Confirm that the current time is equal to or after the time indicated\nby the `iat` claim if the JWT contains the claim.\n5.Confirm that the current time is equal to or after the time indicated\nby the `nbf` claim if the JWT contains the claim.\n6. Check if the JWT is signed and if it is not signed, then (a) reject\nthe token exchange request when the &#123;@link\nService#isTokenExchangeUnsignedJwtRejected()\ntokenExchangeUnsignedJwtRejected&#125; flag of the service is `true`\nor (b) finish validation on the input token. Note that Authlete does\nnot verify the signature of the JWT because there is no standard way\nto obtain the key to verify the signature of a JWT with. This means\nthat you must verify the signature by yourself when a signed JWT is\nused as an input token with the token type\n`\"urn:ietf:params:oauth:token-type:jwt\"`.\n\\*Token Type: `urn:ietf:params:oauth:token-type:access_token`\\*\n1. Confirm that the token is an access token that has been issued by\nthe Authlete server of your service. This implies that access\ntokens issued by other systems cannot be used as a subject token\nor an actor token with the token type\n`urn:ietf:params:oauth:token-type:access_token`.\n2. Confirm that the access token has not expired.\n3. Confirm that the access token belongs to the service.\n\\*Token Type: `urn:ietf:params:oauth:token-type:refresh_token`\\*\n1. Confirm that the token is a refresh token that has been issued by\nthe Authlete server of your service. This implies that refresh\ntokens issued by other systems cannot be used as a subject token\nor an actor token with the token type\n`urn:ietf:params:oauth:token-type:refresh_token`.\n2. Confirm that the refresh token has not expired.\n3. Confirm that the refresh token belongs to the service.\n\\*Token Type: `urn:ietf:params:oauth:token-type:id_token`\\*\n1. Confirm that the format conforms to the JWT specification ([RFC 7519](https://www.rfc-editor.org/rfc/rfc7519.html)).\n2. Check if the ID Token is encrypted and if it is encrypted, then (a)\nreject the token exchange request when the &#123;@link\nService#isTokenExchangeEncryptedJwtRejected()\ntokenExchangeEncryptedJwtRejected&#125; flag of the service is `true`\nor (b) skip remaining validation steps when the flag is `false`.\nNote that Authlete does not verify an encrypted ID Token because\nthere is no standard way to obtain the key to decrypt the ID Token\nwith in the context of token exchange where the client ID for the\nencrypted ID Token cannot be determined. This means that you must\nverify an encrypted ID Token by yourself when one is used as an\ninput token with the token type\n`\"urn:ietf:params:oauth:token-type:id_token\"`.\n3. Confirm that the ID Token contains the `exp` claim and the\ncurrent time has not reached the time indicated by the claim.\n4. Confirm that the ID Token contains the `iat` claim and the\ncurrent time is equal to or after the time indicated by the claim.\n5. Confirm that the current time is equal to or after the time indicated\nby the `nbf` claim if the ID Token contains the claim.\n6. Confirm that the ID Token contains the `iss` claim and the\nvalue is a valid URI. In addition, confirm that the URI has the\n`https` scheme, no query component and no fragment component.\n7. Confirm that the ID Token contains the `aud` claim and its\nvalue is a JSON string or an array of JSON strings.\n8. Confirm that the value of the `nonce` claim is a JSON string\nif the ID Token contains the claim.\n9. Check if the ID Token is signed and if it is not signed, then (a)\nreject the token exchange request when the &#123;@link\nService#isTokenExchangeUnsignedJwtRejected()\ntokenExchangeUnsignedJwtRejected&#125; flag of the service is `true`\nor (b) finish validation on the input token.\n10. Confirm that the signature algorithm is asymmetric. This implies that\nID Tokens whose signature algorithm is symmetric (`HS256`,\n`HS384` or `HS512`) cannot be used as a subject token or\nan actor token with the token type\n`urn:ietf:params:oauth:token-type:id_token`.\n11. Verify the signature of the ID Token. Signature verification is\nperformed even in the case where the issuer of the ID Token is not\nyour service. But in that case, the issuer must support the discovery\nendpoint defined in [OpenID\nConnect Discovery 1.0](https://openid.net/specs/openid-connect-discovery-1_0.html). Otherwise, signature verification fails.\n\\*Token Type: `urn:ietf:params:oauth:token-type:saml1`\\*\n(Authlete does not perform any validation for this token type.)\n\\*Token Type: `urn:ietf:params:oauth:token-type:saml2`\\*\n(Authlete does not perform any validation for this token type.)\nThe specification of Token Exchange ([RFC 8693](https://www.rfc-editor.org/rfc/rfc8693.html)) is very\nflexible. In other words, the specification has abandoned the task of\ndetermining details. Therefore, for secure token exchange, you have\nto complement the specification with your own rules. For that purpose,\nAuthlete provides some configuration options as listed below.\nAuthorization server implementers may utilize them and/or implement\ntheir own rules.\nIn the case of &#123;@link Action#TOKEN_EXCHANGE TOKEN_EXCHANGE&#125;, the &#123;@link\n#getResponseContent()&#125; method returns `null`. You have to construct\nthe token response by yourself.\nFor example, you may generate an access token by calling Authlete's\n`/api/auth/token/create` API and construct a token response like\nbelow.\n```\nHTTP/1.1 401 Unauthorized\nWWW-Authenticate: &#123;challenge&#125;\nContent-Type: application/json\nCache-Control: no-store\nPragma: no-cache\n&#123;responseContent&#125;\n```\n```\nHTTP/1.1 200 OK\nContent-Type: application/json\nCache-Control: no-cache, no-store\n&#123;\n\"access_token\": \"&#123;@link TokenCreateResponse#getAccessToken()&#125;\",\n\"issued_token_type\": \"urn:ietf:params:oauth:token-type:access_token\",\n\"token_type\": \"Bearer\",\n\"expires_in\": &#123; @link TokenCreateResponse#getExpiresIn() &#125;,\n\"scope\": \"String.join(\" \", &#123;@link TokenCreateResponse#getScopes()&#125;)\"\n&#125;\n```\n\n## JWT_BEARER JWT_BEARER (Authlete 2.3 onwards)\n\nWhen the value of `\"action\"` is `\"JWT_BEARER\"`, it means that\nthe request from the client application is a valid token request with the\ngrant type `\"urn:ietf:params:oauth:grant-type:jwt-bearer\"` ([RFC 7523 JSON Web Token (JWT)\nProfile for OAuth 2.0 Client Authentication and Authorization Grants](https://www.rfc-editor.org/rfc/rfc7523.html))\nand that the request has already passed the following validation steps.\n1. Confirm that the `assertion` request parameter is given and its value\nis not empty.\n2. Confirm that the format of the assertion conforms to the JWT specification\n([RFC 7519](https://www.rfc-editor.org/rfc/rfc7519.html)).\n3. Check if the JWT is encrypted and if it is encrypted, then (a) reject the\ntoken request when the &#123;@link Service#isJwtGrantEncryptedJwtRejected()\njwtGrantEncryptedJwtRejected&#125; flag of the service is `true` or (b)\nskip remaining validation steps when the flag is `false`. Note that\nAuthlete does not verify an encrypted JWT because there is no standard way\nto obtain the key to decrypt the JWT with. This means that you must verify\nan encrypted JWT by yourself.\n4. Confirm that the JWT contains the `iss` claim and its value is a\nJSON string.\n5. Confirm that the JWT contains the `sub` claim and its value is a\nJSON string.\n6. Confirm that the JWT contains the `aud` claim and its value is\neither a JSON string or an array of JSON strings.\n7. Confirm that the issuer identifier of the service (cf. &#123;@link Service#getIssuer()&#125;)\nor the URL of the token endpoint (cf. &#123;@link Service#getTokenEndpoint()&#125;)\nis listed as audience in the `aud` claim.\n8. Confirm that the JWT contains the `exp` claim and the current time\nhas not reached the time indicated by the claim.\n9. Confirm that the current time is equal to or after the time indicated by\nby the `iat` claim if the JWT contains the claim.\n10. Confirm that the current time is equal to or after the time indicated by\nby the `nbf` claim if the JWT contains the claim.\n11. Check if the JWT is signed and if it is not signed, then (a) reject the\ntoken request when the &#123;@link Service#isJwtGrantUnsignedJwtRejected()\njwtGrantUnsignedJwtRejected&#125; flag of the service is `true` or (b)\nfinish validation on the JWT. Note that Authlete does not verify the\nsignature of the JWT because there is no standard way to obtain the key\nto verify the signature of a JWT with. This means that you must verify\nthe signature by yourself.\nAuthlete provides some configuration options for the grant type as listed\nbelow. Authorization server implementers may utilize them and/or implement\ntheir own rules.\n```\nHTTP/1.1 200 OK\nContent-Type: application/json\nCache-Control: no-cache, no-store\n&#123;\n\"access_token\": \"&#123;@link TokenCreateResponse#getAccessToken()&#125;\",\n\"token_type\": \"Bearer\",\n\"expires_in\": &#123;@link TokenCreateResponse#getExpiresIn()&#125;,\n\"scope\": \"String.join(\" \", &#123;@link TokenCreateResponse#getScopes()&#125;)\"\n&#125;\n```\nFinally, note again that Authlete does not verify the signature of the JWT\nspecified by the `assertion` request parameter. You must verify the\nsignature by yourself.\n</Accordion>\n"
         },
         "parameters": [
           {
@@ -3577,6 +4026,9 @@
           "403": {
             "$ref": "#/components/responses/403"
           },
+          "429": {
+            "$ref": "#/components/responses/429"
+          },
           "500": {
             "$ref": "#/components/responses/500"
           }
@@ -3668,6 +4120,9 @@
           },
           "403": {
             "$ref": "#/components/responses/403"
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
           },
           "500": {
             "$ref": "#/components/responses/500"
@@ -3790,6 +4245,9 @@
           },
           "403": {
             "$ref": "#/components/responses/403"
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
           },
           "500": {
             "$ref": "#/components/responses/500"
@@ -3920,6 +4378,9 @@
           "403": {
             "$ref": "#/components/responses/403"
           },
+          "429": {
+            "$ref": "#/components/responses/429"
+          },
           "500": {
             "$ref": "#/components/responses/500"
           }
@@ -4010,6 +4471,9 @@
           },
           "403": {
             "$ref": "#/components/responses/403"
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
           },
           "500": {
             "$ref": "#/components/responses/500"
@@ -4102,6 +4566,9 @@
           },
           "403": {
             "$ref": "#/components/responses/403"
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
           },
           "500": {
             "$ref": "#/components/responses/500"
@@ -4200,6 +4667,9 @@
           "403": {
             "$ref": "#/components/responses/403"
           },
+          "429": {
+            "$ref": "#/components/responses/429"
+          },
           "500": {
             "$ref": "#/components/responses/500"
           }
@@ -4291,6 +4761,9 @@
           "403": {
             "$ref": "#/components/responses/403"
           },
+          "429": {
+            "$ref": "#/components/responses/429"
+          },
           "500": {
             "$ref": "#/components/responses/500"
           }
@@ -4361,6 +4834,9 @@
           "403": {
             "$ref": "#/components/responses/403"
           },
+          "429": {
+            "$ref": "#/components/responses/429"
+          },
           "500": {
             "$ref": "#/components/responses/500"
           }
@@ -4421,6 +4897,9 @@
           },
           "403": {
             "$ref": "#/components/responses/403"
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
           },
           "500": {
             "$ref": "#/components/responses/500"
@@ -4521,6 +5000,9 @@
           },
           "403": {
             "$ref": "#/components/responses/403"
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
           },
           "500": {
             "$ref": "#/components/responses/500"
@@ -4909,6 +5391,9 @@
           "403": {
             "$ref": "#/components/responses/403"
           },
+          "429": {
+            "$ref": "#/components/responses/429"
+          },
           "500": {
             "$ref": "#/components/responses/500"
           }
@@ -5029,6 +5514,9 @@
           },
           "403": {
             "$ref": "#/components/responses/403"
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
           },
           "500": {
             "$ref": "#/components/responses/500"
@@ -5152,6 +5640,9 @@
           },
           "403": {
             "$ref": "#/components/responses/403"
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
           },
           "500": {
             "$ref": "#/components/responses/500"
@@ -5278,6 +5769,9 @@
           "403": {
             "$ref": "#/components/responses/403"
           },
+          "429": {
+            "$ref": "#/components/responses/429"
+          },
           "500": {
             "$ref": "#/components/responses/500"
           }
@@ -5374,6 +5868,9 @@
           },
           "403": {
             "$ref": "#/components/responses/403"
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
           },
           "500": {
             "$ref": "#/components/responses/500"
@@ -5494,6 +5991,9 @@
           "403": {
             "$ref": "#/components/responses/403"
           },
+          "429": {
+            "$ref": "#/components/responses/429"
+          },
           "500": {
             "$ref": "#/components/responses/500"
           }
@@ -5588,6 +6088,9 @@
           "403": {
             "$ref": "#/components/responses/403"
           },
+          "429": {
+            "$ref": "#/components/responses/429"
+          },
           "500": {
             "$ref": "#/components/responses/500"
           }
@@ -5675,6 +6178,9 @@
           },
           "403": {
             "$ref": "#/components/responses/403"
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
           },
           "500": {
             "$ref": "#/components/responses/500"
@@ -5786,6 +6292,9 @@
           "403": {
             "$ref": "#/components/responses/403"
           },
+          "429": {
+            "$ref": "#/components/responses/429"
+          },
           "500": {
             "$ref": "#/components/responses/500"
           }
@@ -5809,6 +6318,87 @@
         ],
         "tags": [
           "CIBA"
+        ]
+      }
+    },
+    "/api/{serviceId}/backchannel/logout/token": {
+      "post": {
+        "summary": "Backchannel Logout Token Issuing",
+        "description": "The `/backchannel/logout/token` API issues a logout token for a client application\nin the context of [OpenID Connect Back-Channel Logout 1.0](https://openid.net/specs/openid-connect-backchannel-1_0.html).\n",
+        "x-mint": {
+          "metadata": {
+            "description": "The `/backchannel/logout/token` API issues a logout token for a client application in the context of [OpenID Connect Back-Channel Logout 1.0](https://openid.net/specs/openid-connect-backchannel-1_0.html)."
+          },
+          "content": "<Accordion title=\"Full description\" defaultOpen={false}>\nThe caller provides a client identifier and either a subject, a session ID, or both.\nAuthlete generates a logout token that the caller should then POST to the client's\nregistered `backchannelLogoutUri`.\n\nA response from the `/backchannel/logout/token` API contains an `action` response\nparameter. The possible values are:\n\n## OK\n\nWhen the action is `OK`, it indicates that the API call completed successfully and\na logout token has been issued. The caller should deliver `logoutToken` to\n`backchannelLogoutUri`.\n\n## SERVER_ERROR\n\nWhen the action is `SERVER_ERROR`, it indicates that something has gone wrong on\nthe Authlete side.\n\n## CALLER_ERROR\n\nWhen the action is `CALLER_ERROR`, it indicates that the API call contained a\nproblem. For example, the call may have been missing required request parameters.\n</Accordion>\n"
+        },
+        "parameters": [
+          {
+            "in": "path",
+            "name": "serviceId",
+            "description": "A service ID.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/backchannel_logout_token_request"
+              },
+              "example": {
+                "clientIdentifier": "1140735077",
+                "subject": "user123",
+                "sessionId": "my-sid"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backchannel_logout_token_response"
+                },
+                "example": {
+                  "action": "OK",
+                  "logoutToken": "eyJhbGciOiJSUzI1NiJ9...",
+                  "backchannelLogoutUri": "https://client.example.com/logout",
+                  "resultCode": "A504001",
+                  "resultMessage": "[A504001] The backchannel logout token was successfully issued."
+                }
+              }
+            },
+            "links": {
+              "authz_process": {
+                "$ref": "#/components/links/authz_process"
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "403": {
+            "$ref": "#/components/responses/403"
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        },
+        "operationId": "backchannel_logout_token_api",
+        "tags": [
+          "Back-Channel Logout"
         ]
       }
     },
@@ -5911,6 +6501,9 @@
           },
           "403": {
             "$ref": "#/components/responses/403"
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
           },
           "500": {
             "$ref": "#/components/responses/500"
@@ -6022,6 +6615,9 @@
           "403": {
             "$ref": "#/components/responses/403"
           },
+          "429": {
+            "$ref": "#/components/responses/429"
+          },
           "500": {
             "$ref": "#/components/responses/500"
           }
@@ -6113,6 +6709,9 @@
           },
           "403": {
             "$ref": "#/components/responses/403"
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
           },
           "500": {
             "$ref": "#/components/responses/500"
@@ -6272,6 +6871,9 @@
           "403": {
             "$ref": "#/components/responses/403"
           },
+          "429": {
+            "$ref": "#/components/responses/429"
+          },
           "500": {
             "$ref": "#/components/responses/500"
           }
@@ -6374,6 +6976,9 @@
           "403": {
             "$ref": "#/components/responses/403"
           },
+          "429": {
+            "$ref": "#/components/responses/429"
+          },
           "500": {
             "$ref": "#/components/responses/500"
           }
@@ -6472,6 +7077,9 @@
           "403": {
             "$ref": "#/components/responses/403"
           },
+          "429": {
+            "$ref": "#/components/responses/429"
+          },
           "500": {
             "$ref": "#/components/responses/500"
           }
@@ -6535,6 +7143,9 @@
           "403": {
             "$ref": "#/components/responses/403"
           },
+          "429": {
+            "$ref": "#/components/responses/429"
+          },
           "500": {
             "$ref": "#/components/responses/500"
           }
@@ -6565,6 +7176,12 @@
       "post": {
         "summary": "Revoke Access Token",
         "description": "Revoke an access token.\n",
+        "x-mint": {
+          "metadata": {
+            "description": "Revoke an access token."
+          },
+          "content": "<Accordion title=\"Full description\" defaultOpen={false}>\nBulk revocation with `clientIdentifier` only, `clientIdentifier` + `subject`, or `subject` only deletes at most **20 tokens per request** (the default of `token.revoke.count.max` in `ServerConfiguration.java`). If the target has more than 20 tokens, the response `count` will be 20 and the remainder is left untouched. To fully wipe them, call the endpoint repeatedly until `count` returns 0.\n\n### Safe bulk revocation under ongoing service: the lock-then-revoke pattern\n\nWhen you call `/auth/token/revoke` repeatedly with `clientIdentifier` to wipe all tokens for a client that is still serving live traffic, the following problems arise:\n\n- Each call deletes at most 20 tokens, so a loop is required.\n- During the loop the client can keep issuing and refreshing tokens, so the loop may not converge, or it may collateral-delete legitimate tokens issued after the revocation started.\n- For a public client whose refresh token has leaked (no `client_secret` to rotate), the attacker can keep refreshing while the cleanup runs.\n\nThe safe and reliable pattern is to **temporarily lock the client first, then revoke**.\n\n1. Call `POST /api/client/lock_flag/update/&#123;clientIdentifier&#125;` with `clientLocked: true`.\n  - All subsequent token-endpoint calls for this client (`authorization_code`, `refresh_token`, `client_credentials`, etc.) are rejected with `invalid_client` (e.g. `A458101`).\n  - Existing tokens are also rejected by `/auth/introspection` with `invalid_token` (`A097303`: \"The client application associated with the presented access token is locked.\").\n  - This immediately stops the attacker's refresh path — including the public-client RT-leak case where there is no `client_secret` to rotate.\n2. Call `POST /api/auth/token/revoke` with `clientIdentifier` in a loop until the response `count` reaches 0.\n  - Because issuance is stopped, the loop converges deterministically.\n  - All existing tokens are physically deleted, eliminating any leftover leaked tokens.\n3. Call `POST /api/client/lock_flag/update/&#123;clientIdentifier&#125;` with `clientLocked: false` to return to normal operation.\n  - End users re-authenticate and receive fresh tokens.\n</Accordion>\n"
+        },
         "parameters": [
           {
             "in": "path",
@@ -6621,6 +7238,9 @@
           },
           "404": {
             "$ref": "#/components/responses/404"
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
           },
           "500": {
             "$ref": "#/components/responses/500"
@@ -6718,6 +7338,9 @@
           "403": {
             "$ref": "#/components/responses/403"
           },
+          "429": {
+            "$ref": "#/components/responses/429"
+          },
           "500": {
             "$ref": "#/components/responses/500"
           }
@@ -6766,10 +7389,20 @@
           }
         ],
         "requestBody": {
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
-                "type": "object"
+                "type": "object",
+                "properties": {
+                  "entityTypes": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/entity_type"
+                    },
+                    "description": "The entity types for which the entity configuration is requested.\nWhen omitted or empty, it defaults to `OPENID_PROVIDER` only\n(backward compatibility). Unsupported entity types are ignored.\n`OPENID_CREDENTIAL_ISSUER` requires the Verifiable Credentials\nfeature (Authlete 3.0+).\n"
+                  }
+                }
               }
             }
           }
@@ -6793,6 +7426,9 @@
           },
           "403": {
             "$ref": "#/components/responses/403"
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
           },
           "500": {
             "$ref": "#/components/responses/500"
@@ -6870,6 +7506,9 @@
           "403": {
             "$ref": "#/components/responses/403"
           },
+          "429": {
+            "$ref": "#/components/responses/429"
+          },
           "500": {
             "$ref": "#/components/responses/500"
           }
@@ -6918,6 +7557,9 @@
           },
           "403": {
             "$ref": "#/components/responses/403"
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
           },
           "500": {
             "$ref": "#/components/responses/500"
@@ -6972,6 +7614,9 @@
           },
           "403": {
             "$ref": "#/components/responses/403"
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
           },
           "500": {
             "$ref": "#/components/responses/500"
@@ -7037,6 +7682,9 @@
           "403": {
             "$ref": "#/components/responses/403"
           },
+          "429": {
+            "$ref": "#/components/responses/429"
+          },
           "500": {
             "$ref": "#/components/responses/500"
           }
@@ -7099,6 +7747,9 @@
           "403": {
             "$ref": "#/components/responses/403"
           },
+          "429": {
+            "$ref": "#/components/responses/429"
+          },
           "500": {
             "$ref": "#/components/responses/500"
           }
@@ -7145,6 +7796,9 @@
           },
           "403": {
             "$ref": "#/components/responses/403"
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
           },
           "500": {
             "$ref": "#/components/responses/500"
@@ -7211,6 +7865,9 @@
           "403": {
             "$ref": "#/components/responses/403"
           },
+          "429": {
+            "$ref": "#/components/responses/429"
+          },
           "500": {
             "$ref": "#/components/responses/500"
           }
@@ -7268,6 +7925,9 @@
           },
           "403": {
             "$ref": "#/components/responses/403"
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
           },
           "500": {
             "$ref": "#/components/responses/500"
@@ -7327,6 +7987,9 @@
           "403": {
             "$ref": "#/components/responses/403"
           },
+          "429": {
+            "$ref": "#/components/responses/429"
+          },
           "500": {
             "$ref": "#/components/responses/500"
           }
@@ -7376,6 +8039,9 @@
           },
           "403": {
             "$ref": "#/components/responses/403"
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
           },
           "500": {
             "$ref": "#/components/responses/500"
@@ -7460,6 +8126,9 @@
           "403": {
             "$ref": "#/components/responses/403"
           },
+          "429": {
+            "$ref": "#/components/responses/429"
+          },
           "500": {
             "$ref": "#/components/responses/500"
           }
@@ -7519,6 +8188,9 @@
           },
           "403": {
             "$ref": "#/components/responses/403"
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
           },
           "500": {
             "$ref": "#/components/responses/500"
@@ -7580,6 +8252,9 @@
           "403": {
             "$ref": "#/components/responses/403"
           },
+          "429": {
+            "$ref": "#/components/responses/429"
+          },
           "500": {
             "$ref": "#/components/responses/500"
           }
@@ -7639,6 +8314,9 @@
           },
           "403": {
             "$ref": "#/components/responses/403"
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
           },
           "500": {
             "$ref": "#/components/responses/500"
@@ -7700,6 +8378,9 @@
           "403": {
             "$ref": "#/components/responses/403"
           },
+          "429": {
+            "$ref": "#/components/responses/429"
+          },
           "500": {
             "$ref": "#/components/responses/500"
           }
@@ -7760,6 +8441,9 @@
           "403": {
             "$ref": "#/components/responses/403"
           },
+          "429": {
+            "$ref": "#/components/responses/429"
+          },
           "500": {
             "$ref": "#/components/responses/500"
           }
@@ -7814,6 +8498,9 @@
           },
           "403": {
             "$ref": "#/components/responses/403"
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
           },
           "500": {
             "$ref": "#/components/responses/500"
@@ -7875,6 +8562,9 @@
           "403": {
             "$ref": "#/components/responses/403"
           },
+          "429": {
+            "$ref": "#/components/responses/429"
+          },
           "500": {
             "$ref": "#/components/responses/500"
           }
@@ -7929,6 +8619,9 @@
           },
           "403": {
             "$ref": "#/components/responses/403"
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
           },
           "500": {
             "$ref": "#/components/responses/500"
@@ -8034,6 +8727,9 @@
           "403": {
             "$ref": "#/components/responses/403"
           },
+          "429": {
+            "$ref": "#/components/responses/429"
+          },
           "500": {
             "$ref": "#/components/responses/500"
           }
@@ -8088,6 +8784,9 @@
           },
           "403": {
             "$ref": "#/components/responses/403"
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
           },
           "500": {
             "$ref": "#/components/responses/500"
@@ -8149,6 +8848,9 @@
           "403": {
             "$ref": "#/components/responses/403"
           },
+          "429": {
+            "$ref": "#/components/responses/429"
+          },
           "500": {
             "$ref": "#/components/responses/500"
           }
@@ -8207,6 +8909,9 @@
           },
           "403": {
             "$ref": "#/components/responses/403"
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
           },
           "500": {
             "$ref": "#/components/responses/500"
@@ -8289,6 +8994,9 @@
           },
           "403": {
             "$ref": "#/components/responses/403"
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
           },
           "500": {
             "$ref": "#/components/responses/500"
@@ -8376,6 +9084,9 @@
           },
           "403": {
             "$ref": "#/components/responses/403"
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
           },
           "500": {
             "$ref": "#/components/responses/500"
@@ -8564,7 +9275,8 @@
           "PRIVATE_KEY_JWT",
           "TLS_CLIENT_AUTH",
           "SELF_SIGNED_TLS_CLIENT_AUTH",
-          "ATTEST_JWT_CLIENT_AUTH"
+          "ATTEST_JWT_CLIENT_AUTH",
+          "SPIFFE_JWT"
         ]
       },
       "client_extension": {
@@ -8960,6 +9672,14 @@
             "type": "boolean",
             "description": "The boolean flag to indicate whether a user code is required when this client makes a backchannel\nauthentication request.\n\nThis property corresponds to the `backchannel_user_code_parameter` metadata.\n"
           },
+          "backchannelLogoutUri": {
+            "type": "string",
+            "description": "The backchannel logout URI for this client. Used by the service to\ndeliver logout tokens when OpenID Connect Back-Channel Logout 1.0 is\ntriggered.\n"
+          },
+          "backchannelLogoutSessionRequired": {
+            "type": "boolean",
+            "description": "The flag indicating whether the client requires that a `sid` (session ID)\nclaim be included in the logout token sent to `backchannelLogoutUri`.\n"
+          },
           "attributes": {
             "type": "array",
             "items": {
@@ -9171,6 +9891,14 @@
               "METADATA_DOCUMENT",
               "STATIC_REGISTRATION"
             ]
+          },
+          "spiffeId": {
+            "type": "string",
+            "description": "The SPIFFE ID of the client. Used for SPIFFE-based client authentication\n(`SPIFFE_JWT`). Corresponds to the `spiffe_id` client metadata parameter.\n"
+          },
+          "spiffeBundleEndpoint": {
+            "type": "string",
+            "description": "The endpoint URL of the SPIFFE bundle for this client. Used to fetch\nthe SPIFFE trust bundle for validating JWT-SVIDs. Corresponds to the\n`spiffe_bundle_endpoint` client metadata parameter.\n"
           }
         }
       },
@@ -9598,6 +10326,11 @@
             "type": "integer",
             "format": "int64",
             "description": "The duration of authorization response JWTs in seconds.\n\n[Financial-grade API: JWT Secured Authorization Response Mode for OAuth 2.0 (JARM)](https://openid.net/specs/openid-financial-api-jarm.html)\ndefines new values for the `response_mode` request parameter. They are `query.jwt`, `fragment.jwt`,\n`form_post.jwt` and `jwt`. If one of them is specified as the response mode, response parameters\nfrom the authorization endpoint will be packed into a JWT. This property is used to compute the\nvalue of the `exp` claim of the JWT.\n"
+          },
+          "authorizationCodeDuration": {
+            "type": "integer",
+            "format": "int64",
+            "description": "The duration of authorization codes in seconds.\n"
           },
           "tokenEndpoint": {
             "type": "string",
@@ -10449,6 +11182,49 @@
           "httpAliasProhibited": {
             "type": "boolean",
             "description": "When `true`, client ID aliases starting with `https://` or `http://` are\nprohibited.\n"
+          },
+          "attestationChallengeTimeWindow": {
+            "type": "integer",
+            "format": "int64",
+            "description": "The time window of attestation challenges in seconds. This is used for\nOAuth 2.0 Attestation-Based Client Authentication.\n"
+          },
+          "clientAttesterRootsEnabled": {
+            "type": "boolean",
+            "description": "The flag indicating whether the attester roots for Client Attestation JWT\nx5c chain validation are enabled.\n"
+          },
+          "clientAttesterRootsOnly": {
+            "type": "boolean",
+            "description": "The flag indicating whether only client authentication validated via\nattester roots is accepted.\n"
+          },
+          "keyAttesterRootsEnabled": {
+            "type": "boolean",
+            "description": "The flag indicating whether the attester roots for Key Attestation JWT\nx5c chain validation are enabled.\n"
+          },
+          "keyAttesterRootsOnly": {
+            "type": "boolean",
+            "description": "The flag indicating whether only key attestation validated via\nattester roots is accepted.\n"
+          },
+          "clientAttesterRoots": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "The trusted root certificates (PEM-encoded X.509) for validating the\nx5c chain in Client Attestation JWTs.\n"
+          },
+          "keyAttesterRoots": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "The trusted root certificates (PEM-encoded X.509) for validating the\nx5c chain in Key Attestation JWTs.\n"
+          },
+          "backchannelLogoutSupported": {
+            "type": "boolean",
+            "description": "The flag indicating whether this service supports OpenID Connect\nBack-Channel Logout 1.0.\n"
+          },
+          "backchannelLogoutSessionSupported": {
+            "type": "boolean",
+            "description": "The flag indicating whether this service includes a `sid` (session ID)\nclaim in ID tokens, supporting per-session backchannel logout.\n"
           }
         }
       },
@@ -10644,6 +11420,10 @@
             "type": "string",
             "description": "The value of the format parameter in the credential request."
           },
+          "credentialConfigurationId": {
+            "type": "string",
+            "description": "The identifier of the credential configuration referenced by the credential request."
+          },
           "bindingKey": {
             "type": "string",
             "description": "The binding key specified by the proof in the credential request."
@@ -10736,8 +11516,89 @@
           "requireCredentialResponseEncryption": {
             "type": "boolean",
             "description": "The boolean flag indicating whether credential response encryption is required. This property\ncorresponds to the `credential_response_encryption.encryption_required metadata`. If this flag\nis `true`, every credential request to the credential issuer must include the `credential_response_encryption`\nproperty.\n"
+          },
+          "requireCredentialRequestEncryption": {
+            "type": "boolean",
+            "description": "The boolean flag indicating whether credential request encryption is required. This property\ncorresponds to the `credential_request_encryption.encryption_required` metadata. If this flag\nis `true`, every credential request to the credential issuer must be encrypted.\n"
+          },
+          "credentialResponseEncryptionZipValuesSupported": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "The supported JWE `zip` (compression) algorithms for credential response encryption. This\nproperty corresponds to the `credential_response_encryption.zip_values_supported` metadata.\n"
+          },
+          "batchSize": {
+            "type": "integer",
+            "description": "The maximum array size for the `proofs` parameter in a credential request. This property\ncorresponds to the `batch_credential_issuance.batch_size` metadata. If the value of this\nproperty is 2 or greater, the `batch_credential_issuance` parameter will appear in the\nresponse from the credential issuer metadata endpoint.\n"
           }
         }
+      },
+      "audit_log_entry": {
+        "type": "object",
+        "properties": {
+          "event": {
+            "type": "string",
+            "description": "The audit event type (e.g. service.create, security.login)."
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "completed",
+              "failed"
+            ],
+            "description": "Whether the action completed successfully or failed."
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true,
+            "description": "When the event occurred (ISO 8601). May be null for entries without a recorded\ntimestamp; such entries are only returned on the first page of results.\n"
+          },
+          "cluster": {
+            "type": "string",
+            "description": "The cluster or region where the event occurred."
+          },
+          "path": {
+            "type": "string",
+            "description": "The API path that triggered the event."
+          },
+          "remoteAddr": {
+            "type": "string",
+            "description": "The IP address of the client that performed the action."
+          },
+          "userAgent": {
+            "type": "string",
+            "description": "The user agent of the client."
+          },
+          "user": {
+            "type": "string",
+            "description": "The user or token that performed the action."
+          },
+          "details": {
+            "type": "object",
+            "additionalProperties": true,
+            "description": "Additional event-specific metadata."
+          }
+        }
+      },
+      "idp_error": {
+        "type": "object",
+        "description": "Error response returned by the Authlete IdP server. Unlike the main API's\n`resultCode`/`resultMessage` format, IdP errors carry a human-readable `error` message,\noptionally accompanied by contextual fields (such as `organizationId` or `apiServerId`).\nRequest validation failures instead return an `errors` array of per-field messages.\n",
+        "properties": {
+          "error": {
+            "type": "string",
+            "description": "A human-readable error message."
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Per-field validation error messages, present for request validation failures."
+          }
+        },
+        "additionalProperties": true
       },
       "verified_claims_validation_schema": {
         "type": "string",
@@ -10824,6 +11685,72 @@
               "$ref": "#/components/schemas/service"
             },
             "description": "An array of services.\n"
+          }
+        }
+      },
+      "service_create_idp_request": {
+        "type": "object",
+        "required": [
+          "organizationId"
+        ],
+        "properties": {
+          "apiServerId": {
+            "type": "integer",
+            "format": "int64",
+            "description": "The numeric ID of the API server to create the service on. Official SDKs inject\nthis automatically for known Authlete clusters, so it can be omitted there;\nall other callers must provide it.\n"
+          },
+          "organizationId": {
+            "type": "integer",
+            "format": "int64",
+            "description": "The numeric ID of the organization the service belongs to."
+          },
+          "service": {
+            "$ref": "#/components/schemas/service"
+          }
+        }
+      },
+      "service_remove_idp_request": {
+        "type": "object",
+        "required": [
+          "organizationId",
+          "serviceId"
+        ],
+        "properties": {
+          "apiServerId": {
+            "type": "integer",
+            "format": "int64",
+            "description": "The numeric ID of the API server the service belongs to. Official SDKs inject\nthis automatically for known Authlete clusters, so it can be omitted there;\nall other callers must provide it.\n"
+          },
+          "organizationId": {
+            "type": "integer",
+            "format": "int64",
+            "description": "The numeric ID of the organization the service belongs to."
+          },
+          "serviceId": {
+            "type": "integer",
+            "format": "int64",
+            "description": "The numeric ID of the service to delete."
+          }
+        }
+      },
+      "audit_entries_get_response": {
+        "type": "object",
+        "properties": {
+          "entries": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/audit_log_entry"
+            },
+            "description": "The audit log entries on this page, in reverse chronological order. Entries sharing the\nsame timestamp are never split across pages, so a page may contain more than `limit` entries.\n"
+          },
+          "nextCursor": {
+            "type": "string",
+            "nullable": true,
+            "description": "An opaque cursor pointing at the next page. Pass this value as the `cursor` parameter of the\nnext request to fetch the following page. Absent or `null` on the last page.\n"
+          },
+          "limit": {
+            "type": "integer",
+            "description": "The effective page size limit applied to this response. May differ from the requested `limit`\nif the requested value was outside the allowed range.\n"
           }
         }
       },
@@ -11300,6 +12227,10 @@
           "bcUserCodeRequired": {
             "type": "boolean",
             "description": "The boolean flag to indicate whether a user code is required when this client makes a backchannel\nauthentication request.\n\nThis property corresponds to the `backchannel_user_code_parameter` metadata.\n"
+          },
+          "backchannelLogoutSessionRequired": {
+            "type": "boolean",
+            "description": "The flag indicating whether the client requires that a `sid` (session ID)\nclaim be included in the logout token sent to `backchannelLogoutUri`.\n"
           },
           "dynamicallyRegistered": {
             "type": "boolean",
@@ -11934,6 +12865,13 @@
           "ticketInfo": {
             "$ref": "#/components/schemas/authorization_ticket_info",
             "description": "The information about the ticket.\n"
+          },
+          "consentedClaims": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "the claims that the user has consented for the client application\nto know.\n"
           }
         }
       },
@@ -12034,7 +12972,8 @@
               "PRIVATE_KEY_JWT",
               "TLS_CLIENT_AUTH",
               "SELF_SIGNED_TLS_CLIENT_AUTH",
-              "ATTEST_JWT_CLIENT_AUTH"
+              "ATTEST_JWT_CLIENT_AUTH",
+              "SPIFFE_JWT"
             ]
           },
           "dpopNonce": {
@@ -12097,7 +13036,7 @@
           },
           "jwtAtClaims": {
             "type": "string",
-            "description": "Additional claims that are added to the payload part of the JWT access token.\n"
+            "description": "Additional claims that are added to the payload part of the JWT access token.\n\nEffective only in the client_credentials grant flow (and the Native SSO branch of Token Exchange). For other grant flows, set additional JWT claims via the corresponding API: /auth/authorization/issue (authorization_code), /auth/backchannel/authentication/complete (CIBA), /auth/device/complete (device_code). The parameter is silently ignored when sent with other grants.\n"
           },
           "oauthClientAttestation": {
             "type": "string",
@@ -14214,6 +15153,63 @@
           "metadataDocumentUsed": {
             "type": "boolean",
             "description": "Flag indicating whether a metadata document was used to resolve client metadata for this request.\n\nWhen `true`, the client metadata was retrieved via the CIMD mechanism rather than from the Authlete database.\n"
+          },
+          "consentedClaims": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "the claims that the user has consented for the client application\nto know.\n"
+          }
+        }
+      },
+      "backchannel_logout_token_request": {
+        "type": "object",
+        "required": [
+          "clientIdentifier"
+        ],
+        "properties": {
+          "clientIdentifier": {
+            "type": "string",
+            "description": "The identifier of the client application. Either a client ID or a client\nalias.\n"
+          },
+          "subject": {
+            "type": "string",
+            "description": "The subject (end-user) identifier. The logout token will be issued for\nthis subject. At least one of `subject` or `sessionId` must be provided.\n"
+          },
+          "sessionId": {
+            "type": "string",
+            "description": "The session ID (`sid`) identifying the user session to log out. At least\none of `subject` or `sessionId` must be provided.\n"
+          }
+        }
+      },
+      "backchannel_logout_token_response": {
+        "type": "object",
+        "properties": {
+          "resultCode": {
+            "type": "string",
+            "description": "The code which represents the result of the API call."
+          },
+          "resultMessage": {
+            "type": "string",
+            "description": "A short message which explains the result of the API call."
+          },
+          "action": {
+            "type": "string",
+            "enum": [
+              "OK",
+              "SERVER_ERROR",
+              "CALLER_ERROR"
+            ],
+            "description": "The next action that the API caller should take.\n"
+          },
+          "logoutToken": {
+            "type": "string",
+            "description": "The logout token issued for the client. The caller should deliver this\ntoken to the client's `backchannelLogoutUri`.\n"
+          },
+          "backchannelLogoutUri": {
+            "type": "string",
+            "description": "The backchannel logout URI of the client. The caller should POST the\n`logoutToken` to this URI.\n"
           }
         }
       },
@@ -14686,6 +15682,13 @@
               "SUCCESS"
             ],
             "description": "The next action that the authorization server implementation should take.\n"
+          },
+          "consentedClaims": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "the claims that the user has consented for the client application\nto know.\n"
           }
         }
       },
@@ -15107,11 +16110,11 @@
           },
           "clientIdentifier": {
             "type": "string",
-            "description": "The client ID of the access token to be revoked.\n\nBoth the numeric client ID and the alias are recognized as an identifier\nof a client.\n"
+            "description": "The client ID of the access token to be revoked.\n\nBoth the numeric client ID and the alias are recognized as an identifier\nof a client.\n\nBulk revocation with `clientIdentifier` only or `clientIdentifier` + `subject` deletes at most **20 tokens per request** (the default of `token.revoke.count.max` in `ServerConfiguration.java`). If the target has more than 20 tokens, the response `count` will be 20 and the remainder is left untouched. To fully wipe them, call the endpoint repeatedly until `count` returns 0.\n"
           },
           "subject": {
             "type": "string",
-            "description": "The subject of a resource owner.\n"
+            "description": "The subject of a resource owner.\n\nBulk revocation with `clientIdentifier` + `subject` or `subject` only deletes at most **20 tokens per request** (the default of `token.revoke.count.max` in `ServerConfiguration.java`). If the target has more than 20 tokens, the response `count` will be 20 and the remainder is left untouched. To fully wipe them, call the endpoint repeatedly until `count` returns 0.\n"
           }
         }
       },
@@ -15128,7 +16131,7 @@
           },
           "count": {
             "type": "integer",
-            "description": "The number of tokens revoked"
+            "description": "The number of tokens revoked.\n\nIf the target has more than 20 tokens, the response `count` will be 20 and the remainder is left untouched. To fully wipe them, call the endpoint repeatedly until `count` returns 0.\n"
           }
         }
       },
@@ -15205,6 +16208,19 @@
             "description": "The list of error messages.\n"
           }
         }
+      },
+      "entity_type": {
+        "type": "string",
+        "enum": [
+          "OPENID_RELYING_PARTY",
+          "OPENID_PROVIDER",
+          "OAUTH_AUTHORIZATION_SERVER",
+          "OAUTH_CLIENT",
+          "OAUTH_RESOURCE",
+          "FEDERATION_ENTITY",
+          "OPENID_CREDENTIAL_ISSUER"
+        ],
+        "description": "The entity type, as defined in OpenID Federation 1.0.\n"
       },
       "federation_configuration_response": {
         "type": "object",
@@ -15851,7 +16867,10 @@
             "type": "string",
             "enum": [
               "OK",
+              "OK_JWT",
               "ACCEPTED",
+              "ACCEPTED_JWT",
+              "BAD_REQUEST",
               "UNAUTHORIZED",
               "FORBIDDEN",
               "INTERNAL_SERVER_ERROR",
@@ -16092,7 +17111,7 @@
             "description": "The ticket."
           },
           "info": {
-            "type": "string",
+            "$ref": "#/components/schemas/authorization_ticket_info",
             "description": "The information about the ticket."
           }
         }
@@ -16520,6 +17539,43 @@
           }
         }
       },
+      "429": {
+        "description": "The request exceeded the request rate permitted for the endpoint.",
+        "headers": {
+          "Retry-After": {
+            "description": "The number of seconds to wait before retrying the request.",
+            "schema": {
+              "type": "integer",
+              "example": 1
+            }
+          },
+          "RateLimit-Remaining": {
+            "description": "The number of requests remaining in the next second.",
+            "schema": {
+              "type": "integer",
+              "example": 10
+            }
+          },
+          "RateLimit-Reset": {
+            "description": "The number of seconds to wait before the request rate is fully replenished.",
+            "schema": {
+              "type": "integer",
+              "example": 1
+            }
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/result"
+            },
+            "example": {
+              "resultCode": "A001311",
+              "resultMessage": "[A001311] /auth/authorization,  Too many requests, retry after 1 seconds. (Entity: 23769878923/87122303)"
+            }
+          }
+        }
+      },
       "500": {
         "description": "",
         "content": {
@@ -16533,7 +17589,71 @@
             }
           }
         }
+      },
+      "idp_400": {
+        "description": "",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/idp_error"
+            },
+            "example": {
+              "error": "Unknown user or invalid access token"
+            }
+          }
+        }
+      },
+      "idp_401": {
+        "description": "",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/idp_error"
+            }
+          }
+        }
+      },
+      "idp_403": {
+        "description": "",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/idp_error"
+            },
+            "example": {
+              "error": "No access to organization for this user"
+            }
+          }
+        }
+      },
+      "idp_500": {
+        "description": "",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/idp_error"
+            },
+            "example": {
+              "error": "An internal error occurred. Please try again later."
+            }
+          }
+        }
       }
     }
-  }
+  },
+  "x-speakeasy-retries": {
+    "strategy": "backoff",
+    "backoff": {
+      "initialInterval": 500,
+      "maxInterval": 16000,
+      "maxElapsedTime": 60000,
+      "exponent": 2
+    },
+    "statusCodes": [
+      "5XX",
+      429
+    ],
+    "retryConnectionErrors": true
+  },
+  "x-speakeasy-timeout": 5000
 }
