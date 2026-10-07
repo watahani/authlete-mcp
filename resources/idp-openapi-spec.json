@@ -187,18 +187,90 @@
         "tags": [
           "user-api"
         ],
-        "summary": "Admin level function to retrieve list of all users.",
+        "summary": "Environment admin level function to retrieve a list of users with cursor-based pagination.\nOptionally you can search by name, email or user id, and filter by administrative tier.",
         "operationId": "getAllUsers",
+        "parameters": [
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "DPoP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "description": "If specified, only returns users whose given name, family name, display name,\nemail address or user id contains this value, ignoring case.\n",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "userType",
+            "in": "query",
+            "description": "If specified, only returns users of these tiers. The tiers do not overlap, so listing all of them is the same as omitting the filter.",
+            "required": false,
+            "schema": {
+              "uniqueItems": true,
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "PLATFORM_ADMIN",
+                  "ENVIRONMENT_ADMIN",
+                  "USER"
+                ]
+              }
+            }
+          },
+          {
+            "name": "includeUnregisteredUsers",
+            "in": "query",
+            "description": "Include users who never finished registering, i.e. who have no password, OIDC\nor WebAuthn authentication method. Excluded by default.\n",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Maximum number of users to return (default 100)",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 100
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "description": "Opaque pagination cursor returned in the previous response as nextCursor",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "OK",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/UpdateUserResponse"
-                  }
+                  "$ref": "#/components/schemas/PaginatedUserResponse"
                 }
               }
             }
@@ -209,7 +281,7 @@
         "tags": [
           "user-api"
         ],
-        "summary": "Create a new a new user after verifying the email address.\nAdmin users can create new users without the email verification step.\nFor non-admin requests, the user will be logged in on successful creation.",
+        "summary": "Create a new a new user after verifying the email address.\nPlatform admin users can create new users without the email verification step.\nFor non-admin requests, the user will be logged in on successful creation.",
         "operationId": "createUser",
         "requestBody": {
           "content": {
@@ -240,7 +312,7 @@
         "tags": [
           "user-api"
         ],
-        "summary": "Update own given name, surname, and/or preferred 2fa method.\nAdmin users can update also other users, including their email address.",
+        "summary": "Update own given name, surname, and/or preferred 2fa method.\nPlatform admin users can update also other users, including their email address.",
         "operationId": "updateUser",
         "parameters": [
           {
@@ -280,9 +352,25 @@
         "tags": [
           "user-api"
         ],
-        "summary": "Admin level function to delete a single user, except themselves.",
+        "summary": "Environment admin level function to delete a single user, except themselves or a platform admin.",
         "operationId": "deleteUser",
         "parameters": [
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "DPoP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
           {
             "name": "id",
             "in": "path",
@@ -448,7 +536,7 @@
         "tags": [
           "user-api"
         ],
-        "summary": "Update own password. Admin users can update also other users passwords\nwithout providing the existing password.",
+        "summary": "Update own password. Platform admin users can update also other users passwords\nwithout providing the existing password.",
         "operationId": "updatePassword",
         "parameters": [
           {
@@ -471,6 +559,100 @@
           },
           "required": true
         },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdateUserResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/user/{id}/environment-admin": {
+      "post": {
+        "tags": [
+          "user-api"
+        ],
+        "summary": "Environment admin level function to make another user an environment admin.",
+        "operationId": "setEnvironmentAdmin",
+        "parameters": [
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "DPoP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdateUserResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "user-api"
+        ],
+        "summary": "Environment admin level function to remove environment admin from another user.",
+        "operationId": "unsetEnvironmentAdmin",
+        "parameters": [
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "DPoP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "OK",
@@ -604,7 +786,7 @@
         "tags": [
           "user-api"
         ],
-        "summary": "Admin level function to make another user an admin.",
+        "summary": "Platform admin level function to make another user a platform admin.",
         "operationId": "setAdmin",
         "parameters": [
           {
@@ -650,7 +832,7 @@
         "tags": [
           "user-api"
         ],
-        "summary": "Admin level function to make another admin normal user.",
+        "summary": "Platform admin level function to make another platform admin a normal user.",
         "operationId": "unsetAdmin",
         "parameters": [
           {
@@ -1209,7 +1391,7 @@
         "tags": [
           "service-api"
         ],
-        "summary": "Admin level function to remove an orphaned service that is not on an api server.\nAny service tokens belonging to that service are also deleted and revoked.\nNote that this function does NOT check if the service is actually an orphan or not.",
+        "summary": "Platform admin level function to remove an orphaned service that is not on an api server.\nAny service tokens belonging to that service are also deleted and revoked.\nNote that this function does NOT check if the service is actually an orphan or not.",
         "operationId": "removeOrphanService",
         "parameters": [
           {
@@ -1251,7 +1433,7 @@
         "tags": [
           "service-api"
         ],
-        "summary": "Admin level function to get a organization ids based on service ids.",
+        "summary": "Requires an Authlete API access token with the admin action. Gets organization ids based on service ids.",
         "operationId": "getOrganizationIdsForServices",
         "parameters": [
           {
@@ -1292,7 +1474,7 @@
         "tags": [
           "service-api"
         ],
-        "summary": "Admin level function to move a service from one organization to another.",
+        "summary": "Platform admin level function to move a service from one organization to another.",
         "operationId": "moveService",
         "parameters": [
           {
@@ -1341,7 +1523,7 @@
         "tags": [
           "service-api"
         ],
-        "summary": "Admin level function to adopt an orphaned service\nto the specified api server.",
+        "summary": "Platform admin level function to adopt an orphaned service\nto the specified api server.",
         "operationId": "adoptService",
         "parameters": [
           {
@@ -1631,7 +1813,7 @@
         "tags": [
           "organization-api"
         ],
-        "summary": "Admin level api to retrieve a list of all organizations.\nMembers of the organizations are not included.",
+        "summary": "Environment admin level function to retrieve a list of all organizations.\nMembers of the organizations are not included.",
         "operationId": "getAllOrganizations",
         "parameters": [
           {
@@ -1671,7 +1853,7 @@
         "tags": [
           "organization-api"
         ],
-        "summary": "Create a new organization.\nOnly admin users can create organization with non-free plans.",
+        "summary": "Create a new organization.\nOnly platform admin users can create organization with non-free plans.",
         "operationId": "createOrganization",
         "parameters": [
           {
@@ -1766,7 +1948,7 @@
         "tags": [
           "organization-api"
         ],
-        "summary": "Organization admin level function to update organization name.\nSite admin can also update the organization's plan.",
+        "summary": "Organization admin level function to update organization name.\nEnvironment admins can rename any organization.\nPlatform admins can also update the organization's plan.",
         "operationId": "updateOrganization",
         "parameters": [
           {
@@ -1822,7 +2004,7 @@
         "tags": [
           "organization-api"
         ],
-        "summary": "Organization admin level function to delete an organization.\nThis will also delete all service instances, service access tokens\nand organization access tokens associated with the organization.\nThe tokens are also revoked.",
+        "summary": "Organization admin level function to delete an organization.\nEnvironment admins can delete any organization.\nThis will also delete all service instances, service access tokens\nand organization access tokens associated with the organization.\nThe tokens are also revoked.",
         "operationId": "deleteOrganization",
         "parameters": [
           {
@@ -2374,7 +2556,7 @@
         "tags": [
           "dynamic-config-api"
         ],
-        "summary": "Authlete admin level function to get environment configuration",
+        "summary": "Environment admin level function to get environment configuration",
         "operationId": "getEnvironmentConfiguration",
         "parameters": [
           {
@@ -2411,7 +2593,7 @@
         "tags": [
           "dynamic-config-api"
         ],
-        "summary": "Authlete admin level function to update environment configuration",
+        "summary": "Environment admin level function to update environment configuration",
         "operationId": "setEnvironmentConfiguration",
         "parameters": [
           {
@@ -2520,7 +2702,7 @@
         "tags": [
           "api-server-api"
         ],
-        "summary": "Get a list of all api servers available to you, or to the organization token.\nApi servers associated with organizations that you or the org token\nare not a part of are not returned.\nFor admin users, all api servers are returned.\n",
+        "summary": "Get a list of all api servers available to you, or to the organization token.\nApi servers associated with organizations that you or the org token\nare not a part of are not returned.\nFor platform admin users, all api servers are returned.\n",
         "operationId": "getAllApiServers",
         "parameters": [
           {
@@ -2560,7 +2742,7 @@
         "tags": [
           "api-server-api"
         ],
-        "summary": "Admin level function to create a new api server.",
+        "summary": "Platform admin level function to create a new api server.",
         "operationId": "createApiServer",
         "parameters": [
           {
@@ -2655,7 +2837,7 @@
         "tags": [
           "api-server-api"
         ],
-        "summary": "Admin level function to update an api server.",
+        "summary": "Platform admin level function to update an api server.",
         "operationId": "updateApiServer",
         "parameters": [
           {
@@ -2711,7 +2893,7 @@
         "tags": [
           "api-server-api"
         ],
-        "summary": "Admin level function to delete an api server.",
+        "summary": "Platform admin level function to delete an api server.",
         "operationId": "deleteApiServer",
         "parameters": [
           {
@@ -2752,7 +2934,7 @@
         "tags": [
           "authlete-application-api"
         ],
-        "summary": "Admin level function to retrieve a list of all Authlete applications.",
+        "summary": "Retrieve a list of all Authlete applications. Available to any logged-in user;\nplatform and environment admins additionally see the clientId and scopes.",
         "operationId": "getAllAuthleteApplications",
         "parameters": [
           {
@@ -2792,7 +2974,7 @@
         "tags": [
           "authlete-application-api"
         ],
-        "summary": "Admin level function to create a new allowlisted Authlete application.",
+        "summary": "Platform admin level function to create a new allowlisted Authlete application.",
         "operationId": "createAuthleteApp",
         "parameters": [
           {
@@ -2841,7 +3023,7 @@
         "tags": [
           "authlete-application-api"
         ],
-        "summary": "Admin level function to update an Authlete application.",
+        "summary": "Platform admin level function to update an Authlete application.",
         "operationId": "updateAuthleteApp",
         "parameters": [
           {
@@ -2897,7 +3079,7 @@
         "tags": [
           "authlete-application-api"
         ],
-        "summary": "Admin level function to delete an Authlete application.",
+        "summary": "Platform admin level function to delete an Authlete application.",
         "operationId": "deleteAuthleteApp",
         "parameters": [
           {
@@ -3628,7 +3810,7 @@
         "tags": [
           "service-api"
         ],
-        "summary": "Admin level function to retrieve a orphaned service.\nAn orphan service is a service that is on the api server\nbut not on the IdP, or vice versa.",
+        "summary": "Platform admin level function to retrieve a orphaned service.\nAn orphan service is a service that is on the api server\nbut not on the IdP, or vice versa.",
         "operationId": "getOrphans",
         "parameters": [
           {
@@ -3667,7 +3849,7 @@
         "tags": [
           "service-api"
         ],
-        "summary": "Admin level function to retrieve a list of service instances\nof the specified api server.",
+        "summary": "Platform admin level function to retrieve a list of service instances\nof the specified api server.",
         "operationId": "findServices",
         "parameters": [
           {
@@ -3782,12 +3964,63 @@
         }
       }
     },
+    "/api/feature-flags": {
+      "get": {
+        "tags": [
+          "feature-flags-api"
+        ],
+        "summary": "Returns the feature flags enabled for the currently authenticated user.\nRequires an authenticated session or user-bound access token.\nPass the current organization id to have org-scoped flags evaluated for it.",
+        "operationId": "getFeatureFlags",
+        "parameters": [
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "DPoP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "orgId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "boolean"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/audit": {
       "get": {
         "tags": [
           "audit-api"
         ],
-        "summary": "Retrieve audit logs. Optionally you can limit the returned audit logs by time and type.\nAdmin users can optionally retrieve all audit logs,\nincluding from organizations they do not belong to, without time restrictions.",
+        "summary": "Retrieve audit logs. Optionally you can limit the returned audit logs by time and type.\nPlatform admin users can optionally retrieve all audit logs,\nincluding from organizations they do not belong to, without time restrictions.",
         "operationId": "getAuditLog",
         "parameters": [
           {
@@ -3829,50 +4062,20 @@
           {
             "name": "types",
             "in": "query",
-            "description": "Limit audit logs to these types",
+            "description": "If specified, only returns the specified type of audit events. E.g. security.user.login, or service.create",
             "required": false,
             "schema": {
               "uniqueItems": true,
               "type": "array",
               "items": {
-                "type": "string",
-                "enum": [
-                  "organization.create",
-                  "organization.delete",
-                  "security.login",
-                  "security.logout",
-                  "security.register",
-                  "user.create",
-                  "user.delete",
-                  "user.invite",
-                  "user.invite.accept",
-                  "user.invite.decline",
-                  "user.invite.revoke",
-                  "user.admin.set",
-                  "user.admin.unset",
-                  "permissions.change",
-                  "organization.token.create",
-                  "organization.token.rotate",
-                  "organization.token.delete",
-                  "security.verify.email",
-                  "service.token.create",
-                  "service.token.rotate",
-                  "service.token.delete",
-                  "security.login.mfa",
-                  "security.login.oidc",
-                  "security.mfa.create",
-                  "security.mfa.delete",
-                  "security.password.update",
-                  "service.create",
-                  "service.delete"
-                ]
+                "type": "string"
               }
             }
           },
           {
             "name": "organizationId",
             "in": "query",
-            "description": "Id of the single organization where to get the audit logs from. Required for all non-Authlete admin users.",
+            "description": "Id of the single organization where to get the audit logs from. Required for all users who are not platform admins.",
             "required": false,
             "schema": {
               "type": "integer",
@@ -3894,7 +4097,8 @@
               }
             }
           }
-        }
+        },
+        "deprecated": true
       }
     },
     "/api/audit/types": {
@@ -3933,6 +4137,131 @@
                   "items": {
                     "type": "string"
                   }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/audit/entries": {
+      "get": {
+        "tags": [
+          "audit-api"
+        ],
+        "summary": "Retrieve audit logs with cursor-based pagination. Optionally you can limit the returned audit logs by time and type.\nEnvironment admin users can optionally retrieve all audit logs,\nincluding from organizations they do not belong to. Only platform admin\nusers may exceed the maximum time range.",
+        "operationId": "getAuditLogEntries",
+        "parameters": [
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "DPoP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "after",
+            "in": "query",
+            "description": "Audit logs after this moment in time (exclusive). If both after and before values are not given,\ndefault to 30 days, the maximum allowed range.\n",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "before",
+            "in": "query",
+            "description": "Audit logs before this moment in time (exclusive)",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "types",
+            "in": "query",
+            "description": "If specified, only returns the specified type of audit events. E.g. security.user.login, or service.create",
+            "required": false,
+            "schema": {
+              "uniqueItems": true,
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "name": "organizationId",
+            "in": "query",
+            "description": "Id of the single organization where to get the audit logs from. Required for all users who are not environment admins.",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "userId",
+            "in": "query",
+            "description": "If specified, only returns audit events performed by this user",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "description": "If specified, only returns audit events with this status",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "completed",
+                "failed"
+              ]
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Maximum number of audit log entries to return (default 100)",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 100
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "description": "Opaque pagination cursor returned in the previous response as nextCursor",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedAuditLogResponse"
                 }
               }
             }
@@ -4284,6 +4613,9 @@
           "admin": {
             "type": "boolean"
           },
+          "environmentAdmin": {
+            "type": "boolean"
+          },
           "autoRegister": {
             "type": "boolean"
           },
@@ -4503,6 +4835,9 @@
             "type": "string"
           },
           "admin": {
+            "type": "boolean"
+          },
+          "environmentAdmin": {
             "type": "boolean"
           },
           "preferred2faMethod": {
@@ -6986,13 +7321,21 @@
         }
       },
       "DynamicConfigRequestResponse": {
-        "required": [
-          "passwordRegistrationEnabled"
-        ],
         "type": "object",
         "properties": {
           "passwordRegistrationEnabled": {
             "type": "boolean"
+          },
+          "organizationCreationEnabled": {
+            "type": "boolean"
+          },
+          "sessionInactivityTimeoutSeconds": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "sessionAbsoluteTimeoutSeconds": {
+            "type": "integer",
+            "format": "int64"
           }
         }
       },
@@ -9046,6 +9389,81 @@
           }
         }
       },
+      "PaginatedUserResponse": {
+        "type": "object",
+        "properties": {
+          "entries": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/UserListEntry"
+            }
+          },
+          "nextCursor": {
+            "type": "string"
+          },
+          "limit": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalEntries": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "UserListEntry": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "givenName": {
+            "type": "string"
+          },
+          "familyName": {
+            "type": "string"
+          },
+          "displayName": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "admin": {
+            "type": "boolean"
+          },
+          "environmentAdmin": {
+            "type": "boolean"
+          },
+          "preferred2faMethod": {
+            "type": "string",
+            "enum": [
+              "totp",
+              "webauthn",
+              "scratch"
+            ]
+          },
+          "organizations": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/UserOrganizationSummary"
+            }
+          }
+        }
+      },
+      "UserOrganizationSummary": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "name": {
+            "type": "string"
+          }
+        }
+      },
       "GoogleAuthenticatorConfig": {
         "type": "object",
         "properties": {
@@ -9201,6 +9619,9 @@
           "passwordRegistrationEnabled": {
             "type": "boolean"
           },
+          "organizationCreationEnabled": {
+            "type": "boolean"
+          },
           "socialLoginEnabled": {
             "type": "boolean"
           },
@@ -9251,6 +9672,24 @@
             "additionalProperties": {
               "type": "object"
             }
+          }
+        }
+      },
+      "PaginatedAuditLogResponse": {
+        "type": "object",
+        "properties": {
+          "entries": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AuditLogEntry"
+            }
+          },
+          "nextCursor": {
+            "type": "string"
+          },
+          "limit": {
+            "type": "integer",
+            "format": "int32"
           }
         }
       },
@@ -9384,6 +9823,9 @@
             "format": "int64"
           },
           "admin": {
+            "type": "boolean"
+          },
+          "environmentAdmin": {
             "type": "boolean"
           }
         }
